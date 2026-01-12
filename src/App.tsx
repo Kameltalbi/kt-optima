@@ -9,6 +9,7 @@ import Products from "./pages/Products";
 import Invoices from "./pages/Invoices";
 import Treasury from "./pages/Treasury";
 import Settings from "./pages/Settings";
+import Purchases from "./pages/Purchases";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
@@ -27,9 +28,11 @@ const App = () => (
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/treasury" element={<Treasury />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/purchases" element={<Purchases />} />
+          <Route path="/suppliers" element={<ComingSoon title="Fournisseurs" subtitle="Gestion des fournisseurs" />} />
           <Route path="/projects" element={<ComingSoon title="Projets" subtitle="Gestion de projets et budgets" />} />
           <Route path="/reports" element={<ComingSoon title="Rapports" subtitle="Analyses et statistiques" />} />
-          <Route path="/stock" element={<ComingSoon title="Stock & Achats" subtitle="Gestion des stocks" />} />
+          <Route path="/stock" element={<ComingSoon title="Stock" subtitle="Gestion des stocks" />} />
           <Route path="/hr" element={<ComingSoon title="RH & Dépenses" subtitle="Gestion des ressources humaines" />} />
           <Route path="/accounting" element={<ComingSoon title="Comptabilité" subtitle="Journaux et TVA" />} />
           
