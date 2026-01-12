@@ -22,7 +22,7 @@ const App = () => (
         <Routes>
           {/* Tableau de bord */}
           <Route path="/" element={<Dashboard />} />
-          <Route path="/tasks" element={<ComingSoon title="Mes tâches" subtitle="Gestion de vos tâches" />} />
+          <Route path="/crm" element={<ComingSoon title="CRM" subtitle="Gestion de la relation client" />} />
           
           {/* Commercial */}
           <Route path="/clients" element={<Clients />} />
