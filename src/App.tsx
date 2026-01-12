@@ -33,7 +33,8 @@ const App = () => (
           <Route path="/projects" element={<ComingSoon title="Projets" subtitle="Gestion de projets et budgets" />} />
           <Route path="/reports" element={<ComingSoon title="Rapports" subtitle="Analyses et statistiques" />} />
           <Route path="/stock" element={<ComingSoon title="Stock" subtitle="Gestion des stocks" />} />
-          <Route path="/hr" element={<ComingSoon title="RH & Dépenses" subtitle="Gestion des ressources humaines" />} />
+          <Route path="/hr" element={<ComingSoon title="Ressources Humaines" subtitle="Gestion du personnel" />} />
+          <Route path="/expenses" element={<ComingSoon title="Dépenses" subtitle="Suivi des dépenses internes" />} />
           <Route path="/accounting" element={<ComingSoon title="Comptabilité" subtitle="Journaux et TVA" />} />
           
           <Route path="/notifications" element={<ComingSoon title="Notifications" subtitle="Centre de notifications" />} />

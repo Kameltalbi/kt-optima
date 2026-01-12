@@ -61,7 +61,8 @@ const menuGroups = [
     title: "Organisation",
     items: [
       { icon: FolderKanban, label: "Projets", path: "/projects" },
-      { icon: UserCog, label: "RH & Dépenses", path: "/hr" },
+      { icon: UserCog, label: "Ressources Humaines", path: "/hr" },
+      { icon: Wallet, label: "Dépenses", path: "/expenses" },
     ],
   },
   {
