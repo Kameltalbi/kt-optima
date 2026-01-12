@@ -11,13 +11,14 @@ import {
   Boxes,
   UserCog,
   Calculator,
-  FolderOpen,
   Bell,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   Building2,
   Settings,
+  ShoppingCart,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,9 +34,18 @@ const menuGroups = [
     id: "ventes",
     title: "Ventes",
     items: [
-      { icon: Users, label: "Clients & Fournisseurs", path: "/clients" },
+      { icon: Users, label: "Clients", path: "/clients" },
       { icon: Package, label: "Produits & Services", path: "/products" },
       { icon: FileText, label: "Facturation", path: "/invoices" },
+    ],
+  },
+  {
+    id: "achats",
+    title: "Achats",
+    items: [
+      { icon: Truck, label: "Fournisseurs", path: "/suppliers" },
+      { icon: ShoppingCart, label: "Achats", path: "/purchases" },
+      { icon: Boxes, label: "Stock", path: "/stock" },
     ],
   },
   {
@@ -51,7 +61,6 @@ const menuGroups = [
     title: "Organisation",
     items: [
       { icon: FolderKanban, label: "Projets", path: "/projects" },
-      { icon: Boxes, label: "Stock & Achats", path: "/stock" },
       { icon: UserCog, label: "RH & Dépenses", path: "/hr" },
     ],
   },
