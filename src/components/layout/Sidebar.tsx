@@ -15,6 +15,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Building2,
   Settings,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const menuGroups = [
   {
+    id: "pilotage",
     title: "Pilotage",
     items: [
       { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
@@ -29,6 +31,7 @@ const menuGroups = [
     ],
   },
   {
+    id: "ventes",
     title: "Ventes",
     items: [
       { icon: Users, label: "Clients & Fournisseurs", path: "/clients" },
@@ -37,6 +40,7 @@ const menuGroups = [
     ],
   },
   {
+    id: "finances",
     title: "Finances",
     items: [
       { icon: Wallet, label: "Trésorerie", path: "/treasury" },
@@ -44,6 +48,7 @@ const menuGroups = [
     ],
   },
   {
+    id: "organisation",
     title: "Organisation",
     items: [
       { icon: FolderKanban, label: "Projets", path: "/projects" },
@@ -52,6 +57,7 @@ const menuGroups = [
     ],
   },
   {
+    id: "systeme",
     title: "Système",
     items: [
       { icon: FolderOpen, label: "Documents", path: "/documents" },
@@ -63,10 +69,28 @@ const menuGroups = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [openGroups, setOpenGroups] = useState<string[]>(["pilotage"]);
   const location = useLocation();
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
+        : [...prev, groupId]
+    );
+  };
+
+  const handleMouseLeave = () => {
+    // Keep only the group containing active route open
+    const activeGroup = menuGroups.find((group) =>
+      group.items.some((item) => item.path === location.pathname)
+    );
+    setOpenGroups(activeGroup ? [activeGroup.id] : []);
+  };
 
   return (
     <aside
+      onMouseLeave={handleMouseLeave}
       className={cn(
         "h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 sticky top-0 border-r border-sidebar-border/50",
         collapsed ? "w-16" : "w-60"
@@ -98,37 +122,67 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
-        {menuGroups.map((group, groupIndex) => (
-          <div key={group.title} className={cn(groupIndex > 0 && "mt-5")}>
-            {!collapsed && (
-              <p className="px-3 mb-1.5 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
-                {group.title}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
+        {menuGroups.map((group, groupIndex) => {
+          const isOpen = openGroups.includes(group.id);
+          const hasActiveItem = group.items.some(
+            (item) => item.path === location.pathname
+          );
+
+          return (
+            <div key={group.id} className={cn(groupIndex > 0 && "mt-2")}>
+              {!collapsed && (
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors",
+                    hasActiveItem
+                      ? "text-primary/80"
+                      : "text-sidebar-foreground/40 hover:text-sidebar-foreground/60 hover:bg-sidebar-accent/30"
+                  )}
+                >
+                  <span>{group.title}</span>
+                  <ChevronDown
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
-                      isActive
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      "w-3 h-3 transition-transform duration-200",
+                      isOpen && "rotate-180"
                     )}
-                  >
-                    <item.icon className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")} />
-                    {!collapsed && (
-                      <span className="truncate animate-fade-in">{item.label}</span>
-                    )}
-                  </NavLink>
-                );
-              })}
+                  />
+                </button>
+              )}
+              <div
+                className={cn(
+                  "overflow-hidden transition-all duration-200",
+                  !collapsed && !isOpen ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                )}
+              >
+                <div className="space-y-0.5 mt-1">
+                  {group.items.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={cn(
+                          "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        <item.icon
+                          className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")}
+                        />
+                        {!collapsed && (
+                          <span className="truncate animate-fade-in">{item.label}</span>
+                        )}
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer */}
