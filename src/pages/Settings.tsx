@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Shield, FileText, Globe } from "lucide-react";
+import { Building2, Users, Shield, FileText, Globe, FolderOpen, Upload, Download, Trash2 } from "lucide-react";
 
 export default function Settings() {
   return (
@@ -30,6 +30,10 @@ export default function Settings() {
           <TabsTrigger value="regional" className="gap-2 text-xs">
             <Globe className="w-3.5 h-3.5" />
             Régional
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-2 text-xs">
+            <FolderOpen className="w-3.5 h-3.5" />
+            Documents
           </TabsTrigger>
         </TabsList>
 
@@ -279,6 +283,85 @@ export default function Settings() {
                 <Button size="sm" className="text-xs">
                   Enregistrer
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-6">
+          <Card className="border-border/50">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Gestion des documents</CardTitle>
+                  <CardDescription className="text-xs">
+                    Factures, contrats, justificatifs et documents RH
+                  </CardDescription>
+                </div>
+                <Button size="sm" className="text-xs gap-1.5">
+                  <Upload className="w-3.5 h-3.5" />
+                  Télécharger
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { name: "Facture_001.pdf", type: "Facture", date: "12/01/2025", size: "245 KB" },
+                  { name: "Contrat_Client_ABC.pdf", type: "Contrat", date: "10/01/2025", size: "1.2 MB" },
+                  { name: "Justificatif_Deplacement.pdf", type: "Justificatif", date: "08/01/2025", size: "156 KB" },
+                  { name: "Fiche_Paie_Dec2024.pdf", type: "RH", date: "05/01/2025", size: "89 KB" },
+                ].map((doc) => (
+                  <div
+                    key={doc.name}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">{doc.type} • {doc.date} • {doc.size}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Download className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base">Catégories de documents</CardTitle>
+              <CardDescription className="text-xs">
+                Organisez vos documents par catégorie
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { name: "Factures", count: 24 },
+                  { name: "Contrats", count: 8 },
+                  { name: "Justificatifs", count: 45 },
+                  { name: "Documents RH", count: 12 },
+                ].map((cat) => (
+                  <div
+                    key={cat.name}
+                    className="p-3 rounded-lg bg-muted/30 border border-border/50"
+                  >
+                    <p className="text-sm font-medium">{cat.name}</p>
+                    <p className="text-xs text-muted-foreground">{cat.count} fichiers</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
