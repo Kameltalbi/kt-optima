@@ -38,16 +38,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const dashboardItems = [
+  { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/" },
+  { icon: Target, label: "CRM", path: "/crm" },
+];
+
 const menuGroups = [
-  {
-    id: "dashboard",
-    title: "Tableau de bord",
-    icon: LayoutDashboard,
-    items: [
-      { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/" },
-      { icon: Target, label: "CRM", path: "/crm" },
-    ],
-  },
   {
     id: "commercial",
     title: "Commercial",
@@ -131,13 +127,10 @@ const menuGroups = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState<string[]>(["dashboard"]);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
   const location = useLocation();
 
   const toggleGroup = (groupId: string) => {
-    // Dashboard always stays open
-    if (groupId === "dashboard") return;
-    
     setOpenGroups((prev) =>
       prev.includes(groupId)
         ? prev.filter((id) => id !== groupId)
@@ -146,15 +139,11 @@ export function Sidebar() {
   };
 
   const handleMouseLeave = () => {
-    // Keep dashboard always open + the group containing active route
+    // Keep only the group containing active route open
     const activeGroup = menuGroups.find((group) =>
       group.items.some((item) => item.path === location.pathname)
     );
-    const groups = ["dashboard"];
-    if (activeGroup && activeGroup.id !== "dashboard") {
-      groups.push(activeGroup.id);
-    }
-    setOpenGroups(groups);
+    setOpenGroups(activeGroup ? [activeGroup.id] : []);
   };
 
   return (
@@ -191,6 +180,38 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        {/* Dashboard - Always visible */}
+        <div className="mb-4">
+          {!collapsed && (
+            <span className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
+              Tableau de bord
+            </span>
+          )}
+          <div className="space-y-0.5 mt-1">
+            {dashboardItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
+                    isActive
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon
+                    className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")}
+                  />
+                  {!collapsed && (
+                    <span className="truncate animate-fade-in">{item.label}</span>
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
 
         {menuGroups.map((group, groupIndex) => {
           const isOpen = openGroups.includes(group.id);
