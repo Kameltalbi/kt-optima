@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  ListTodo,
+  Target,
   Users,
   FileText,
   Truck,
@@ -45,7 +45,7 @@ const menuGroups = [
     icon: LayoutDashboard,
     items: [
       { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/" },
-      { icon: ListTodo, label: "Mes tâches", path: "/tasks" },
+      { icon: Target, label: "CRM", path: "/crm" },
     ],
   },
   {
