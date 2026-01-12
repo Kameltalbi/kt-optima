@@ -2,83 +2,129 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
+  ListTodo,
   Users,
-  Package,
   FileText,
-  Wallet,
-  FolderKanban,
+  Truck,
+  Package,
+  Receipt,
   BarChart3,
+  ShoppingCart,
+  ClipboardList,
+  PackageCheck,
   Boxes,
-  UserCog,
+  ArrowLeftRight,
+  AlertTriangle,
+  Warehouse,
+  Wallet,
+  Landmark,
+  Calendar,
+  GitCompare,
   Calculator,
-  Bell,
+  BookOpen,
+  Scale,
+  FileSpreadsheet,
+  UserCheck,
+  Clock,
+  Palmtree,
+  Banknote,
+  Building2,
+  Settings,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Building2,
-  Settings,
-  ShoppingCart,
-  Truck,
-  Target,
+  Percent,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuGroups = [
   {
-    id: "pilotage",
-    title: "Pilotage",
+    id: "dashboard",
+    title: "Tableau de bord",
+    icon: LayoutDashboard,
     items: [
-      { icon: BarChart3, label: "Rapports", path: "/reports" },
+      { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/" },
+      { icon: ListTodo, label: "Mes tâches", path: "/tasks" },
     ],
   },
   {
-    id: "crm",
-    title: "CRM",
+    id: "commercial",
+    title: "Commercial",
+    icon: Users,
     items: [
-      { icon: Target, label: "CRM", path: "/crm" },
       { icon: Users, label: "Clients", path: "/clients" },
-    ],
-  },
-  {
-    id: "ventes",
-    title: "Ventes",
-    items: [
-      { icon: Package, label: "Produits & Services", path: "/products" },
-      { icon: FileText, label: "Facturation", path: "/invoices" },
+      { icon: FileText, label: "Devis", path: "/quotes" },
+      { icon: Receipt, label: "Factures", path: "/invoices" },
+      { icon: Truck, label: "Bons de livraison", path: "/delivery-notes" },
+      { icon: BarChart3, label: "Statistiques ventes", path: "/sales-stats" },
     ],
   },
   {
     id: "achats",
     title: "Achats",
+    icon: ShoppingCart,
     items: [
-      { icon: Truck, label: "Fournisseurs", path: "/suppliers" },
-      { icon: ShoppingCart, label: "Achats", path: "/purchases" },
-      { icon: Boxes, label: "Stock", path: "/stock" },
+      { icon: Users, label: "Fournisseurs", path: "/suppliers" },
+      { icon: ClipboardList, label: "Commandes", path: "/purchase-orders" },
+      { icon: PackageCheck, label: "Réceptions", path: "/receptions" },
+      { icon: Receipt, label: "Factures fournisseurs", path: "/supplier-invoices" },
     ],
   },
   {
-    id: "finances",
-    title: "Finances",
+    id: "stock",
+    title: "Stock",
+    icon: Package,
+    items: [
+      { icon: Boxes, label: "Inventaire", path: "/inventory" },
+      { icon: ArrowLeftRight, label: "Mouvements", path: "/stock-movements" },
+      { icon: AlertTriangle, label: "Alertes stock", path: "/stock-alerts" },
+      { icon: Warehouse, label: "Dépôts", path: "/warehouses" },
+    ],
+  },
+  {
+    id: "finance",
+    title: "Finance",
+    icon: Wallet,
     items: [
       { icon: Wallet, label: "Trésorerie", path: "/treasury" },
-      { icon: Calculator, label: "Comptabilité", path: "/accounting" },
+      { icon: Landmark, label: "Banques", path: "/banks" },
+      { icon: Calendar, label: "Échéanciers", path: "/payment-schedules" },
+      { icon: GitCompare, label: "Rapprochements", path: "/reconciliations" },
     ],
   },
   {
-    id: "organisation",
-    title: "Organisation",
+    id: "comptabilite",
+    title: "Comptabilité",
+    icon: Calculator,
     items: [
-      { icon: FolderKanban, label: "Projets", path: "/projects" },
-      { icon: UserCog, label: "Ressources Humaines", path: "/hr" },
-      { icon: Wallet, label: "Dépenses", path: "/expenses" },
+      { icon: BookOpen, label: "Plan comptable", path: "/chart-of-accounts" },
+      { icon: FileText, label: "Écritures", path: "/journal-entries" },
+      { icon: FileSpreadsheet, label: "Grand livre", path: "/general-ledger" },
+      { icon: Scale, label: "Balance", path: "/trial-balance" },
+      { icon: Receipt, label: "Déclarations fiscales", path: "/tax-declarations" },
     ],
   },
   {
-    id: "systeme",
-    title: "Système",
+    id: "rh",
+    title: "RH",
+    icon: UserCheck,
     items: [
-      { icon: Bell, label: "Notifications", path: "/notifications" },
-      { icon: Settings, label: "Paramètres", path: "/settings" },
+      { icon: Users, label: "Employés", path: "/employees" },
+      { icon: Clock, label: "Présences", path: "/attendance" },
+      { icon: Palmtree, label: "Congés", path: "/leaves" },
+      { icon: Banknote, label: "Paie", path: "/payroll" },
+    ],
+  },
+  {
+    id: "parametres",
+    title: "Paramètres",
+    icon: Settings,
+    items: [
+      { icon: Building2, label: "Entreprise", path: "/settings/company" },
+      { icon: Users, label: "Utilisateurs", path: "/settings/users" },
+      { icon: Percent, label: "Taxes", path: "/settings/taxes" },
+      { icon: Wrench, label: "Configuration", path: "/settings/config" },
     ],
   },
 ];
@@ -138,19 +184,6 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
-        {/* Dashboard - Always visible */}
-        <NavLink
-          to="/"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150 mb-3",
-            location.pathname === "/"
-              ? "bg-primary/10 text-primary font-medium"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-          )}
-        >
-          <LayoutDashboard className={cn("w-4 h-4 flex-shrink-0", location.pathname === "/" && "text-primary")} />
-          {!collapsed && <span className="truncate animate-fade-in">Tableau de bord</span>}
-        </NavLink>
 
         {menuGroups.map((group, groupIndex) => {
           const isOpen = openGroups.includes(group.id);
