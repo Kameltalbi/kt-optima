@@ -8,6 +8,7 @@ import Clients from "./pages/Clients";
 import Products from "./pages/Products";
 import Invoices from "./pages/Invoices";
 import Treasury from "./pages/Treasury";
+import Settings from "./pages/Settings";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/products" element={<Products />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/treasury" element={<Treasury />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/projects" element={<ComingSoon title="Projets" subtitle="Gestion de projets et budgets" />} />
           <Route path="/reports" element={<ComingSoon title="Rapports" subtitle="Analyses et statistiques" />} />
           <Route path="/stock" element={<ComingSoon title="Stock & Achats" subtitle="Gestion des stocks" />} />
