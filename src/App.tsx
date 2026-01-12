@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import Treasury from "./pages/Treasury";
 import Settings from "./pages/Settings";
 import Purchases from "./pages/Purchases";
+import CRM from "./pages/CRM";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/crm" element={<CRM />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/products" element={<Products />} />
           <Route path="/invoices" element={<Invoices />} />

@@ -19,6 +19,7 @@ import {
   Settings,
   ShoppingCart,
   Truck,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,10 +32,17 @@ const menuGroups = [
     ],
   },
   {
+    id: "crm",
+    title: "CRM",
+    items: [
+      { icon: Target, label: "CRM", path: "/crm" },
+      { icon: Users, label: "Clients", path: "/clients" },
+    ],
+  },
+  {
     id: "ventes",
     title: "Ventes",
     items: [
-      { icon: Users, label: "Clients", path: "/clients" },
       { icon: Package, label: "Produits & Services", path: "/products" },
       { icon: FileText, label: "Facturation", path: "/invoices" },
     ],
