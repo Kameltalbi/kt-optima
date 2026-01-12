@@ -26,7 +26,6 @@ const menuGroups = [
     id: "pilotage",
     title: "Pilotage",
     items: [
-      { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
       { icon: BarChart3, label: "Rapports", path: "/reports" },
     ],
   },
@@ -60,7 +59,6 @@ const menuGroups = [
     id: "systeme",
     title: "Système",
     items: [
-      { icon: FolderOpen, label: "Documents", path: "/documents" },
       { icon: Bell, label: "Notifications", path: "/notifications" },
       { icon: Settings, label: "Paramètres", path: "/settings" },
     ],
@@ -122,6 +120,20 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        {/* Dashboard - Always visible */}
+        <NavLink
+          to="/"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150 mb-3",
+            location.pathname === "/"
+              ? "bg-primary/10 text-primary font-medium"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          )}
+        >
+          <LayoutDashboard className={cn("w-4 h-4 flex-shrink-0", location.pathname === "/" && "text-primary")} />
+          {!collapsed && <span className="truncate animate-fade-in">Tableau de bord</span>}
+        </NavLink>
+
         {menuGroups.map((group, groupIndex) => {
           const isOpen = openGroups.includes(group.id);
           const hasActiveItem = group.items.some(
