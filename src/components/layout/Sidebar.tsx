@@ -131,10 +131,13 @@ const menuGroups = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState<string[]>(["pilotage"]);
+  const [openGroups, setOpenGroups] = useState<string[]>(["dashboard"]);
   const location = useLocation();
 
   const toggleGroup = (groupId: string) => {
+    // Dashboard always stays open
+    if (groupId === "dashboard") return;
+    
     setOpenGroups((prev) =>
       prev.includes(groupId)
         ? prev.filter((id) => id !== groupId)
@@ -143,11 +146,15 @@ export function Sidebar() {
   };
 
   const handleMouseLeave = () => {
-    // Keep only the group containing active route open
+    // Keep dashboard always open + the group containing active route
     const activeGroup = menuGroups.find((group) =>
       group.items.some((item) => item.path === location.pathname)
     );
-    setOpenGroups(activeGroup ? [activeGroup.id] : []);
+    const groups = ["dashboard"];
+    if (activeGroup && activeGroup.id !== "dashboard") {
+      groups.push(activeGroup.id);
+    }
+    setOpenGroups(groups);
   };
 
   return (
