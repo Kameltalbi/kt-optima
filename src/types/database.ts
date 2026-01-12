@@ -1,0 +1,210 @@
+// ============================================
+// MAGHREB ERP - DATABASE SCHEMA TYPES
+// ============================================
+
+// CORE SYSTEM
+export interface Company {
+  id: string;
+  name: string;
+  logo?: string;
+  address: string;
+  phone: string;
+  email: string;
+  tax_number: string;
+  currency: string;
+  language: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  company_id: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+}
+
+// MODULE 1: CLIENTS & SUPPLIERS
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  company_id: string;
+  balance: number;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  company_id: string;
+  balance: number;
+}
+
+// MODULE 2: PRODUCTS & SERVICES
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  tax_rate: number;
+  category: string;
+  company_id: string;
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  price: number;
+  tax_rate: number;
+  company_id: string;
+}
+
+// MODULE 3: INVOICING & SALES
+export interface Invoice {
+  id: string;
+  number: string;
+  client_id: string;
+  date: string;
+  total: number;
+  tax: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  company_id: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  product_or_service: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  date: string;
+  method: 'cash' | 'bank' | 'check' | 'card';
+}
+
+// MODULE 4: CASH FLOW / TREASURY
+export interface Account {
+  id: string;
+  name: string;
+  type: 'bank' | 'cash' | 'savings';
+  balance: number;
+  company_id: string;
+}
+
+export interface Transaction {
+  id: string;
+  account_id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  category: string;
+  date: string;
+  description: string;
+}
+
+// MODULE 5: PROJECTS & BUDGETS
+export interface Project {
+  id: string;
+  name: string;
+  client_id: string;
+  budget: number;
+  company_id: string;
+  status: 'active' | 'completed' | 'on-hold';
+}
+
+export interface ProjectExpense {
+  id: string;
+  project_id: string;
+  amount: number;
+  description: string;
+  date: string;
+}
+
+// MODULE 6: REPORTING
+export interface Report {
+  id: string;
+  type: 'revenue' | 'expenses' | 'profit';
+  period: string;
+  company_id: string;
+}
+
+// MODULE 7: STOCK & PURCHASES
+export interface StockItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  company_id: string;
+}
+
+export interface Purchase {
+  id: string;
+  supplier_id: string;
+  total: number;
+  date: string;
+  company_id: string;
+}
+
+// MODULE 8: HR & INTERNAL EXPENSES
+export interface Employee {
+  id: string;
+  name: string;
+  position: string;
+  company_id: string;
+}
+
+export interface Expense {
+  id: string;
+  employee_id: string;
+  amount: number;
+  category: string;
+  date: string;
+}
+
+// MODULE 9: SIMPLE ACCOUNTING
+export interface Journal {
+  id: string;
+  type: 'sales' | 'purchases' | 'treasury';
+  amount: number;
+  date: string;
+  company_id: string;
+}
+
+export interface VAT {
+  id: string;
+  collected: number;
+  deductible: number;
+  period: string;
+  company_id: string;
+}
+
+// MODULE 10: DOCUMENTS
+export interface Document {
+  id: string;
+  name: string;
+  type: string;
+  file_path: string;
+  company_id: string;
+}
+
+// MODULE 11: NOTIFICATIONS
+export interface Notification {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  date: string;
+  company_id: string;
+}
