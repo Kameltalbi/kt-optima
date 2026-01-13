@@ -150,12 +150,12 @@ export function Sidebar() {
     <aside
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "h-screen bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 sticky top-0 border-r border-sidebar-border/50",
+        "h-screen bg-[#1e293b] text-white flex flex-col transition-all duration-300 sticky top-0 border-r border-slate-700/50",
         collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border/50">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-slate-700/50">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Building2 className="w-4 h-4 text-primary" />
@@ -168,7 +168,7 @@ export function Sidebar() {
         </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-sidebar-accent/50 transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground"
+          className="p-1 rounded-md hover:bg-slate-700/50 transition-colors text-slate-400 hover:text-white"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -183,7 +183,7 @@ export function Sidebar() {
         {/* Dashboard - Always visible */}
         <div className="mb-4">
           {!collapsed && (
-            <span className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
+            <span className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
               Tableau de bord
             </span>
           )}
@@ -197,8 +197,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
                     isActive
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      ? "bg-primary/20 text-primary font-medium"
+                      : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
                   )}
                 >
                   <item.icon
@@ -228,7 +228,7 @@ export function Sidebar() {
                     "w-full flex items-center justify-between px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors",
                     hasActiveItem
                       ? "text-primary/80"
-                      : "text-sidebar-foreground/40 hover:text-sidebar-foreground/60 hover:bg-sidebar-accent/30"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
                   )}
                 >
                   <span>{group.title}</span>
@@ -256,8 +256,8 @@ export function Sidebar() {
                         className={cn(
                           "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
                           isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                            ? "bg-primary/20 text-primary font-medium"
+                            : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
                         )}
                       >
                         <item.icon
@@ -277,7 +277,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border/50">
+      <div className="p-3 border-t border-slate-700/50">
         <div className="flex items-center gap-2.5 px-2 py-1.5">
           <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-xs font-medium text-primary">A</span>
@@ -285,7 +285,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="animate-fade-in min-w-0">
               <p className="text-xs font-medium truncate">Admin</p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate">Entreprise SA</p>
+              <p className="text-[10px] text-slate-400 truncate">Entreprise SA</p>
             </div>
           )}
         </div>
