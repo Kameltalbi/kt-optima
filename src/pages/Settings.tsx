@@ -103,47 +103,16 @@ export default function Settings() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base">Pied de page documents</CardTitle>
                 <CardDescription className="text-xs">
-                  Informations affichées en bas de vos factures, devis et documents
+                  Texte affiché en bas de vos factures, devis et documents
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Capital social</Label>
-                    <Input placeholder="100 000 DH" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Registre de commerce (RC)</Label>
-                    <Input placeholder="123456" className="h-9 text-sm" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Identifiant fiscal (IF)</Label>
-                    <Input placeholder="12345678" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">ICE</Label>
-                    <Input placeholder="001234567890123" className="h-9 text-sm" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Patente</Label>
-                    <Input placeholder="12345678" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">CNSS</Label>
-                    <Input placeholder="1234567" className="h-9 text-sm" />
-                  </div>
-                </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Coordonnées bancaires (RIB)</Label>
-                  <Input placeholder="XXX XXX XXXX XXXX XXXX XXXX XXX" className="h-9 text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Texte additionnel pied de page</Label>
-                  <Input placeholder="Mention légale, conditions de paiement..." className="h-9 text-sm" />
+                  <Label className="text-xs">Contenu du pied de page</Label>
+                  <textarea 
+                    className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                    placeholder="Capital: 100 000 DH | RC: 123456 | IF: 12345678 | ICE: 001234567890123 | Patente: 12345678 | CNSS: 1234567&#10;RIB: XXX XXX XXXX XXXX XXXX XXXX XXX&#10;Conditions de paiement, mentions légales..."
+                  />
                 </div>
                 <div className="pt-2">
                   <Button size="sm" className="text-xs">
