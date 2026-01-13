@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -70,11 +69,7 @@ export default function Clients() {
   const activeClients = mockClients.filter(c => c.balance > 0).length;
 
   return (
-    <MainLayout
-      title="Clients"
-      subtitle="Gérez votre base de clients"
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-border/50">
@@ -324,6 +319,5 @@ export default function Clients() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }

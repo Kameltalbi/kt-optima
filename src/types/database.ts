@@ -52,22 +52,67 @@ export interface Supplier {
   balance: number;
 }
 
-// MODULE 2: PRODUCTS & SERVICES
+export interface SupplierInvoice {
+  id: string;
+  number: string;
+  supplier_id: string;
+  date: string;
+  due_date: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'partial';
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// MODULE 2: PRODUCTS & SERVICES (REFERENTIEL GLOBAL)
 export interface Product {
   id: string;
-  name: string;
-  price: number;
-  tax_rate: number;
-  category: string;
+  code: string; // Code produit
+  name: string; // Libellé
+  category_id?: string; // Catégorie
+  purchase_price?: number; // Prix d'achat
+  sale_price: number; // Prix de vente
+  tax_rate: number; // TVA
+  unit?: string; // Unité (pièce, kg, m, etc.)
+  stockable: boolean; // Produit stockable (oui / non)
+  active: boolean; // Actif / inactif
+  description?: string;
+  sku?: string; // Ancien champ, gardé pour compatibilité
+  cost?: number; // Ancien champ, gardé pour compatibilité
+  price?: number; // Ancien champ, gardé pour compatibilité
+  category?: string; // Ancien champ, gardé pour compatibilité
   company_id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Service {
   id: string;
-  name: string;
-  price: number;
-  tax_rate: number;
+  code: string; // Code service
+  name: string; // Libellé
+  category_id?: string; // Catégorie
+  price: number; // Prix de vente
+  tax_rate: number; // TVA
+  billing_type: 'fixed' | 'duration'; // Type de facturation (forfait / durée)
+  active: boolean; // Actif / inactif
+  description?: string;
   company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string; // Nom de la catégorie
+  type: 'product' | 'service'; // Type : Produit ou Service
+  description?: string; // Description optionnelle
+  active: boolean; // Actif / inactif
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // MODULE 3: INVOICING & SALES
@@ -97,6 +142,136 @@ export interface Payment {
   amount: number;
   date: string;
   method: 'cash' | 'bank' | 'check' | 'card';
+}
+
+// AVOIRS (CREDITS)
+export interface SupplierCredit {
+  id: string;
+  number: string;
+  supplier_invoice_id: string; // Facture d'origine obligatoire
+  supplier_id: string;
+  date: string;
+  type: 'full' | 'partial'; // Avoir total ou partiel
+  reason: 'return' | 'price_error' | 'commercial_discount' | 'other'; // Motif
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'sent' | 'applied'; // applied = imputé sur échéancier
+  stock_impact: boolean; // Si retour marchandise
+  comments?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierCreditItem {
+  id: string;
+  supplier_credit_id: string;
+  product_id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  total: number;
+}
+
+export interface ClientCredit {
+  id: string;
+  number: string;
+  invoice_id: string; // Facture d'origine obligatoire
+  client_id: string;
+  date: string;
+  type: 'full' | 'partial'; // Avoir total ou partiel
+  reason: 'return' | 'commercial_gesture' | 'billing_error' | 'other'; // Motif
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'sent' | 'applied' | 'refunded'; // applied = imputé, refunded = remboursé
+  stock_impact: boolean; // Si retour marchandise
+  refund_method?: 'future_invoice' | 'cash_refund'; // Méthode de remboursement
+  comments?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientCreditItem {
+  id: string;
+  client_credit_id: string;
+  product_id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  total: number;
+}
+
+// MODULE: CRM (CUSTOMER RELATIONSHIP MANAGEMENT)
+export interface CRMContact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  email?: string;
+  function?: string; // Fonction/poste
+  companyId?: string; // Société liée
+  tags?: string[]; // Tags pour catégorisation
+  notes?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CRMCompany {
+  id: string;
+  name: string; // Raison sociale
+  taxNumber?: string; // Matricule fiscal
+  address?: string;
+  phone?: string;
+  email?: string;
+  sector?: string; // Secteur d'activité
+  salesRepId?: string; // Responsable commercial (user_id)
+  website?: string;
+  notes?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CRMOpportunity {
+  id: string;
+  name: string; // Nom de l'opportunité
+  companyId: string; // Société
+  contactId?: string; // Contact principal
+  estimatedAmount: number; // Montant estimé
+  probability: number; // Probabilité (0-100)
+  expectedCloseDate?: string; // Date de conclusion prévue
+  salesRepId?: string; // Responsable
+  stage: 'new' | 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'; // Étape
+  status: 'active' | 'won' | 'lost'; // Statut global
+  quoteId?: string; // Devis généré (lien vers Ventes)
+  description?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CRMActivity {
+  id: string;
+  type: 'call' | 'meeting' | 'email' | 'task'; // Type d'activité
+  subject: string; // Sujet
+  contactId?: string; // Contact lié
+  companyId?: string; // Société liée
+  opportunityId?: string; // Opportunité liée
+  date: string; // Date
+  time?: string; // Heure
+  duration?: number; // Durée en minutes
+  salesRepId?: string; // Responsable
+  description?: string; // Commentaire
+  completed: boolean; // Tâche complétée
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // MODULE 4: CASH FLOW / TREASURY
@@ -375,4 +550,58 @@ export interface Notification {
   type: 'info' | 'warning' | 'success' | 'error';
   date: string;
   company_id: string;
+}
+
+// MODULE 12: GESTION DE PARC (FLEET MANAGEMENT)
+export interface Equipment {
+  id: string;
+  name: string;
+  category: 'vehicle' | 'machine' | 'it' | 'other';
+  reference: string; // Matricule / Référence
+  acquisitionDate: string;
+  status: 'active' | 'inactive';
+  warehouseId?: string; // Dépôt
+  department?: string; // Service
+  employeeId?: string; // Employé (optionnel)
+  comments?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EquipmentAssignment {
+  id: string;
+  equipmentId: string;
+  warehouseId?: string;
+  department?: string;
+  employeeId?: string;
+  startDate: string;
+  endDate?: string; // null si affectation active
+  comments?: string;
+  company_id: string;
+  createdAt: string;
+}
+
+export interface Maintenance {
+  id: string;
+  equipmentId: string;
+  date: string;
+  type: 'maintenance' | 'repair' | 'inspection';
+  description: string;
+  cost: number;
+  nextDueDate?: string; // Prochaine échéance
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FleetAlert {
+  id: string;
+  equipmentId: string;
+  type: 'upcoming_maintenance' | 'overdue_maintenance' | 'inactive_equipment';
+  message: string;
+  dueDate?: string;
+  priority: 'low' | 'medium' | 'high';
+  company_id: string;
+  createdAt: string;
 }

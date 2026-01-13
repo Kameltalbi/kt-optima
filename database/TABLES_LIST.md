@@ -1,6 +1,6 @@
 # Liste des Tables Créées - BilvoxaERP
 
-## Total : 48 tables
+## Total : 52 tables
 
 ### CORE SYSTEM (3 tables)
 1. ✅ companies
@@ -73,6 +73,12 @@
 ### DOCUMENTS & NOTIFICATIONS (2 tables)
 47. ✅ documents
 48. ✅ notifications
+
+### GESTION DE PARC (4 tables)
+49. ✅ equipment
+50. ✅ equipment_assignments
+51. ✅ maintenance
+52. ✅ fleet_alerts
 
 ## Caractéristiques
 

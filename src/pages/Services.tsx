@@ -33,132 +33,119 @@ import {
   Search,
   Edit,
   Trash2,
-  Package,
+  Briefcase,
   TrendingUp,
 } from "lucide-react";
 import { useProducts } from "@/hooks/use-products";
 import { useCurrency } from "@/hooks/use-currency";
-import type { Product } from "@/types/database";
+import type { Service } from "@/types/database";
 
-export default function Products() {
-  const { products, categories, createProduct, updateProduct, deleteProduct, getProductCategories } = useProducts();
+export default function Services() {
+  const { services, categories, createService, updateService, deleteService, getServiceCategories } = useProducts();
   const { formatCurrency } = useCurrency();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const productCategories = getProductCategories();
+  const serviceCategories = getServiceCategories();
 
   const [formData, setFormData] = useState({
     code: "",
     name: "",
     category_id: "",
-    purchase_price: "",
-    sale_price: "",
+    price: "",
     tax_rate: 19,
-    unit: "pièce",
-    stockable: true,
+    billing_type: "fixed" as Service['billing_type'],
     active: true,
     description: "",
   });
 
-  const filteredProducts = products.filter((product) => {
+  const filteredServices = services.filter((service) => {
     const matchesSearch =
-      product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category_id === categoryFilter;
+      service.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || service.category_id === categoryFilter;
     const matchesActive = activeFilter === "all" ||
-      (activeFilter === "active" && product.active) ||
-      (activeFilter === "inactive" && !product.active);
+      (activeFilter === "active" && service.active) ||
+      (activeFilter === "inactive" && !service.active);
     return matchesSearch && matchesCategory && matchesActive;
   });
 
-  const activeProducts = products.filter(p => p.active).length;
-  const stockableProducts = products.filter(p => p.stockable && p.active).length;
+  const activeServices = services.filter(s => s.active).length;
 
   const handleCreate = () => {
     setFormData({
       code: "",
       name: "",
       category_id: "",
-      purchase_price: "",
-      sale_price: "",
+      price: "",
       tax_rate: 19,
-      unit: "pièce",
-      stockable: true,
+      billing_type: "fixed",
       active: true,
       description: "",
     });
-    setSelectedProduct(null);
+    setSelectedService(null);
     setIsCreateModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const productData = {
+    const serviceData = {
       code: formData.code,
       name: formData.name,
       category_id: formData.category_id || undefined,
-      purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
-      sale_price: parseFloat(formData.sale_price),
+      price: parseFloat(formData.price),
       tax_rate: formData.tax_rate,
-      unit: formData.unit || undefined,
-      stockable: formData.stockable,
+      billing_type: formData.billing_type,
       active: formData.active,
       description: formData.description || undefined,
     };
 
-    if (selectedProduct) {
-      updateProduct(selectedProduct.id, productData);
+    if (selectedService) {
+      updateService(selectedService.id, serviceData);
     } else {
-      createProduct(productData);
+      createService(serviceData);
     }
     setIsCreateModalOpen(false);
-    setSelectedProduct(null);
+    setSelectedService(null);
   };
 
-  const handleEdit = (product: Product) => {
-    setSelectedProduct(product);
+  const handleEdit = (service: Service) => {
+    setSelectedService(service);
     setFormData({
-      code: product.code,
-      name: product.name,
-      category_id: product.category_id || "",
-      purchase_price: product.purchase_price?.toString() || "",
-      sale_price: product.sale_price.toString(),
-      tax_rate: product.tax_rate,
-      unit: product.unit || "pièce",
-      stockable: product.stockable,
-      active: product.active,
-      description: product.description || "",
+      code: service.code,
+      name: service.name,
+      category_id: service.category_id || "",
+      price: service.price.toString(),
+      tax_rate: service.tax_rate,
+      billing_type: service.billing_type,
+      active: service.active,
+      description: service.description || "",
     });
     setIsCreateModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-      deleteProduct(id);
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce service ?")) {
+      deleteService(id);
     }
-  };
-
-  const handleToggleActive = (id: string, active: boolean) => {
-    updateProduct(id, { active });
   };
 
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total produits</p>
-                <p className="text-2xl font-bold">{products.length}</p>
+                <p className="text-sm text-muted-foreground">Total services</p>
+                <p className="text-2xl font-bold">{services.length}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Package className="w-6 h-6 text-primary" />
+                <Briefcase className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -167,24 +154,11 @@ export default function Products() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Produits actifs</p>
-                <p className="text-2xl font-bold text-green-600">{activeProducts}</p>
+                <p className="text-sm text-muted-foreground">Services actifs</p>
+                <p className="text-2xl font-bold text-green-600">{activeServices}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Stockables</p>
-                <p className="text-2xl font-bold text-blue-600">{stockableProducts}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -195,10 +169,10 @@ export default function Products() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>Produits</CardTitle>
+            <CardTitle>Services</CardTitle>
             <Button onClick={handleCreate}>
               <Plus className="w-4 h-4 mr-2" />
-              Nouveau produit
+              Nouveau service
             </Button>
           </div>
         </CardHeader>
@@ -219,7 +193,7 @@ export default function Products() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les catégories</SelectItem>
-                {productCategories.map((cat) => (
+                {serviceCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -244,28 +218,27 @@ export default function Products() {
                   <TableHead>Code</TableHead>
                   <TableHead>Libellé</TableHead>
                   <TableHead>Catégorie</TableHead>
-                  <TableHead>Prix d'achat</TableHead>
                   <TableHead>Prix de vente</TableHead>
                   <TableHead>TVA</TableHead>
-                  <TableHead>Stockable</TableHead>
+                  <TableHead>Type facturation</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.length === 0 ? (
+                {filteredServices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                      Aucun produit trouvé
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      Aucun service trouvé
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredProducts.map((product) => {
-                    const category = categories.find(c => c.id === product.category_id);
+                  filteredServices.map((service) => {
+                    const category = categories.find(c => c.id === service.category_id);
                     return (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.code}</TableCell>
-                        <TableCell>{product.name}</TableCell>
+                      <TableRow key={service.id}>
+                        <TableCell className="font-medium">{service.code}</TableCell>
+                        <TableCell>{service.name}</TableCell>
                         <TableCell>
                           {category ? (
                             <Badge variant="outline">{category.name}</Badge>
@@ -273,21 +246,18 @@ export default function Products() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {product.purchase_price ? formatCurrency(product.purchase_price) : '-'}
-                        </TableCell>
                         <TableCell className="font-medium">
-                          {formatCurrency(product.sale_price)}
+                          {formatCurrency(service.price)}
                         </TableCell>
-                        <TableCell>{product.tax_rate}%</TableCell>
+                        <TableCell>{service.tax_rate}%</TableCell>
                         <TableCell>
-                          <Badge variant={product.stockable ? "default" : "outline"}>
-                            {product.stockable ? "Oui" : "Non"}
+                          <Badge variant="outline">
+                            {service.billing_type === 'fixed' ? 'Forfait' : 'Durée'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={product.active ? "default" : "secondary"}>
-                            {product.active ? "Actif" : "Inactif"}
+                          <Badge variant={service.active ? "default" : "secondary"}>
+                            {service.active ? "Actif" : "Inactif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -295,14 +265,14 @@ export default function Products() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleEdit(product)}
+                              onClick={() => handleEdit(service)}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(product.id)}
+                              onClick={() => handleDelete(service.id)}
                             >
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
@@ -323,22 +293,22 @@ export default function Products() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedProduct ? "Modifier le produit" : "Nouveau produit"}
+              {selectedService ? "Modifier le service" : "Nouveau service"}
             </DialogTitle>
             <DialogDescription>
-              Créer ou modifier un produit du référentiel
+              Créer ou modifier un service du référentiel
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code produit *</Label>
+                <Label htmlFor="code">Code service *</Label>
                 <Input
                   id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   required
-                  placeholder="PROD-001"
+                  placeholder="SERV-001"
                 />
               </div>
               <div className="space-y-2">
@@ -363,7 +333,7 @@ export default function Products() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Aucune</SelectItem>
-                  {productCategories.map((cat) => (
+                  {serviceCategories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
                     </SelectItem>
@@ -374,33 +344,18 @@ export default function Products() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="purchase_price">Prix d'achat (TND)</Label>
+                <Label htmlFor="price">Prix de vente (TND) *</Label>
                 <Input
-                  id="purchase_price"
+                  id="price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.purchase_price}
-                  onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sale_price">Prix de vente (TND) *</Label>
-                <Input
-                  id="sale_price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.sale_price}
-                  onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   required
                   placeholder="0.00"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="tax_rate">TVA (%) *</Label>
                 <Input
@@ -414,48 +369,29 @@ export default function Products() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unité</Label>
-                <Select
-                  value={formData.unit}
-                  onValueChange={(value) => setFormData({ ...formData, unit: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pièce">Pièce</SelectItem>
-                    <SelectItem value="kg">Kilogramme</SelectItem>
-                    <SelectItem value="g">Gramme</SelectItem>
-                    <SelectItem value="m">Mètre</SelectItem>
-                    <SelectItem value="m²">Mètre carré</SelectItem>
-                    <SelectItem value="m³">Mètre cube</SelectItem>
-                    <SelectItem value="L">Litre</SelectItem>
-                    <SelectItem value="unité">Unité</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
-            <div className="flex items-center justify-between space-x-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="stockable">Produit stockable</Label>
-                <p className="text-sm text-muted-foreground">
-                  Ce produit peut être géré en stock
-                </p>
-              </div>
-              <Switch
-                id="stockable"
-                checked={formData.stockable}
-                onCheckedChange={(checked) => setFormData({ ...formData, stockable: checked })}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="billing_type">Type de facturation *</Label>
+              <Select
+                value={formData.billing_type}
+                onValueChange={(value) => setFormData({ ...formData, billing_type: value as Service['billing_type'] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Forfait</SelectItem>
+                  <SelectItem value="duration">Durée (par heure/jour)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center justify-between space-x-2">
               <div className="space-y-0.5">
                 <Label htmlFor="active">Actif</Label>
                 <p className="text-sm text-muted-foreground">
-                  Le produit est disponible dans les modules métier
+                  Le service est disponible dans les modules métier
                 </p>
               </div>
               <Switch
@@ -472,7 +408,7 @@ export default function Products() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                placeholder="Description du produit..."
+                placeholder="Description du service..."
               />
             </div>
 
@@ -482,13 +418,13 @@ export default function Products() {
                 variant="outline"
                 onClick={() => {
                   setIsCreateModalOpen(false);
-                  setSelectedProduct(null);
+                  setSelectedService(null);
                 }}
               >
                 Annuler
               </Button>
               <Button type="submit">
-                {selectedProduct ? "Modifier" : "Créer"}
+                {selectedService ? "Modifier" : "Créer"}
               </Button>
             </div>
           </form>

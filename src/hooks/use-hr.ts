@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAccounting } from './use-accounting';
 import { useAuth } from '@/contexts/AuthContext';
 import type {

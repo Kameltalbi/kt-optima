@@ -43,9 +43,9 @@ export default function Landing() {
               <a href="#modules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Modules
               </a>
-              <a href="#tarifs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Tarifs
-              </a>
+              </Link>
             </nav>
 
             {/* CTA Buttons */}

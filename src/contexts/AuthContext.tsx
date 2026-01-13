@@ -83,27 +83,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Simuler une authentification (en production, appel API)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const foundUser = mockUsers.find(u => u.email === email);
+      // Vérifier si l'email existe dans les utilisateurs mock
+      let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      
+      // Si l'utilisateur n'existe pas, vérifier dans localStorage (utilisateurs créés via register)
+      if (!foundUser) {
+        try {
+          const storedUser = localStorage.getItem(STORAGE_KEY_USER);
+          if (storedUser) {
+            const storedUserData = JSON.parse(storedUser);
+            if (storedUserData.email.toLowerCase() === email.toLowerCase()) {
+              foundUser = storedUserData;
+            }
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+
       if (!foundUser) {
         setIsLoading(false);
         return false;
       }
 
       // En production, vérifier le mot de passe avec le hash
-      // Pour la démo, on accepte n'importe quel mot de passe
-      const foundCompany = mockCompanies.find(c => c.id === foundUser.company_id);
-      
-      if (foundCompany) {
-        setUser(foundUser);
-        setCompany(foundCompany);
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(foundUser));
-        localStorage.setItem(STORAGE_KEY_COMPANY, JSON.stringify(foundCompany));
+      // Pour la démo, on accepte n'importe quel mot de passe (mais il doit être non vide)
+      if (!password || password.trim().length === 0) {
         setIsLoading(false);
-        return true;
+        return false;
+      }
+
+      // Trouver ou créer la company
+      let foundCompany = mockCompanies.find(c => c.id === foundUser.company_id);
+      
+      // Si la company n'est pas trouvée, chercher dans localStorage
+      if (!foundCompany) {
+        try {
+          const storedCompany = localStorage.getItem(STORAGE_KEY_COMPANY);
+          if (storedCompany) {
+            const storedCompanyData = JSON.parse(storedCompany);
+            if (storedCompanyData.id === foundUser.company_id) {
+              foundCompany = storedCompanyData;
+            }
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+
+      // Si toujours pas de company, créer une company par défaut
+      if (!foundCompany) {
+        foundCompany = {
+          id: foundUser.company_id || '1',
+          name: 'Mon Entreprise',
+          address: '',
+          phone: '',
+          email: foundUser.email,
+          tax_number: '',
+          currency: 'TND',
+          language: 'fr',
+        };
       }
       
+      setUser(foundUser);
+      setCompany(foundCompany);
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(foundUser));
+      localStorage.setItem(STORAGE_KEY_COMPANY, JSON.stringify(foundCompany));
       setIsLoading(false);
-      return false;
+      return true;
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);

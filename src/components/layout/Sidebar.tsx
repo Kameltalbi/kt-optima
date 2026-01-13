@@ -12,19 +12,23 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Car,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Modules principaux uniquement - navigation simplifiée
 const mainModules = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: ShoppingCart, label: "Achats", path: "/achats" },
+  { icon: UserCircle, label: "CRM", path: "/crm" },
   { icon: Users, label: "Ventes", path: "/ventes" },
   { icon: Package, label: "Stock", path: "/stock" },
   { icon: Wallet, label: "Finance", path: "/finance" },
   { icon: Calculator, label: "Comptabilité", path: "/comptabilite" },
   { icon: UserCheck, label: "Ressources humaines", path: "/rh" },
+  { icon: Car, label: "Gestion de parc", path: "/parc" },
 ];
 
 interface SidebarProps {

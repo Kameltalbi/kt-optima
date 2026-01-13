@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -71,11 +70,7 @@ export default function Suppliers() {
   const activeSuppliers = mockSuppliers.filter(s => s.balance < 0).length;
 
   return (
-    <MainLayout
-      title="Fournisseurs"
-      subtitle="Gérez votre base de fournisseurs"
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-border/50">
@@ -324,6 +319,5 @@ export default function Suppliers() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }

@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import AchatsModule from "./pages/modules/AchatsModule";
 import VentesModule from "./pages/modules/VentesModule";
@@ -16,6 +17,8 @@ import FinanceModule from "./pages/modules/FinanceModule";
 import ComptabiliteModule from "./pages/modules/ComptabiliteModule";
 import RHModule from "./pages/modules/RHModule";
 import SettingsModule from "./pages/modules/SettingsModule";
+import FleetModule from "./pages/modules/FleetModule";
+import CRMModule from "./pages/modules/CRMModule";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 import DocumentPreview from "./pages/DocumentPreview";
@@ -37,6 +40,7 @@ const App = () => (
             {/* Auth Pages (Public) */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/pricing" element={<Pricing />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={
@@ -82,6 +86,16 @@ const App = () => (
             <Route path="/parametres/*" element={
               <ProtectedRoute>
                 <SettingsModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/parc/*" element={
+              <ProtectedRoute>
+                <FleetModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/*" element={
+              <ProtectedRoute>
+                <CRMModule />
               </ProtectedRoute>
             } />
           
