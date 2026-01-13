@@ -3,6 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AchatsModule from "./pages/modules/AchatsModule";
 import VentesModule from "./pages/modules/VentesModule";
@@ -21,21 +26,64 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Dashboard */}
-          <Route path="/" element={<Dashboard />} />
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Landing Page (Public) */}
+            <Route path="/" element={<Landing />} />
+            
+            {/* Auth Pages (Public) */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Redirect root to dashboard if authenticated, else landing */}
+            <Route path="/app" element={<Navigate to="/dashboard" replace />} />
           
-          {/* Modules avec navigation par onglets */}
-          <Route path="/achats/*" element={<AchatsModule />} />
-          <Route path="/ventes/*" element={<VentesModule />} />
-          <Route path="/stock/*" element={<StockModule />} />
-          <Route path="/finance/*" element={<FinanceModule />} />
-          <Route path="/comptabilite/*" element={<ComptabiliteModule />} />
-          <Route path="/rh/*" element={<RHModule />} />
-          <Route path="/parametres/*" element={<SettingsModule />} />
+            {/* Modules avec navigation par onglets (Protected) */}
+            <Route path="/achats/*" element={
+              <ProtectedRoute>
+                <AchatsModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/ventes/*" element={
+              <ProtectedRoute>
+                <VentesModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/stock/*" element={
+              <ProtectedRoute>
+                <StockModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/*" element={
+              <ProtectedRoute>
+                <FinanceModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/comptabilite/*" element={
+              <ProtectedRoute>
+                <ComptabiliteModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/rh/*" element={
+              <ProtectedRoute>
+                <RHModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/parametres/*" element={
+              <ProtectedRoute>
+                <SettingsModule />
+              </ProtectedRoute>
+            } />
           
           {/* Redirections pour compatibilité avec anciennes routes */}
           <Route path="/purchase-orders" element={<Navigate to="/achats/bons-de-commande" replace />} />
@@ -60,9 +108,10 @@ const App = () => (
           {/* Documents */}
           <Route path="/documents/preview" element={<DocumentPreview />} />
           
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

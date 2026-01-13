@@ -39,10 +39,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHR } from "@/hooks/use-hr";
+import { useAuth } from "@/contexts/AuthContext";
 import type { HRContract } from "@/types/database";
 
 export default function HRContracts() {
   const { contracts, employees, saveContracts, getActiveContract } = useHR();
+  const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -86,7 +88,7 @@ export default function HRContracts() {
       position: "",
       department: "",
       status: "active",
-      company_id: "1",
+      company_id: companyId || "",
     });
     setIsCreateModalOpen(true);
   };
@@ -137,7 +139,7 @@ export default function HRContracts() {
       position: "",
       department: "",
       status: "active",
-      company_id: "1",
+      company_id: companyId || "",
     });
   };
 

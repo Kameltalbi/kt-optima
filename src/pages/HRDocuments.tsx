@@ -40,10 +40,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHR } from "@/hooks/use-hr";
+import { useAuth } from "@/contexts/AuthContext";
 import type { HRDocument } from "@/types/database";
 
 export default function HRDocuments() {
   const { documents, employees, saveDocuments } = useHR();
+  const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -106,7 +108,7 @@ export default function HRDocuments() {
         uploadedBy: 'current_user',
         uploadedDate: new Date().toISOString(),
         accessLevel: formData.accessLevel,
-        company_id: '1',
+        company_id: companyId || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

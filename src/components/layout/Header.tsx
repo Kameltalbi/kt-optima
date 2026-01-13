@@ -1,7 +1,15 @@
-import { Bell, Search, Settings, Menu, ArrowLeft } from "lucide-react";
+import { Bell, Search, Settings, Menu, ArrowLeft, LogOut, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   title: string;
@@ -12,6 +20,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, onMenuClick, showBackButton = false }: HeaderProps) {
   const navigate = useNavigate();
+  const { company, logout } = useAuth();
 
   return (
     <header className="h-16 bg-card/95 backdrop-blur-sm border-b border-border/50 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 shadow-sm">
@@ -75,6 +84,43 @@ export function Header({ title, subtitle, onMenuClick, showBackButton = false }:
         <Button variant="ghost" size="icon" className="hidden sm:flex hover:bg-primary/10 transition-colors">
           <Settings className="w-5 h-5 text-foreground/70" />
         </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-primary" />
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {company && (
+              <>
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-semibold">{company.name}</p>
+                  <p className="text-xs text-muted-foreground">{company.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem onClick={() => navigate("/parametres")}>
+              <Settings className="w-4 h-4 mr-2" />
+              Paramètres
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Déconnexion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

@@ -45,10 +45,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHR } from "@/hooks/use-hr";
+import { useAuth } from "@/contexts/AuthContext";
 import type { HREmployee } from "@/types/database";
 
 export default function Employees() {
   const { employees, createEmployee, updateEmployee } = useHR();
+  const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
@@ -69,7 +71,7 @@ export default function Employees() {
     department: "",
     hireDate: "",
     status: "active",
-    company_id: "1",
+    company_id: companyId || "",
   });
 
   const departments = Array.from(new Set(employees.map(e => e.department)));
@@ -102,7 +104,7 @@ export default function Employees() {
       department: "",
       hireDate: "",
       status: "active",
-      company_id: "1",
+      company_id: companyId || "",
     });
     setIsCreateModalOpen(true);
   };
@@ -140,7 +142,7 @@ export default function Employees() {
       department: "",
       hireDate: "",
       status: "active",
-      company_id: "1",
+      company_id: companyId || "",
     });
   };
 

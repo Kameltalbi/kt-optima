@@ -39,10 +39,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHR } from "@/hooks/use-hr";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Leave } from "@/types/database";
 
 export default function Leaves() {
   const { leaves, leaveBalances, employees, saveLeaves } = useHR();
+  const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -116,7 +118,7 @@ export default function Leaves() {
       days,
       status: 'pending',
       requestedDate: new Date().toISOString(),
-      company_id: '1',
+      company_id: companyId || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

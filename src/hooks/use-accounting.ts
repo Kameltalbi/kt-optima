@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types
 export interface AccountingAccount {
@@ -88,6 +89,8 @@ const mockAccounts: AccountingAccount[] = [
 ];
 
 export function useAccounting() {
+  const { companyId } = useAuth();
+  
   const [config, setConfig] = useState<AccountingConfig>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -107,7 +110,9 @@ export function useAccounting() {
       const stored = localStorage.getItem(ENTRIES_STORAGE_KEY);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          // Filtrer par company_id si disponible (les entries n'ont pas company_id dans le type actuel, mais on peut l'ajouter)
+          return data;
         } catch {
           return [];
         }

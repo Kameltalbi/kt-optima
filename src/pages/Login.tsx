@@ -1,0 +1,118 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate("/dashboard");
+      } else {
+        setError("Email ou mot de passe incorrect");
+      }
+    } catch (err) {
+      setError("Une erreur est survenue lors de la connexion");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
+            <Building2 className="w-7 h-7 text-primary-foreground" />
+          </div>
+          <span className="font-bold text-2xl text-foreground">BilvoxaERP</span>
+        </div>
+
+        {/* Login Card */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Connexion</CardTitle>
+            <CardDescription className="text-center">
+              Connectez-vous à votre compte ERP
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@entreprise.tn"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Mot de passe</Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? "Connexion..." : "Se connecter"}
+              </Button>
+            </form>
+            <div className="mt-6 text-center text-sm">
+              <span className="text-muted-foreground">Pas encore de compte ? </span>
+              <Link to="/register" className="text-primary font-medium hover:underline">
+                Créer un compte
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Back to landing */}
+        <div className="mt-6 text-center">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Retour à l'accueil
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

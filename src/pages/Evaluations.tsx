@@ -41,10 +41,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHR } from "@/hooks/use-hr";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Evaluation, EvaluationCampaign } from "@/types/database";
 
 export default function Evaluations() {
   const { evaluations, campaigns, employees, saveEvaluations, saveCampaigns } = useHR();
+  const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
@@ -125,7 +127,7 @@ export default function Evaluations() {
       areasForImprovement: formData.areasForImprovement.filter(a => a),
       comments: formData.comments,
       status: 'draft',
-      company_id: '1',
+      company_id: companyId || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

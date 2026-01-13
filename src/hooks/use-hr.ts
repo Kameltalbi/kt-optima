@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAccounting } from './use-accounting';
+import { useAuth } from '@/contexts/AuthContext';
 import type {
   HREmployee,
   HRContract,
@@ -256,18 +257,22 @@ const mockCampaigns: EvaluationCampaign[] = [
 
 export function useHR() {
   const { generateEntryFromPayroll, config: accountingConfig } = useAccounting();
+  const { companyId } = useAuth();
+  
   const [employees, setEmployees] = useState<HREmployee[]>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}employees`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          // Filtrer par company_id si disponible
+          return companyId ? data.filter((e: HREmployee) => e.company_id === companyId) : data;
         } catch {
-          return mockEmployees;
+          return companyId ? mockEmployees.filter(e => e.company_id === companyId) : mockEmployees;
         }
       }
     }
-    return mockEmployees;
+    return companyId ? mockEmployees.filter(e => e.company_id === companyId) : mockEmployees;
   });
 
   const [contracts, setContracts] = useState<HRContract[]>(() => {
@@ -275,13 +280,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}contracts`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((c: HRContract) => c.company_id === companyId) : data;
         } catch {
-          return mockContracts;
+          return companyId ? mockContracts.filter(c => c.company_id === companyId) : mockContracts;
         }
       }
     }
-    return mockContracts;
+    return companyId ? mockContracts.filter(c => c.company_id === companyId) : mockContracts;
   });
 
   const [payrolls, setPayrolls] = useState<Payroll[]>(() => {
@@ -289,13 +295,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}payrolls`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((p: Payroll) => p.company_id === companyId) : data;
         } catch {
-          return mockPayrolls;
+          return companyId ? mockPayrolls.filter(p => p.company_id === companyId) : mockPayrolls;
         }
       }
     }
-    return mockPayrolls;
+    return companyId ? mockPayrolls.filter(p => p.company_id === companyId) : mockPayrolls;
   });
 
   const [leaves, setLeaves] = useState<Leave[]>(() => {
@@ -303,13 +310,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}leaves`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((l: Leave) => l.company_id === companyId) : data;
         } catch {
-          return mockLeaves;
+          return companyId ? mockLeaves.filter(l => l.company_id === companyId) : mockLeaves;
         }
       }
     }
-    return mockLeaves;
+    return companyId ? mockLeaves.filter(l => l.company_id === companyId) : mockLeaves;
   });
 
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>(() => {
@@ -317,13 +325,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}leaveBalances`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((lb: LeaveBalance) => lb.company_id === companyId) : data;
         } catch {
-          return mockLeaveBalances;
+          return companyId ? mockLeaveBalances.filter(lb => lb.company_id === companyId) : mockLeaveBalances;
         }
       }
     }
-    return mockLeaveBalances;
+    return companyId ? mockLeaveBalances.filter(lb => lb.company_id === companyId) : mockLeaveBalances;
   });
 
   const [documents, setDocuments] = useState<HRDocument[]>(() => {
@@ -331,13 +340,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}documents`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((d: HRDocument) => d.company_id === companyId) : data;
         } catch {
-          return mockDocuments;
+          return companyId ? mockDocuments.filter(d => d.company_id === companyId) : mockDocuments;
         }
       }
     }
-    return mockDocuments;
+    return companyId ? mockDocuments.filter(d => d.company_id === companyId) : mockDocuments;
   });
 
   const [evaluations, setEvaluations] = useState<Evaluation[]>(() => {
@@ -345,13 +355,14 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}evaluations`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((e: Evaluation) => e.company_id === companyId) : data;
         } catch {
-          return mockEvaluations;
+          return companyId ? mockEvaluations.filter(e => e.company_id === companyId) : mockEvaluations;
         }
       }
     }
-    return mockEvaluations;
+    return companyId ? mockEvaluations.filter(e => e.company_id === companyId) : mockEvaluations;
   });
 
   const [campaigns, setCampaigns] = useState<EvaluationCampaign[]>(() => {
@@ -359,69 +370,185 @@ export function useHR() {
       const stored = localStorage.getItem(`${STORAGE_PREFIX}campaigns`);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const data = JSON.parse(stored);
+          return companyId ? data.filter((c: EvaluationCampaign) => c.company_id === companyId) : data;
         } catch {
-          return mockCampaigns;
+          return companyId ? mockCampaigns.filter(c => c.company_id === companyId) : mockCampaigns;
         }
       }
     }
-    return mockCampaigns;
+    return companyId ? mockCampaigns.filter(c => c.company_id === companyId) : mockCampaigns;
   });
 
-  // Persist to localStorage
+  // Persist to localStorage (with company filtering)
   const saveEmployees = useCallback((data: HREmployee[]) => {
-    setEmployees(data);
+    // Filtrer par company_id avant de sauvegarder
+    const filtered = companyId ? data.filter(e => e.company_id === companyId) : data;
+    setEmployees(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify(data));
+      // Charger toutes les données existantes et fusionner
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}employees`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((e: HREmployee) => e.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}employees`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
 
   const saveContracts = useCallback((data: HRContract[]) => {
-    setContracts(data);
+    const filtered = companyId ? data.filter(c => c.company_id === companyId) : data;
+    setContracts(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}contracts`, JSON.stringify(data));
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}contracts`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((c: HRContract) => c.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}contracts`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}contracts`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}contracts`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
 
   const savePayrolls = useCallback((data: Payroll[]) => {
-    setPayrolls(data);
+    const filtered = companyId ? data.filter(p => p.company_id === companyId) : data;
+    setPayrolls(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}payrolls`, JSON.stringify(data));
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}payrolls`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((p: Payroll) => p.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}payrolls`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}payrolls`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}payrolls`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
 
   const saveLeaves = useCallback((data: Leave[]) => {
-    setLeaves(data);
+    const filtered = companyId ? data.filter(l => l.company_id === companyId) : data;
+    setLeaves(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}leaves`, JSON.stringify(data));
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}leaves`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((l: Leave) => l.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}leaves`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}leaves`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}leaves`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
 
   const saveDocuments = useCallback((data: HRDocument[]) => {
-    setDocuments(data);
+    const filtered = companyId ? data.filter(d => d.company_id === companyId) : data;
+    setDocuments(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}documents`, JSON.stringify(data));
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}documents`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((d: HRDocument) => d.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}documents`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}documents`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}documents`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
 
   const saveEvaluations = useCallback((data: Evaluation[]) => {
-    setEvaluations(data);
+    const filtered = companyId ? data.filter(e => e.company_id === companyId) : data;
+    setEvaluations(filtered);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`${STORAGE_PREFIX}evaluations`, JSON.stringify(data));
+      const existing = localStorage.getItem(`${STORAGE_PREFIX}evaluations`);
+      if (existing) {
+        try {
+          const allData = JSON.parse(existing);
+          const otherCompanies = allData.filter((e: Evaluation) => e.company_id !== companyId);
+          localStorage.setItem(`${STORAGE_PREFIX}evaluations`, JSON.stringify([...otherCompanies, ...filtered]));
+        } catch {
+          localStorage.setItem(`${STORAGE_PREFIX}evaluations`, JSON.stringify(filtered));
+        }
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}evaluations`, JSON.stringify(filtered));
+      }
     }
-  }, []);
+  }, [companyId]);
+
+  // Re-load data when companyId changes
+  useEffect(() => {
+    if (!companyId) return;
+
+    // Re-load from localStorage when company changes
+    const loadAndFilter = <T extends { company_id: string }>(
+      storageKey: string,
+      mockData: T[],
+      setter: (data: T[]) => void
+    ) => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          try {
+            const allData = JSON.parse(stored);
+            const filtered = allData.filter((item: T) => item.company_id === companyId);
+            setter(filtered);
+            return;
+          } catch {
+            // Fall through to mock data
+          }
+        }
+      }
+      const filtered = mockData.filter(item => item.company_id === companyId);
+      setter(filtered);
+    };
+
+    loadAndFilter(`${STORAGE_PREFIX}employees`, mockEmployees, setEmployees);
+    loadAndFilter(`${STORAGE_PREFIX}contracts`, mockContracts, setContracts);
+    loadAndFilter(`${STORAGE_PREFIX}payrolls`, mockPayrolls, setPayrolls);
+    loadAndFilter(`${STORAGE_PREFIX}leaves`, mockLeaves, setLeaves);
+    loadAndFilter(`${STORAGE_PREFIX}leaveBalances`, mockLeaveBalances, setLeaveBalances);
+    loadAndFilter(`${STORAGE_PREFIX}documents`, mockDocuments, setDocuments);
+    loadAndFilter(`${STORAGE_PREFIX}evaluations`, mockEvaluations, setEvaluations);
+    loadAndFilter(`${STORAGE_PREFIX}campaigns`, mockCampaigns, setCampaigns);
+  }, [companyId]);
 
   // Employee methods
-  const createEmployee = useCallback((employee: Omit<HREmployee, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createEmployee = useCallback((employee: Omit<HREmployee, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
+    if (!companyId) {
+      throw new Error('Company ID is required');
+    }
     const newEmployee: HREmployee = {
       ...employee,
+      company_id: companyId,
       id: `emp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     saveEmployees([...employees, newEmployee]);
     return newEmployee;
-  }, [employees, saveEmployees]);
+  }, [employees, saveEmployees, companyId]);
 
   const updateEmployee = useCallback((id: string, updates: Partial<HREmployee>) => {
     const updated = employees.map(emp =>
@@ -486,6 +613,9 @@ export function useHR() {
     salaryBrut: number,
     avantages?: { prime?: number; indemnites?: number; autres?: number }
   ): Payroll => {
+    if (!companyId) {
+      throw new Error('Company ID is required');
+    }
     const contract = contracts.find(c => c.id === contractId);
     if (!contract) throw new Error('Contrat introuvable');
 
@@ -506,14 +636,14 @@ export function useHR() {
       netAPayer,
       statut: 'draft',
       bulletinGenerated: false,
-      company_id: '1',
+      company_id: companyId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     savePayrolls([...payrolls, payroll]);
     return payroll;
-  }, [contracts, calculatePayroll, payrolls, savePayrolls]);
+  }, [contracts, calculatePayroll, payrolls, savePayrolls, companyId]);
 
   const validatePayroll = useCallback((payrollId: string, generateAccounting: boolean = true) => {
     const payroll = payrolls.find(p => p.id === payrollId);
