@@ -9,7 +9,7 @@ export interface Tax {
   isDefault?: boolean;
 }
 
-const STORAGE_KEY = 'maghreb_erp_taxes';
+const STORAGE_KEY = 'bilvoxa_erp_taxes';
 
 const defaultTaxes: Tax[] = [
   {

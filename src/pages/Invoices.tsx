@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -109,10 +108,7 @@ export default function Invoices() {
   };
 
   return (
-    <MainLayout
-      title="Factures"
-      subtitle="Gérez vos factures et paiements"
-    >
+    <>
       <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -356,6 +352,6 @@ export default function Invoices() {
           </div>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 }

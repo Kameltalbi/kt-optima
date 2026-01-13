@@ -2,116 +2,28 @@ import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Target,
-  Users,
-  FileText,
-  Truck,
-  Package,
-  Receipt,
-  BarChart3,
   ShoppingCart,
-  ClipboardList,
-  PackageCheck,
-  Boxes,
-  ArrowLeftRight,
-  AlertTriangle,
-  Warehouse,
+  Users,
+  Package,
   Wallet,
-  Landmark,
-  Calendar,
-  GitCompare,
   Calculator,
-  BookOpen,
-  Scale,
-  FileSpreadsheet,
   UserCheck,
-  Clock,
-  Palmtree,
-  Banknote,
   Building2,
   Settings,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  Percent,
-  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const dashboardItems = [
-  { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/" },
-  { icon: Target, label: "CRM", path: "/crm" },
-];
-
-const menuGroups = [
-  {
-    id: "commercial",
-    title: "Commercial",
-    icon: Users,
-    items: [
-      { icon: Users, label: "Clients", path: "/clients" },
-      { icon: FileText, label: "Devis", path: "/quotes" },
-      { icon: Receipt, label: "Factures", path: "/invoices" },
-      { icon: Truck, label: "Bons de livraison", path: "/delivery-notes" },
-      { icon: BarChart3, label: "Statistiques ventes", path: "/sales-stats" },
-    ],
-  },
-  {
-    id: "achats",
-    title: "Achats",
-    icon: ShoppingCart,
-    items: [
-      { icon: Users, label: "Fournisseurs", path: "/suppliers" },
-      { icon: ClipboardList, label: "Commandes", path: "/purchase-orders" },
-      { icon: PackageCheck, label: "Réceptions", path: "/receptions" },
-      { icon: Receipt, label: "Factures fournisseurs", path: "/supplier-invoices" },
-    ],
-  },
-  {
-    id: "stock",
-    title: "Stock",
-    icon: Package,
-    items: [
-      { icon: Boxes, label: "Inventaire", path: "/inventory" },
-      { icon: ArrowLeftRight, label: "Mouvements", path: "/stock-movements" },
-      { icon: AlertTriangle, label: "Alertes stock", path: "/stock-alerts" },
-      { icon: Warehouse, label: "Dépôts", path: "/warehouses" },
-    ],
-  },
-  {
-    id: "finance",
-    title: "Finance",
-    icon: Wallet,
-    items: [
-      { icon: Wallet, label: "Trésorerie", path: "/treasury" },
-      { icon: Landmark, label: "Banques", path: "/banks" },
-      { icon: Calendar, label: "Échéanciers", path: "/payment-schedules" },
-      { icon: GitCompare, label: "Rapprochements", path: "/reconciliations" },
-    ],
-  },
-  {
-    id: "comptabilite",
-    title: "Comptabilité",
-    icon: Calculator,
-    items: [
-      { icon: BookOpen, label: "Plan comptable", path: "/chart-of-accounts" },
-      { icon: FileText, label: "Écritures", path: "/journal-entries" },
-      { icon: FileSpreadsheet, label: "Grand livre", path: "/general-ledger" },
-      { icon: Scale, label: "Balance", path: "/trial-balance" },
-      { icon: Receipt, label: "Déclarations fiscales", path: "/tax-declarations" },
-    ],
-  },
-  {
-    id: "rh",
-    title: "RH",
-    icon: UserCheck,
-    items: [
-      { icon: Users, label: "Employés", path: "/employees" },
-      { icon: Clock, label: "Présences", path: "/attendance" },
-      { icon: Palmtree, label: "Congés", path: "/leaves" },
-      { icon: Banknote, label: "Paie", path: "/payroll" },
-    ],
-  },
+// Modules principaux uniquement - navigation simplifiée
+const mainModules = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: ShoppingCart, label: "Achats", path: "/achats" },
+  { icon: Users, label: "Ventes", path: "/ventes" },
+  { icon: Package, label: "Stock", path: "/stock" },
+  { icon: Wallet, label: "Finance", path: "/finance" },
+  { icon: Calculator, label: "Comptabilité", path: "/comptabilite" },
+  { icon: UserCheck, label: "Ressources humaines", path: "/rh" },
 ];
 
 interface SidebarProps {
@@ -120,7 +32,6 @@ interface SidebarProps {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
 
@@ -136,22 +47,6 @@ export function Sidebar({ onClose }: SidebarProps) {
   // On mobile, always show full sidebar (not collapsed)
   const effectiveCollapsed = isMobile ? false : collapsed;
 
-  const toggleGroup = (groupId: string) => {
-    setOpenGroups((prev) =>
-      prev.includes(groupId)
-        ? prev.filter((id) => id !== groupId)
-        : [...prev, groupId]
-    );
-  };
-
-  const handleMouseLeave = () => {
-    // Keep only the group containing active route open
-    const activeGroup = menuGroups.find((group) =>
-      group.items.some((item) => item.path === location.pathname)
-    );
-    setOpenGroups(activeGroup ? [activeGroup.id] : []);
-  };
-
   const handleItemClick = () => {
     // Close sidebar on mobile when item is clicked
     if (window.innerWidth < 1024 && onClose) {
@@ -161,7 +56,6 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   return (
     <aside
-      onMouseLeave={handleMouseLeave}
       className={cn(
         "h-screen bg-sidebar text-white flex flex-col transition-all duration-300 border-r border-sidebar-border/50 shadow-xl",
         effectiveCollapsed ? "w-20" : "w-72",
@@ -176,7 +70,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           {!effectiveCollapsed && (
             <span className="font-bold text-lg tracking-tight animate-fade-in text-white drop-shadow-sm">
-              Maghreb ERP
+              BilvoxaERP
             </span>
           )}
         </div>
@@ -199,120 +93,52 @@ export function Sidebar({ onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Modules principaux uniquement */}
       <nav className="flex-1 px-4 py-4 overflow-y-auto">
-        {/* Dashboard - Always visible */}
-        <div className="mb-5">
-          {!effectiveCollapsed && (
-            <span className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/70">
-              Tableau de bord
-            </span>
-          )}
-          <div className="space-y-1 mt-2">
-            {dashboardItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={handleItemClick}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-semibold transition-all duration-150",
-                    isActive
-                      ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
-                      : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
-                  )}
-                >
-                  <item.icon
-                    className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")}
-                  />
-                  {!effectiveCollapsed && (
-                    <span className="truncate animate-fade-in">{item.label}</span>
-                  )}
-                </NavLink>
-              );
-            })}
-          </div>
-        </div>
-
-        {menuGroups.map((group, groupIndex) => {
-          const isOpen = openGroups.includes(group.id);
-          const hasActiveItem = group.items.some(
-            (item) => item.path === location.pathname
-          );
-
-          return (
-            <div key={group.id} className={cn(groupIndex > 0 && "mt-3")}>
-              {!effectiveCollapsed && (
-                <button
-                  onClick={() => toggleGroup(group.id)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-colors",
-                    hasActiveItem
-                      ? "text-white/95"
-                      : "text-white/70 hover:text-white/90 hover:bg-white/10"
-                  )}
-                >
-                  <span>{group.title}</span>
-                  <ChevronDown
-                    className={cn(
-                      "w-4 h-4 transition-transform duration-200",
-                      isOpen && "rotate-180"
-                    )}
-                  />
-                </button>
-              )}
-              <div
+        <div className="space-y-1">
+          {mainModules.map((module) => {
+            // Vérifier si le module est actif (pathname commence par le path du module)
+            const isActive = location.pathname === module.path || 
+              (module.path !== "/" && location.pathname.startsWith(module.path));
+            
+            return (
+              <NavLink
+                key={module.path}
+                to={module.path}
+                onClick={handleItemClick}
                 className={cn(
-                  "overflow-hidden transition-all duration-200",
-                  !effectiveCollapsed && !isOpen ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-semibold transition-all duration-150",
+                  isActive
+                    ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+                    : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
                 )}
               >
-                <div className="space-y-1 mt-2">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <NavLink
-                        key={item.path}
-                        to={item.path}
-                        onClick={handleItemClick}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
-                          isActive
-                            ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
-                            : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
-                        )}
-                      >
-                        <item.icon
-                          className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")}
-                        />
-                        {!collapsed && (
-                          <span className="truncate animate-fade-in">{item.label}</span>
-                        )}
-                      </NavLink>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                <module.icon
+                  className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")}
+                />
+                {!effectiveCollapsed && (
+                  <span className="truncate animate-fade-in">{module.label}</span>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border/50 backdrop-blur-sm space-y-3">
         {/* Paramètres */}
         <NavLink
-          to="/settings"
+          to="/parametres"
           onClick={handleItemClick}
           className={cn(
             "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
-            location.pathname === "/settings"
+            location.pathname.startsWith("/parametres")
               ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
               : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
           )}
         >
-          <Settings className={cn("w-5 h-5 flex-shrink-0", location.pathname === "/settings" && "text-white")} />
+          <Settings className={cn("w-5 h-5 flex-shrink-0", location.pathname.startsWith("/parametres") && "text-white")} />
           {!effectiveCollapsed && (
             <span className="truncate animate-fade-in">Paramètres</span>
           )}

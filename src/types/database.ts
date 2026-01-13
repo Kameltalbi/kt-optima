@@ -1,5 +1,5 @@
 // ============================================
-// MAGHREB ERP - DATABASE SCHEMA TYPES
+// BILVOXA ERP - DATABASE SCHEMA TYPES
 // ============================================
 
 // CORE SYSTEM
@@ -174,6 +174,172 @@ export interface Expense {
   amount: number;
   category: string;
   date: string;
+}
+
+// MODULE 12: HR ADVANCED - RESSOURCES HUMAINES AVANCÉ
+export interface HREmployee {
+  id: string;
+  matricule: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  cin: string; // Carte d'identité nationale
+  position: string;
+  department: string;
+  hireDate: string;
+  status: 'active' | 'inactive' | 'suspended';
+  managerId?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HRContract {
+  id: string;
+  employee_id: string;
+  type: 'cdi' | 'cdd' | 'stage' | 'consultant';
+  startDate: string;
+  endDate?: string; // Optionnel pour CDI
+  salary: number;
+  position: string;
+  department: string;
+  status: 'active' | 'expired' | 'terminated';
+  terminationDate?: string;
+  terminationReason?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payroll {
+  id: string;
+  employee_id: string;
+  contract_id: string;
+  period: string; // Format: YYYY-MM
+  date: string;
+  salaryBrut: number;
+  cotisations: {
+    cnss: number;
+    assurance: number;
+    retraite: number;
+    autres: number;
+  };
+  retenues: {
+    irpp: number; // Impôt sur le revenu
+    autres: number;
+  };
+  avantages: {
+    prime: number;
+    indemnites: number;
+    autres: number;
+  };
+  netAPayer: number;
+  statut: 'draft' | 'validated' | 'paid';
+  bulletinGenerated: boolean;
+  accountingEntryId?: string; // Référence à l'écriture comptable
+  financeScheduleId?: string; // Référence à l'échéancier Finance
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Leave {
+  id: string;
+  employee_id: string;
+  type: 'annual' | 'sick' | 'maternity' | 'paternity' | 'unpaid' | 'other';
+  startDate: string;
+  endDate: string;
+  days: number;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  requestedDate: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  rejectionReason?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeaveBalance {
+  id: string;
+  employee_id: string;
+  year: number;
+  annualTotal: number;
+  annualUsed: number;
+  annualRemaining: number;
+  sickTotal: number;
+  sickUsed: number;
+  sickRemaining: number;
+  company_id: string;
+  updatedAt: string;
+}
+
+export interface HRDocument {
+  id: string;
+  employee_id?: string; // Optionnel pour documents généraux
+  name: string;
+  type: 'contract' | 'cv' | 'diploma' | 'certificate' | 'evaluation' | 'disciplinary' | 'other';
+  category: 'personal' | 'professional' | 'administrative' | 'confidential';
+  filePath: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedBy: string;
+  uploadedDate: string;
+  accessLevel: 'public' | 'hr' | 'manager' | 'confidential';
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Evaluation {
+  id: string;
+  employee_id: string;
+  campaignId: string;
+  campaignName: string;
+  period: string; // Format: YYYY ou YYYY-Q1, etc.
+  evaluatorId: string;
+  evaluatorName: string;
+  date: string;
+  objectives: {
+    id: string;
+    description: string;
+    target: string;
+    achievement: string;
+    rating: number; // 1-5
+  }[];
+  competencies: {
+    id: string;
+    name: string;
+    rating: number; // 1-5
+    comment?: string;
+  }[];
+  overallRating: number; // 1-5
+  strengths: string[];
+  areasForImprovement: string[];
+  comments: string;
+  status: 'draft' | 'submitted' | 'reviewed' | 'validated';
+  employeeComments?: string;
+  validatedBy?: string;
+  validatedDate?: string;
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvaluationCampaign {
+  id: string;
+  name: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  status: 'planned' | 'active' | 'completed' | 'cancelled';
+  company_id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // MODULE 9: SIMPLE ACCOUNTING

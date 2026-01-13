@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Currency, defaultCurrencies } from '@/types/currency';
 
-const STORAGE_KEY = 'maghreb_erp_currencies';
-const DEFAULT_CURRENCY_KEY = 'maghreb_erp_default_currency';
+const STORAGE_KEY = 'bilvoxa_erp_currencies';
+const DEFAULT_CURRENCY_KEY = 'bilvoxa_erp_default_currency';
 
 export function useCurrency() {
   const [currencies, setCurrencies] = useState<Currency[]>(() => {

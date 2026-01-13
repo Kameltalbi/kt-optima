@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -108,10 +107,7 @@ export default function Quotes() {
   };
 
   return (
-    <MainLayout
-      title="Devis"
-      subtitle="Gérez vos devis clients"
-    >
+    <>
       <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -355,6 +351,6 @@ export default function Quotes() {
           </div>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 }

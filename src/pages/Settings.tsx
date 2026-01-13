@@ -27,14 +27,22 @@ import {
   Star,
   StarOff,
   Percent,
-  DollarSign
+  DollarSign,
+  Calculator,
+  BookOpen,
+  Info,
+  ShoppingCart,
+  Receipt,
+  Wallet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/use-currency";
 import { Currency } from "@/types/currency";
 import { useTaxes } from "@/hooks/use-taxes";
+import { useAccounting } from "@/hooks/use-accounting";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const settingsSections = [
   { id: "company", label: "Entreprise", icon: Building2 },
@@ -43,6 +51,7 @@ const settingsSections = [
   { id: "modules", label: "Modules", icon: Package },
   { id: "taxes", label: "Taxes et TVA", icon: Percent },
   { id: "invoicing", label: "Facturation", icon: FileText },
+  { id: "accounting", label: "Comptabilité", icon: Calculator },
   { id: "templates", label: "Modèles", icon: FileCheck },
   { id: "regional", label: "Régional", icon: Globe },
   { id: "documents", label: "Documents", icon: FolderOpen },
@@ -598,6 +607,177 @@ function RegionalSettings() {
   );
 }
 
+function AccountingSettings() {
+  const { config, updateConfig, getAccount } = useAccounting();
+  const [localConfig, setLocalConfig] = useState(config);
+
+  const handleSave = () => {
+    updateConfig(localConfig);
+  };
+
+  const accountLabels: Record<keyof typeof config.accounts, string> = {
+    fournisseurs: "Fournisseurs (401xxx)",
+    clients: "Clients (411xxx)",
+    banque: "Banque principale (512xxx)",
+    caisse: "Caisse (531xxx)",
+    tvaDeductible: "TVA déductible (345xxx)",
+    tvaCollectee: "TVA collectée (4457xx)",
+    achats: "Achats (60xxx)",
+    ventes: "Ventes (70xxx)",
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-border/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Configuration comptable</CardTitle>
+              <CardDescription className="text-xs">
+                Configurez les comptes par défaut et activez/désactivez la génération automatique d'écritures
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Activation de la comptabilité */}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-5 h-5 text-primary" />
+              <div>
+                <Label className="text-sm font-semibold">Génération automatique d'écritures</Label>
+                <p className="text-xs text-muted-foreground">
+                  Activez pour générer automatiquement les écritures depuis les modules Finance, Achats et Ventes
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={localConfig.enabled}
+              onCheckedChange={(checked) => setLocalConfig({ ...localConfig, enabled: checked })}
+            />
+          </div>
+
+          {/* Comptes par défaut */}
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-semibold mb-3 block">Comptes par défaut (PCG Tunisien)</Label>
+              <p className="text-xs text-muted-foreground mb-4">
+                Configurez les numéros de comptes utilisés pour la génération automatique des écritures
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(localConfig.accounts).map(([key, value]) => (
+                <div key={key} className="space-y-2">
+                  <Label className="text-xs">{accountLabels[key as keyof typeof accountLabels]}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={value}
+                      onChange={(e) => setLocalConfig({
+                        ...localConfig,
+                        accounts: { ...localConfig.accounts, [key]: e.target.value }
+                      })}
+                      placeholder="Ex: 401000"
+                      className="h-9 text-sm font-mono"
+                    />
+                    {getAccount(value) && (
+                      <Badge variant="outline" className="text-xs">
+                        {getAccount(value)?.intitule}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Informations */}
+          <Alert className="bg-info/5 border-info/20">
+            <Info className="h-4 w-4 text-info" />
+            <AlertDescription className="text-xs">
+              Les écritures comptables sont générées automatiquement selon le Plan Comptable Général Tunisien (PCG TN).
+              Toute action financière validée (facture, paiement) crée une écriture équilibrée.
+            </AlertDescription>
+          </Alert>
+
+          <div className="pt-4 border-t">
+            <Button size="sm" onClick={handleSave} className="text-xs">
+              Enregistrer la configuration
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Règles de mapping */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">Règles de mapping Finance → Comptabilité</CardTitle>
+          <CardDescription className="text-xs">
+            Comprendre comment les écritures sont générées automatiquement
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-start gap-3">
+                <ShoppingCart className="w-5 h-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold mb-2">Facture fournisseur enregistrée</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+                    <li>Débit compte {localConfig.accounts.achats} (Achats)</li>
+                    <li>Débit compte {localConfig.accounts.tvaDeductible} (TVA déductible)</li>
+                    <li>Crédit compte {localConfig.accounts.fournisseurs} (Fournisseurs)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-start gap-3">
+                <Wallet className="w-5 h-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold mb-2">Paiement fournisseur</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+                    <li>Débit compte {localConfig.accounts.fournisseurs} (Fournisseurs)</li>
+                    <li>Crédit compte {localConfig.accounts.banque} (Banque) ou {localConfig.accounts.caisse} (Caisse)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-start gap-3">
+                <Receipt className="w-5 h-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold mb-2">Facture client émise</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+                    <li>Débit compte {localConfig.accounts.clients} (Clients)</li>
+                    <li>Crédit compte {localConfig.accounts.ventes} (Ventes)</li>
+                    <li>Crédit compte {localConfig.accounts.tvaCollectee} (TVA collectée)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-start gap-3">
+                <DollarSign className="w-5 h-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold mb-2">Encaissement client</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
+                    <li>Débit compte {localConfig.accounts.banque} (Banque) ou {localConfig.accounts.caisse} (Caisse)</li>
+                    <li>Crédit compte {localConfig.accounts.clients} (Clients)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [activeSection, setActiveSection] = useState("company");
 
@@ -949,7 +1129,7 @@ export default function Settings() {
                 <div>
                   <CardTitle className="text-base">Modules disponibles</CardTitle>
                   <CardDescription className="text-xs">
-                    Activez ou désactivez les modules de votre ERP
+                    Activez ou désactivez les modules de votre BilvoxaERP
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -1104,6 +1284,9 @@ export default function Settings() {
             </Card>
           </div>
         );
+
+      case "accounting":
+        return <AccountingSettings />;
 
       case "documents":
         return (
