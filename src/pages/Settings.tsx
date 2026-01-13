@@ -359,9 +359,9 @@ export default function Settings() {
 
         {/* Right Sidebar - Always Open */}
         <div className="w-56 flex-shrink-0">
-          <Card className="border-border/50 sticky top-6">
+          <Card className="border-border/50 sticky top-6 bg-[#1e293b]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Navigation</CardTitle>
+              <CardTitle className="text-sm font-medium text-white">Navigation</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-auto">
@@ -376,8 +376,8 @@ export default function Settings() {
                         className={cn(
                           "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150 text-left",
                           isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            ? "bg-primary/20 text-primary font-medium"
+                            : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
                         )}
                       >
                         <Icon className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")} />
