@@ -1,118 +1,120 @@
+import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Shield, FileText, Globe, FolderOpen, Upload, Download, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Building2, 
+  Users, 
+  Shield, 
+  FileText, 
+  Globe, 
+  FolderOpen,
+  Plus,
+  Download,
+  Trash2,
+  Upload
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const settingsSections = [
+  { id: "company", label: "Entreprise", icon: Building2 },
+  { id: "users", label: "Utilisateurs", icon: Users },
+  { id: "roles", label: "Rôles", icon: Shield },
+  { id: "invoicing", label: "Facturation", icon: FileText },
+  { id: "regional", label: "Régional", icon: Globe },
+  { id: "documents", label: "Documents", icon: FolderOpen },
+];
 
 export default function Settings() {
-  return (
-    <MainLayout title="Paramètres" subtitle="Configuration de l'entreprise et du système">
-      <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="company" className="gap-2 text-xs">
-            <Building2 className="w-3.5 h-3.5" />
-            Entreprise
-          </TabsTrigger>
-          <TabsTrigger value="users" className="gap-2 text-xs">
-            <Users className="w-3.5 h-3.5" />
-            Utilisateurs
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="gap-2 text-xs">
-            <Shield className="w-3.5 h-3.5" />
-            Rôles
-          </TabsTrigger>
-          <TabsTrigger value="invoicing" className="gap-2 text-xs">
-            <FileText className="w-3.5 h-3.5" />
-            Facturation
-          </TabsTrigger>
-          <TabsTrigger value="regional" className="gap-2 text-xs">
-            <Globe className="w-3.5 h-3.5" />
-            Régional
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="gap-2 text-xs">
-            <FolderOpen className="w-3.5 h-3.5" />
-            Documents
-          </TabsTrigger>
-        </TabsList>
+  const [activeSection, setActiveSection] = useState("company");
 
-        <TabsContent value="company" className="space-y-6">
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">Informations de l'entreprise</CardTitle>
-              <CardDescription className="text-xs">
-                Ces informations apparaîtront sur vos documents officiels
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Nom de l'entreprise</Label>
-                  <Input placeholder="Entreprise SA" className="h-9 text-sm" />
+  const renderContent = () => {
+    switch (activeSection) {
+      case "company":
+        return (
+          <div className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Informations de l'entreprise</CardTitle>
+                <CardDescription className="text-xs">
+                  Ces informations apparaîtront sur vos documents officiels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Nom de l'entreprise</Label>
+                    <Input placeholder="Entreprise SA" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Numéro fiscal</Label>
+                    <Input placeholder="123456789" className="h-9 text-sm" />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Numéro fiscal</Label>
-                  <Input placeholder="123456789" className="h-9 text-sm" />
+                  <Label className="text-xs">Adresse</Label>
+                  <Input placeholder="123 Rue Principale, Casablanca" className="h-9 text-sm" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Adresse</Label>
-                <Input placeholder="123 Rue Principale, Casablanca" className="h-9 text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Téléphone</Label>
-                  <Input placeholder="+212 5XX XXX XXX" className="h-9 text-sm" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Téléphone</Label>
+                    <Input placeholder="+212 5XX XXX XXX" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Email</Label>
+                    <Input placeholder="contact@entreprise.ma" className="h-9 text-sm" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Email</Label>
-                  <Input placeholder="contact@entreprise.ma" className="h-9 text-sm" />
-                </div>
-              </div>
-              <div className="pt-2">
-                <Button size="sm" className="text-xs">
-                  Enregistrer les modifications
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">Logo de l'entreprise</CardTitle>
-              <CardDescription className="text-xs">
-                Le logo sera affiché sur les factures et documents
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30">
-                  <Building2 className="w-8 h-8 text-muted-foreground/50" />
-                </div>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    Télécharger un logo
+                <div className="pt-2">
+                  <Button size="sm" className="text-xs">
+                    Enregistrer les modifications
                   </Button>
-                  <p className="text-[10px] text-muted-foreground">PNG, JPG jusqu'à 2MB</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="users" className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Logo de l'entreprise</CardTitle>
+                <CardDescription className="text-xs">
+                  Le logo sera affiché sur les factures et documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30">
+                    <Building2 className="w-8 h-8 text-muted-foreground/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      Télécharger un logo
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG jusqu'à 2MB</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "users":
+        return (
           <Card className="border-border/50">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">Utilisateurs</CardTitle>
                   <CardDescription className="text-xs">
-                    Gérez les accès à votre espace ERP
+                    Gérez les utilisateurs de votre organisation
                   </CardDescription>
                 </div>
-                <Button size="sm" className="text-xs">
-                  Ajouter un utilisateur
+                <Button size="sm" className="text-xs gap-1.5">
+                  <Plus className="w-3.5 h-3.5" />
+                  Ajouter
                 </Button>
               </div>
             </CardHeader>
@@ -120,163 +122,151 @@ export default function Settings() {
               <div className="space-y-3">
                 {[
                   { name: "Admin Principal", email: "admin@entreprise.ma", role: "Administrateur" },
-                  { name: "Mohamed Alami", email: "m.alami@entreprise.ma", role: "Comptable" },
-                  { name: "Fatima Bennani", email: "f.bennani@entreprise.ma", role: "Commercial" },
+                  { name: "Comptable", email: "compta@entreprise.ma", role: "Comptabilité" },
+                  { name: "Commercial", email: "commercial@entreprise.ma", role: "Ventes" },
                 ].map((user) => (
-                  <div
-                    key={user.email}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
-                  >
+                  <div key={user.email} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">
-                          {user.name.charAt(0)}
-                        </span>
+                        <span className="text-xs font-medium text-primary">{user.name[0]}</span>
                       </div>
                       <div>
                         <p className="text-sm font-medium">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-secondary/10 text-secondary-foreground">
-                      {user.role}
-                    </span>
+                    <Badge variant="secondary" className="text-[10px]">{user.role}</Badge>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        );
 
-        <TabsContent value="roles" className="space-y-6">
+      case "roles":
+        return (
           <Card className="border-border/50">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">Rôles et permissions</CardTitle>
                   <CardDescription className="text-xs">
-                    Définissez les droits d'accès par rôle
+                    Configurez les accès par rôle
                   </CardDescription>
                 </div>
-                <Button size="sm" className="text-xs">
-                  Créer un rôle
+                <Button size="sm" className="text-xs gap-1.5">
+                  <Plus className="w-3.5 h-3.5" />
+                  Nouveau rôle
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { name: "Administrateur", permissions: "Accès complet", users: 1 },
-                  { name: "Comptable", permissions: "Finances, Facturation, Rapports", users: 1 },
-                  { name: "Commercial", permissions: "Clients, Produits, Facturation", users: 1 },
+                  { name: "Administrateur", desc: "Accès complet", users: 1 },
+                  { name: "Comptabilité", desc: "Finance et rapports", users: 2 },
+                  { name: "Ventes", desc: "Commercial et clients", users: 3 },
                 ].map((role) => (
-                  <div
-                    key={role.name}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
-                  >
+                  <div key={role.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div>
                       <p className="text-sm font-medium">{role.name}</p>
-                      <p className="text-xs text-muted-foreground">{role.permissions}</p>
+                      <p className="text-xs text-muted-foreground">{role.desc}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {role.users} utilisateur{role.users > 1 ? "s" : ""}
-                    </span>
+                    <Badge variant="outline" className="text-[10px]">{role.users} utilisateurs</Badge>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        );
 
-        <TabsContent value="invoicing" className="space-y-6">
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">Numérotation des documents</CardTitle>
-              <CardDescription className="text-xs">
-                Configurez les préfixes et formats de numérotation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Préfixe factures</Label>
-                  <Input placeholder="FAC-" defaultValue="FAC-" className="h-9 text-sm" />
+      case "invoicing":
+        return (
+          <div className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Numérotation des documents</CardTitle>
+                <CardDescription className="text-xs">
+                  Format de numérotation automatique
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Préfixe factures</Label>
+                    <Input defaultValue="FAC-" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Prochain numéro</Label>
+                    <Input defaultValue="00001" className="h-9 text-sm" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Prochain numéro</Label>
-                  <Input placeholder="001" defaultValue="001" className="h-9 text-sm" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Préfixe devis</Label>
+                    <Input defaultValue="DEV-" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Prochain numéro</Label>
+                    <Input defaultValue="00001" className="h-9 text-sm" />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Préfixe devis</Label>
-                  <Input placeholder="DEV-" defaultValue="DEV-" className="h-9 text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Prochain numéro</Label>
-                  <Input placeholder="001" defaultValue="001" className="h-9 text-sm" />
-                </div>
-              </div>
-              <div className="pt-2">
-                <Button size="sm" className="text-xs">
-                  Enregistrer
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">TVA</CardTitle>
-              <CardDescription className="text-xs">
-                Configurez les taux de TVA applicables
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[
-                { label: "Taux normal", rate: "20%" },
-                { label: "Taux réduit", rate: "10%" },
-                { label: "Taux super-réduit", rate: "7%" },
-              ].map((tax) => (
-                <div
-                  key={tax.label}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
-                >
-                  <span className="text-sm">{tax.label}</span>
-                  <span className="text-sm font-medium">{tax.rate}</span>
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Taux de TVA</CardTitle>
+                <CardDescription className="text-xs">
+                  Taux applicables aux produits et services
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[
+                    { name: "TVA Standard", rate: "20%" },
+                    { name: "TVA Réduit", rate: "10%" },
+                    { name: "TVA Super réduit", rate: "7%" },
+                  ].map((vat) => (
+                    <div key={vat.name} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                      <span className="text-sm">{vat.name}</span>
+                      <Badge variant="secondary" className="text-[10px]">{vat.rate}</Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
+        );
 
-        <TabsContent value="regional" className="space-y-6">
+      case "regional":
+        return (
           <Card className="border-border/50">
             <CardHeader className="pb-4">
               <CardTitle className="text-base">Paramètres régionaux</CardTitle>
               <CardDescription className="text-xs">
-                Devise, langue et formats d'affichage
+                Devise, langue et format de date
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs">Devise</Label>
-                  <Input placeholder="MAD" defaultValue="MAD" className="h-9 text-sm" />
+                  <Input defaultValue="MAD" className="h-9 text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Symbole</Label>
-                  <Input placeholder="DH" defaultValue="DH" className="h-9 text-sm" />
+                  <Input defaultValue="DH" className="h-9 text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs">Langue</Label>
-                  <Input placeholder="Français" defaultValue="Français" className="h-9 text-sm" />
+                  <Input defaultValue="Français" className="h-9 text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Format de date</Label>
-                  <Input placeholder="DD/MM/YYYY" defaultValue="DD/MM/YYYY" className="h-9 text-sm" />
+                  <Input defaultValue="DD/MM/YYYY" className="h-9 text-sm" />
                 </div>
               </div>
               <div className="pt-2">
@@ -286,87 +276,121 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        );
 
-        <TabsContent value="documents" className="space-y-6">
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Gestion des documents</CardTitle>
-                  <CardDescription className="text-xs">
-                    Factures, contrats, justificatifs et documents RH
-                  </CardDescription>
+      case "documents":
+        return (
+          <div className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Documents</CardTitle>
+                    <CardDescription className="text-xs">
+                      Gérez vos fichiers et modèles
+                    </CardDescription>
+                  </div>
+                  <Button size="sm" className="text-xs gap-1.5">
+                    <Upload className="w-3.5 h-3.5" />
+                    Téléverser
+                  </Button>
                 </div>
-                <Button size="sm" className="text-xs gap-1.5">
-                  <Upload className="w-3.5 h-3.5" />
-                  Télécharger
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[
-                  { name: "Facture_001.pdf", type: "Facture", date: "12/01/2025", size: "245 KB" },
-                  { name: "Contrat_Client_ABC.pdf", type: "Contrat", date: "10/01/2025", size: "1.2 MB" },
-                  { name: "Justificatif_Deplacement.pdf", type: "Justificatif", date: "08/01/2025", size: "156 KB" },
-                  { name: "Fiche_Paie_Dec2024.pdf", type: "RH", date: "05/01/2025", size: "89 KB" },
-                ].map((doc) => (
-                  <div
-                    key={doc.name}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[
+                    { name: "Modèle facture.docx", type: "Modèle", date: "12/01/2024", size: "45 KB" },
+                    { name: "Logo HD.png", type: "Image", date: "10/01/2024", size: "1.2 MB" },
+                    { name: "CGV.pdf", type: "Document", date: "05/01/2024", size: "320 KB" },
+                  ].map((doc) => (
+                    <div key={doc.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{doc.name}</p>
+                          <p className="text-xs text-muted-foreground">{doc.type} • {doc.date} • {doc.size}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">{doc.type} • {doc.date} • {doc.size}</p>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Download className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Download className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="border-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base">Catégories de documents</CardTitle>
-              <CardDescription className="text-xs">
-                Organisez vos documents par catégorie
-              </CardDescription>
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Catégories de documents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {["Factures", "Devis", "Contrats", "Modèles", "Autres"].map((cat) => (
+                    <Badge key={cat} variant="secondary" className="text-xs">{cat}</Badge>
+                  ))}
+                  <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
+                    <Plus className="w-3 h-3" />
+                    Ajouter
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <MainLayout title="Paramètres" subtitle="Configuration de l'application">
+      <div className="flex gap-6">
+        {/* Main Content */}
+        <div className="flex-1">
+          {renderContent()}
+        </div>
+
+        {/* Right Sidebar - Always Open */}
+        <div className="w-56 flex-shrink-0">
+          <Card className="border-border/50 sticky top-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Navigation</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: "Factures", count: 24 },
-                  { name: "Contrats", count: 8 },
-                  { name: "Justificatifs", count: 45 },
-                  { name: "Documents RH", count: 12 },
-                ].map((cat) => (
-                  <div
-                    key={cat.name}
-                    className="p-3 rounded-lg bg-muted/30 border border-border/50"
-                  >
-                    <p className="text-sm font-medium">{cat.name}</p>
-                    <p className="text-xs text-muted-foreground">{cat.count} fichiers</p>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="p-0">
+              <ScrollArea className="h-auto">
+                <nav className="px-3 pb-3 space-y-1">
+                  {settingsSections.map((section) => {
+                    const Icon = section.icon;
+                    const isActive = activeSection === section.id;
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => setActiveSection(section.id)}
+                        className={cn(
+                          "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150 text-left",
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        )}
+                      >
+                        <Icon className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")} />
+                        <span>{section.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </ScrollArea>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </MainLayout>
   );
 }
