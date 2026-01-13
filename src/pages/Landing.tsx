@@ -66,10 +66,10 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              ERP Complet pour les Entreprises du Maghreb
+              Une seule plateforme pour piloter l'ensemble de votre entreprise
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Gérez vos <strong>Achats</strong>, <strong>Stock</strong>, <strong>Finance</strong>, <strong>Comptabilité</strong> et <strong>Ressources Humaines</strong> sur une seule plateforme moderne et intuitive.
+              Centralisez vos opérations, maîtrisez votre trésorerie et structurez vos processus avec un ERP pensé pour la croissance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild className="text-lg px-8">
