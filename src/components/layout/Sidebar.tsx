@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -112,23 +112,29 @@ const menuGroups = [
       { icon: Banknote, label: "Paie", path: "/payroll" },
     ],
   },
-  {
-    id: "parametres",
-    title: "Paramètres",
-    icon: Settings,
-    items: [
-      { icon: Building2, label: "Entreprise", path: "/settings/company" },
-      { icon: Users, label: "Utilisateurs", path: "/settings/users" },
-      { icon: Percent, label: "Taxes", path: "/settings/taxes" },
-      { icon: Wrench, label: "Configuration", path: "/settings/config" },
-    ],
-  },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // On mobile, always show full sidebar (not collapsed)
+  const effectiveCollapsed = isMobile ? false : collapsed;
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) =>
@@ -146,65 +152,81 @@ export function Sidebar() {
     setOpenGroups(activeGroup ? [activeGroup.id] : []);
   };
 
+  const handleItemClick = () => {
+    // Close sidebar on mobile when item is clicked
+    if (window.innerWidth < 1024 && onClose) {
+      onClose();
+    }
+  };
+
   return (
     <aside
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "h-screen bg-[#1e293b] text-white flex flex-col transition-all duration-300 sticky top-0 border-r border-slate-700/50",
-        collapsed ? "w-16" : "w-60"
+        "h-screen bg-sidebar text-white flex flex-col transition-all duration-300 border-r border-sidebar-border/50 shadow-xl",
+        effectiveCollapsed ? "w-20" : "w-72",
+        "lg:sticky lg:top-0"
       )}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-slate-700/50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-primary" />
+      <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border/50 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
-          {!collapsed && (
-            <span className="font-semibold text-sm tracking-tight animate-fade-in">
+          {!effectiveCollapsed && (
+            <span className="font-bold text-lg tracking-tight animate-fade-in text-white drop-shadow-sm">
               Maghreb ERP
             </span>
           )}
         </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-slate-700/50 transition-colors text-slate-400 hover:text-white"
+          className="hidden lg:flex p-2 rounded-md hover:bg-white/20 transition-colors text-white/80 hover:text-white backdrop-blur-sm"
         >
           {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           ) : (
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           )}
+        </button>
+        {/* Close button for mobile */}
+        <button
+          onClick={onClose}
+          className="lg:hidden p-2 rounded-md hover:bg-white/20 transition-colors text-white/80 hover:text-white backdrop-blur-sm"
+        >
+          <ChevronLeft className="w-5 h-5" />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+      <nav className="flex-1 px-4 py-4 overflow-y-auto">
         {/* Dashboard - Always visible */}
-        <div className="mb-4">
-          {!collapsed && (
-            <span className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+        <div className="mb-5">
+          {!effectiveCollapsed && (
+            <span className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/70">
               Tableau de bord
             </span>
           )}
-          <div className="space-y-0.5 mt-1">
+          <div className="space-y-1 mt-2">
             {dashboardItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={handleItemClick}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-semibold transition-all duration-150",
                     isActive
-                      ? "bg-primary/20 text-primary font-medium"
-                      : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                      ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+                      : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
                   )}
                 >
                   <item.icon
-                    className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")}
+                    className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")}
                   />
-                  {!collapsed && (
+                  {!effectiveCollapsed && (
                     <span className="truncate animate-fade-in">{item.label}</span>
                   )}
                 </NavLink>
@@ -220,21 +242,21 @@ export function Sidebar() {
           );
 
           return (
-            <div key={group.id} className={cn(groupIndex > 0 && "mt-2")}>
-              {!collapsed && (
+            <div key={group.id} className={cn(groupIndex > 0 && "mt-3")}>
+              {!effectiveCollapsed && (
                 <button
                   onClick={() => toggleGroup(group.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors",
+                    "w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-colors",
                     hasActiveItem
-                      ? "text-primary/80"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
+                      ? "text-white/95"
+                      : "text-white/70 hover:text-white/90 hover:bg-white/10"
                   )}
                 >
                   <span>{group.title}</span>
                   <ChevronDown
                     className={cn(
-                      "w-3 h-3 transition-transform duration-200",
+                      "w-4 h-4 transition-transform duration-200",
                       isOpen && "rotate-180"
                     )}
                   />
@@ -243,25 +265,26 @@ export function Sidebar() {
               <div
                 className={cn(
                   "overflow-hidden transition-all duration-200",
-                  !collapsed && !isOpen ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                  !effectiveCollapsed && !isOpen ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
                 )}
               >
-                <div className="space-y-0.5 mt-1">
+                <div className="space-y-1 mt-2">
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
                       <NavLink
                         key={item.path}
                         to={item.path}
+                        onClick={handleItemClick}
                         className={cn(
-                          "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-all duration-150",
+                          "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
                           isActive
-                            ? "bg-primary/20 text-primary font-medium"
-                            : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                            ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+                            : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
                         )}
                       >
                         <item.icon
-                          className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")}
+                          className={cn("w-5 h-5 flex-shrink-0", isActive && "text-white")}
                         />
                         {!collapsed && (
                           <span className="truncate animate-fade-in">{item.label}</span>
@@ -277,15 +300,33 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-slate-700/50">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-xs font-medium text-primary">A</span>
+      <div className="p-4 border-t border-sidebar-border/50 backdrop-blur-sm space-y-3">
+        {/* Paramètres */}
+        <NavLink
+          to="/settings"
+          onClick={handleItemClick}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
+            location.pathname === "/settings"
+              ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+              : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
+          )}
+        >
+          <Settings className={cn("w-5 h-5 flex-shrink-0", location.pathname === "/settings" && "text-white")} />
+          {!effectiveCollapsed && (
+            <span className="truncate animate-fade-in">Paramètres</span>
+          )}
+        </NavLink>
+
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-2 py-2">
+          <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-md">
+            <span className="text-sm font-bold text-white">A</span>
           </div>
-          {!collapsed && (
+          {!effectiveCollapsed && (
             <div className="animate-fade-in min-w-0">
-              <p className="text-xs font-medium truncate">Admin</p>
-              <p className="text-[10px] text-slate-400 truncate">Entreprise SA</p>
+              <p className="text-sm font-bold truncate text-white">Admin</p>
+              <p className="text-xs text-white/70 truncate font-medium">Entreprise SA</p>
             </div>
           )}
         </div>

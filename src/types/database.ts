@@ -36,6 +36,7 @@ export interface Client {
   phone: string;
   email: string;
   address: string;
+  tax_number?: string;
   company_id: string;
   balance: number;
 }
@@ -46,6 +47,7 @@ export interface Supplier {
   phone: string;
   email: string;
   address: string;
+  tax_number?: string;
   company_id: string;
   balance: number;
 }

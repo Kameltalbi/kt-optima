@@ -22,11 +22,11 @@ export function RevenueChart() {
   return (
     <div className="erp-card animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-accent/10">
-          <BarChart3 className="w-5 h-5 text-accent" />
+        <div className="p-2.5 rounded-xl bg-secondary shadow-lg shadow-secondary/20">
+          <BarChart3 className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold">Revenus & Dépenses</h3>
+          <h3 className="text-lg font-bold text-foreground">Revenus & Dépenses</h3>
           <p className="text-sm text-muted-foreground">6 derniers mois</p>
         </div>
       </div>
@@ -36,47 +36,48 @@ export function RevenueChart() {
           <AreaChart data={data}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(144, 26%, 45%)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="hsl(144, 26%, 45%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(29, 47%, 57%)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="hsl(29, 47%, 57%)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 20%, 88%)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
             <XAxis 
               dataKey="month" 
-              tick={{ fill: 'hsl(217, 20%, 45%)', fontSize: 12 }}
-              axisLine={{ stroke: 'hsl(214, 20%, 88%)' }}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+              axisLine={{ stroke: 'hsl(var(--border))' }}
             />
             <YAxis 
-              tick={{ fill: 'hsl(217, 20%, 45%)', fontSize: 12 }}
-              axisLine={{ stroke: 'hsl(214, 20%, 88%)' }}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+              axisLine={{ stroke: 'hsl(var(--border))' }}
               tickFormatter={(value) => `${value / 1000}k`}
             />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: 'hsl(0, 0%, 100%)',
-                border: '1px solid hsl(214, 20%, 88%)',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px hsl(222, 47%, 11%, 0.1)'
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '12px',
+                boxShadow: 'var(--shadow-lg)',
+                padding: '12px'
               }}
               formatter={(value: number) => [`${value.toLocaleString()} MAD`, '']}
             />
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="hsl(142, 71%, 45%)"
-              strokeWidth={2}
+              stroke="hsl(144, 26%, 45%)"
+              strokeWidth={3}
               fill="url(#revenueGradient)"
               name="Revenus"
             />
             <Area
               type="monotone"
               dataKey="expenses"
-              stroke="hsl(38, 92%, 50%)"
-              strokeWidth={2}
+              stroke="hsl(29, 47%, 57%)"
+              strokeWidth={3}
               fill="url(#expenseGradient)"
               name="Dépenses"
             />

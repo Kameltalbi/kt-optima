@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -35,83 +34,86 @@ import {
   Printer,
   DollarSign,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Invoice } from "@/types/database";
 import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 
-const mockInvoices: Invoice[] = [
-  { id: "1", number: "FAC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "paid", company_id: "1" },
-  { id: "2", number: "FAC-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "sent", company_id: "1" },
-  { id: "3", number: "FAC-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "overdue", company_id: "1" },
-  { id: "4", number: "FAC-2024-004", client_id: "4", date: "2024-01-03", total: 5200, tax: 1040, status: "paid", company_id: "1" },
-  { id: "5", number: "FAC-2024-005", client_id: "1", date: "2024-01-02", total: 12800, tax: 2560, status: "draft", company_id: "1" },
+const mockPurchaseOrders: Invoice[] = [
+  { id: "1", number: "BC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "sent", company_id: "1" },
+  { id: "2", number: "BC-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "confirmed", company_id: "1" },
+  { id: "3", number: "BC-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "received", company_id: "1" },
+  { id: "4", number: "BC-2024-004", client_id: "4", date: "2024-01-03", total: 5200, tax: 1040, status: "sent", company_id: "1" },
+  { id: "5", number: "BC-2024-005", client_id: "1", date: "2024-01-02", total: 12800, tax: 2560, status: "draft", company_id: "1" },
 ];
 
-const clientNames: Record<string, string> = {
-  "1": "Société Alpha",
-  "2": "Entreprise Beta",
-  "3": "Commerce Gamma",
-  "4": "Services Delta",
+const supplierNames: Record<string, string> = {
+  "1": "Fournisseur Alpha",
+  "2": "Entreprise Beta Supply",
+  "3": "Commerce Gamma Pro",
+  "4": "Services Delta Corp",
 };
 
 const statusStyles = {
-  paid: "bg-success/10 text-success border-0",
-  sent: "bg-info/10 text-info border-0",
-  overdue: "bg-destructive/10 text-destructive border-0",
-  draft: "bg-warning/10 text-warning border-0",
+  confirmed: "bg-success/10 text-success border-0",
+  received: "bg-info/10 text-info border-0",
+  sent: "bg-warning/10 text-warning border-0",
+  draft: "bg-muted/10 text-muted-foreground border-0",
+  cancelled: "bg-destructive/10 text-destructive border-0",
 };
 
 const statusLabels = {
-  paid: "Payée",
-  sent: "Envoyée",
-  overdue: "En retard",
+  confirmed: "Confirmé",
+  received: "Reçu",
+  sent: "Envoyé",
   draft: "Brouillon",
+  cancelled: "Annulé",
 };
 
-export default function Invoices() {
+export default function PurchaseOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Invoice | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const filteredInvoices = mockInvoices.filter((invoice) => {
-    const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clientNames[invoice.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+  const filteredOrders = mockPurchaseOrders.filter((order) => {
+    const matchesSearch = order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplierNames[order.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalInvoices = mockInvoices.length;
-  const totalAmount = mockInvoices.reduce((sum, inv) => sum + inv.total, 0);
-  const paidAmount = mockInvoices
-    .filter(inv => inv.status === "paid")
-    .reduce((sum, inv) => sum + inv.total, 0);
-  const pendingAmount = mockInvoices
-    .filter(inv => inv.status === "sent" || inv.status === "overdue")
-    .reduce((sum, inv) => sum + inv.total, 0);
+  const totalOrders = mockPurchaseOrders.length;
+  const totalAmount = mockPurchaseOrders.reduce((sum, o) => sum + o.total, 0);
+  const confirmedAmount = mockPurchaseOrders
+    .filter(o => o.status === "confirmed" || o.status === "received")
+    .reduce((sum, o) => sum + o.total, 0);
+  const pendingAmount = mockPurchaseOrders
+    .filter(o => o.status === "sent")
+    .reduce((sum, o) => sum + o.total, 0);
 
-  const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
+  const handleViewOrder = (order: Invoice) => {
+    setSelectedOrder(order);
     setIsViewModalOpen(true);
   };
 
-  const handleCreateInvoice = () => {
+  const handleCreateOrder = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveInvoice = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    console.log("Saving invoice:", data);
+  const handleSaveOrder = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+    console.log("Saving purchase order:", data);
     setIsCreateModalOpen(false);
-    // Ici vous pouvez ajouter la logique pour sauvegarder la facture
+    // Ici vous pouvez ajouter la logique pour sauvegarder le bon de commande
   };
 
   return (
     <MainLayout
-      title="Factures"
-      subtitle="Gérez vos factures et paiements"
+      title="Bons de commande"
+      subtitle="Gérez vos commandes fournisseurs"
     >
       <div className="space-y-6">
         {/* Stats Cards */}
@@ -120,11 +122,11 @@ export default function Invoices() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total factures</p>
-                  <p className="text-2xl font-bold mt-1">{totalInvoices}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total commandes</p>
+                  <p className="text-2xl font-bold mt-1">{totalOrders}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-primary/10">
-                  <FileText className="w-5 h-5 text-primary" />
+                  <ShoppingCart className="w-5 h-5 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -150,9 +152,9 @@ export default function Invoices() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payées</p>
+                  <p className="text-sm font-medium text-muted-foreground">Confirmés/Reçus</p>
                   <p className="text-2xl font-bold mt-1 text-success">
-                    {paidAmount.toLocaleString()} MAD
+                    {confirmedAmount.toLocaleString()} MAD
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-success/10">
@@ -185,7 +187,7 @@ export default function Invoices() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher par numéro ou client..."
+                placeholder="Rechercher par numéro ou fournisseur..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 w-64"
@@ -198,19 +200,20 @@ export default function Invoices() {
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="draft">Brouillon</SelectItem>
-                <SelectItem value="sent">Envoyée</SelectItem>
-                <SelectItem value="paid">Payée</SelectItem>
-                <SelectItem value="overdue">En retard</SelectItem>
+                <SelectItem value="sent">Envoyé</SelectItem>
+                <SelectItem value="confirmed">Confirmé</SelectItem>
+                <SelectItem value="received">Reçu</SelectItem>
+                <SelectItem value="cancelled">Annulé</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button 
             className="bg-primary hover:bg-primary/90"
-            onClick={handleCreateInvoice}
+            onClick={handleCreateOrder}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Nouvelle facture
+            Nouveau bon de commande
           </Button>
         </div>
 
@@ -221,8 +224,8 @@ export default function Invoices() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">N° Facture</TableHead>
-                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">N° Bon de commande</TableHead>
+                    <TableHead className="font-semibold">Fournisseur</TableHead>
                     <TableHead className="font-semibold">Date</TableHead>
                     <TableHead className="text-right font-semibold">HT</TableHead>
                     <TableHead className="text-right font-semibold">TVA</TableHead>
@@ -232,35 +235,35 @@ export default function Invoices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInvoices.length === 0 ? (
+                  {filteredOrders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Aucune facture trouvée
+                        Aucun bon de commande trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredInvoices.map((invoice) => (
-                      <TableRow key={invoice.id} className="hover:bg-muted/30 transition-colors">
+                    filteredOrders.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-semibold">{invoice.number}</span>
+                            <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-semibold">{order.number}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{clientNames[invoice.client_id]}</TableCell>
-                        <TableCell>{new Date(invoice.date).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell>{supplierNames[order.client_id]}</TableCell>
+                        <TableCell>{new Date(order.date).toLocaleDateString('fr-FR')}</TableCell>
                         <TableCell className="text-right">
-                          {(invoice.total - invoice.tax).toLocaleString()} MAD
+                          {(order.total - order.tax).toLocaleString()} MAD
                         </TableCell>
                         <TableCell className="text-right">
-                          {invoice.tax.toLocaleString()} MAD
+                          {order.tax.toLocaleString()} MAD
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {invoice.total.toLocaleString()} MAD
+                          {order.total.toLocaleString()} MAD
                         </TableCell>
                         <TableCell>
-                          <span className={cn("erp-badge text-xs", statusStyles[invoice.status])}>
-                            {statusLabels[invoice.status]}
+                          <span className={cn("erp-badge text-xs", statusStyles[order.status as keyof typeof statusStyles])}>
+                            {statusLabels[order.status as keyof typeof statusLabels]}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -269,7 +272,7 @@ export default function Invoices() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8"
-                              onClick={() => handleViewInvoice(invoice)}
+                              onClick={() => handleViewOrder(order)}
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -291,26 +294,26 @@ export default function Invoices() {
         </Card>
       </div>
 
-      {/* Modal pour créer une nouvelle facture */}
+      {/* Modal pour créer un nouveau bon de commande */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <div className="overflow-y-auto max-h-[95vh]">
             <DocumentTemplate
-              docType="facture"
+              docType="bon_commande"
               readOnly={false}
-              onSave={handleSaveInvoice}
+              onSave={handleSaveOrder}
             />
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Modal pour voir une facture existante */}
+      {/* Modal pour voir un bon de commande existant */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-bold">
-                {selectedInvoice?.number}
+                {selectedOrder?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
                 <Button 
@@ -350,7 +353,7 @@ export default function Invoices() {
           </DialogHeader>
           <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
-              docType="facture"
+              docType="bon_commande"
               readOnly={true}
             />
           </div>

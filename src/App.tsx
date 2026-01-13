@@ -5,7 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
+import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";
+import DeliveryNotes from "./pages/DeliveryNotes";
+import SalesStats from "./pages/SalesStats";
+import Suppliers from "./pages/Suppliers";
+import PurchaseOrders from "./pages/PurchaseOrders";
 import Treasury from "./pages/Treasury";
 import Settings from "./pages/Settings";
 import ComingSoon from "./pages/ComingSoon";
@@ -27,14 +32,14 @@ const App = () => (
           
           {/* Commercial */}
           <Route path="/clients" element={<Clients />} />
-          <Route path="/quotes" element={<ComingSoon title="Devis" subtitle="Gestion des devis clients" />} />
+          <Route path="/quotes" element={<Quotes />} />
           <Route path="/invoices" element={<Invoices />} />
-          <Route path="/delivery-notes" element={<ComingSoon title="Bons de livraison" subtitle="Suivi des livraisons" />} />
-          <Route path="/sales-stats" element={<ComingSoon title="Statistiques ventes" subtitle="Analyses commerciales" />} />
+          <Route path="/delivery-notes" element={<DeliveryNotes />} />
+          <Route path="/sales-stats" element={<SalesStats />} />
           
           {/* Achats */}
-          <Route path="/suppliers" element={<ComingSoon title="Fournisseurs" subtitle="Gestion des fournisseurs" />} />
-          <Route path="/purchase-orders" element={<ComingSoon title="Commandes" subtitle="Commandes fournisseurs" />} />
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/purchase-orders" element={<PurchaseOrders />} />
           <Route path="/receptions" element={<ComingSoon title="Réceptions" subtitle="Réception des marchandises" />} />
           <Route path="/supplier-invoices" element={<ComingSoon title="Factures fournisseurs" subtitle="Factures d'achat" />} />
           
@@ -65,10 +70,6 @@ const App = () => (
           
           {/* Paramètres */}
           <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/company" element={<Settings />} />
-          <Route path="/settings/users" element={<Settings />} />
-          <Route path="/settings/taxes" element={<Settings />} />
-          <Route path="/settings/config" element={<Settings />} />
           
           {/* Documents */}
           <Route path="/documents/preview" element={<DocumentPreview />} />
