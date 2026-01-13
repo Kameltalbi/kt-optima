@@ -10,6 +10,7 @@ import Treasury from "./pages/Treasury";
 import Settings from "./pages/Settings";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
+import DocumentPreview from "./pages/DocumentPreview";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,9 @@ const App = () => (
           <Route path="/settings/users" element={<Settings />} />
           <Route path="/settings/taxes" element={<Settings />} />
           <Route path="/settings/config" element={<Settings />} />
+          
+          {/* Documents */}
+          <Route path="/documents/preview" element={<DocumentPreview />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
