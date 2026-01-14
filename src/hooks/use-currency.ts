@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Currency, defaultCurrencies } from '@/types/currency';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'bilvoxa_erp_currencies';
-const DEFAULT_CURRENCY_KEY = 'bilvoxa_erp_default_currency';
 
 export function useCurrency() {
+  const { company } = useAuth();
+  
   const [currencies, setCurrencies] = useState<Currency[]>(() => {
     // Charger depuis localStorage ou utiliser les devises par défaut
     if (typeof window !== 'undefined') {
@@ -20,33 +23,31 @@ export function useCurrency() {
     return defaultCurrencies;
   });
 
-  const [defaultCurrency, setDefaultCurrency] = useState<Currency | null>(() => {
-    if (typeof window !== 'undefined') {
-      const storedId = localStorage.getItem(DEFAULT_CURRENCY_KEY);
-      if (storedId) {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          try {
-            const allCurrencies = JSON.parse(stored);
-            return allCurrencies.find((c: Currency) => c.id === storedId) || allCurrencies.find((c: Currency) => c.isDefault) || allCurrencies[0];
-          } catch {
-            return defaultCurrencies.find(c => c.isDefault) || defaultCurrencies[0];
-          }
-        }
-      }
-    }
-    return currencies.find(c => c.isDefault) || currencies[0];
+  // La devise par défaut est déterminée par la company en base de données
+  const [defaultCurrency, setDefaultCurrencyState] = useState<Currency | null>(() => {
+    // Initialiser avec la première devise par défaut
+    return defaultCurrencies.find(c => c.isDefault) || defaultCurrencies[0];
   });
 
-  // Sauvegarder dans localStorage à chaque changement
+  // Synchroniser la devise par défaut avec la company de la base de données
+  useEffect(() => {
+    if (company?.currency) {
+      // Chercher la devise correspondante dans la liste
+      const companyCurrency = currencies.find(c => c.code === company.currency);
+      if (companyCurrency) {
+        setDefaultCurrencyState(companyCurrency);
+        // Mettre à jour isDefault dans la liste
+        setCurrencies(prev => prev.map(c => ({ ...c, isDefault: c.code === company.currency })));
+      }
+    }
+  }, [company?.currency, currencies.length]);
+
+  // Sauvegarder les devises dans localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currencies));
-      if (defaultCurrency) {
-        localStorage.setItem(DEFAULT_CURRENCY_KEY, defaultCurrency.id);
-      }
     }
-  }, [currencies, defaultCurrency]);
+  }, [currencies]);
 
   const addCurrency = useCallback((currency: Omit<Currency, 'id' | 'isDefault'>) => {
     const newCurrency: Currency = {
@@ -61,7 +62,7 @@ export function useCurrency() {
   const updateCurrency = useCallback((id: string, updates: Partial<Currency>) => {
     setCurrencies(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     if (defaultCurrency?.id === id) {
-      setDefaultCurrency(prev => prev ? { ...prev, ...updates } : null);
+      setDefaultCurrencyState(prev => prev ? { ...prev, ...updates } : null);
     }
   }, [defaultCurrency]);
 
@@ -70,25 +71,47 @@ export function useCurrency() {
       const filtered = prev.filter(c => c.id !== id);
       // Si on supprime la devise par défaut, définir la première comme défaut
       if (defaultCurrency?.id === id && filtered.length > 0) {
-        setDefaultCurrency(filtered[0]);
+        setDefaultCurrencyState(filtered[0]);
       }
       return filtered;
     });
   }, [defaultCurrency]);
 
-  const setAsDefault = useCallback((id: string) => {
-    setCurrencies(prev => prev.map(c => ({ ...c, isDefault: c.id === id })));
+  // Définir une devise comme défaut et mettre à jour la company en base
+  const setAsDefault = useCallback(async (id: string) => {
     const currency = currencies.find(c => c.id === id);
-    if (currency) {
-      setDefaultCurrency(currency);
+    if (!currency) return;
+
+    // Mettre à jour localement
+    setCurrencies(prev => prev.map(c => ({ ...c, isDefault: c.id === id })));
+    setDefaultCurrencyState(currency);
+
+    // Mettre à jour en base de données si une company existe
+    if (company?.id) {
+      try {
+        const { error } = await supabase
+          .from('companies')
+          .update({ currency: currency.code })
+          .eq('id', company.id);
+        
+        if (error) {
+          console.error('Erreur lors de la mise à jour de la devise:', error);
+        }
+      } catch (err) {
+        console.error('Erreur lors de la mise à jour de la devise:', err);
+      }
     }
-  }, [currencies]);
+  }, [currencies, company?.id]);
 
   const formatAmount = useCallback((amount: number, currency?: Currency) => {
     const curr = currency || defaultCurrency;
     if (!curr) return amount.toFixed(2);
     
-    const formatted = amount.toFixed(curr.decimalPlaces);
+    const formatted = amount.toLocaleString('fr-FR', {
+      minimumFractionDigits: curr.decimalPlaces,
+      maximumFractionDigits: curr.decimalPlaces,
+    });
+    
     if (curr.symbolPosition === 'before') {
       return `${curr.symbol}${formatted}`;
     }
