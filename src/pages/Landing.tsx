@@ -556,8 +556,8 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <ul className="space-y-2 text-sm">
-                <li className="text-muted-foreground">contact@bilvoxaerp.com</li>
-                <li className="text-muted-foreground">+216 XX XXX XXX</li>
+                <li className="text-muted-foreground">contact@ktconsulting.info</li>
+                <li className="text-muted-foreground">+21698704385</li>
               </ul>
             </div>
           </div>
