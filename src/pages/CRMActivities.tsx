@@ -38,6 +38,7 @@ import {
   Calendar,
   CheckSquare,
   Users,
+  Eye,
   Building2,
   TrendingUp,
 } from "lucide-react";

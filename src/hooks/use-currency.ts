@@ -103,5 +103,6 @@ export function useCurrency() {
     deleteCurrency,
     setAsDefault,
     formatAmount,
+    formatCurrency: formatAmount, // Alias for backward compatibility
   };
 }

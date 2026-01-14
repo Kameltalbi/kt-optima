@@ -45,7 +45,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Evaluation, EvaluationCampaign } from "@/types/database";
 
 export default function Evaluations() {
-  const { evaluations, campaigns, employees, saveEvaluations, saveCampaigns } = useHR();
+  const { evaluations, campaigns, employees, saveEvaluations } = useHR();
   const { companyId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");

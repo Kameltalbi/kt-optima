@@ -37,10 +37,23 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Invoice } from "@/types/database";
 import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 
-const mockPurchaseOrders: Invoice[] = [
+// Local type for purchase orders with extended status
+type PurchaseOrderStatus = 'draft' | 'sent' | 'confirmed' | 'received' | 'cancelled';
+
+interface PurchaseOrder {
+  id: string;
+  number: string;
+  client_id: string;
+  date: string;
+  total: number;
+  tax: number;
+  status: PurchaseOrderStatus;
+  company_id: string;
+}
+
+const mockPurchaseOrders: PurchaseOrder[] = [
   { id: "1", number: "BC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "sent", company_id: "1" },
   { id: "2", number: "BC-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "confirmed", company_id: "1" },
   { id: "3", number: "BC-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "received", company_id: "1" },
@@ -74,7 +87,7 @@ const statusLabels = {
 export default function PurchaseOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedOrder, setSelectedOrder] = useState<Invoice | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -94,7 +107,7 @@ export default function PurchaseOrders() {
     .filter(o => o.status === "sent")
     .reduce((sum, o) => sum + o.total, 0);
 
-  const handleViewOrder = (order: Invoice) => {
+  const handleViewOrder = (order: PurchaseOrder) => {
     setSelectedOrder(order);
     setIsViewModalOpen(true);
   };
