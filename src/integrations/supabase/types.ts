@@ -1529,6 +1529,10 @@ export type Database = {
     }
     Functions: {
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
+      get_user_company_id_from_roles: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1537,6 +1541,10 @@ export type Database = {
         Returns: boolean
       }
       user_belongs_to_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_has_admin_role: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
