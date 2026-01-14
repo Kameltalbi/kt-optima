@@ -38,7 +38,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Invoice } from "@/types/database";
-import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
+import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mockInvoices: Invoice[] = [
   { id: "1", number: "FAC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "paid", company_id: "1" },
@@ -70,11 +71,24 @@ const statusLabels = {
 };
 
 export default function Invoices() {
+  const { company } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Construire les infos entreprise depuis le contexte Auth
+  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+    nom: company.name,
+    adresse: company.address || '',
+    ville: '',
+    tel: company.phone || '',
+    email: company.email || '',
+    mf: company.tax_number || '',
+    logo: company.logo || undefined,
+    piedDePage: company.footer || ''
+  } : undefined;
 
   const filteredInvoices = mockInvoices.filter((invoice) => {
     const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -293,6 +307,7 @@ export default function Invoices() {
           <div className="overflow-y-auto max-h-[95vh]">
             <DocumentTemplate
               docType="facture"
+              entreprise={entrepriseInfo}
               readOnly={false}
               onSave={handleSaveInvoice}
             />
@@ -347,6 +362,7 @@ export default function Invoices() {
           <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
               docType="facture"
+              entreprise={entrepriseInfo}
               readOnly={true}
             />
           </div>

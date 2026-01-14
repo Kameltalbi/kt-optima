@@ -62,7 +62,7 @@ export default function Clients() {
   const [formData, setFormData] = useState({
     code: "",
     nom: "",
-    type: "prospect" as "prospect" | "client",
+    type: "prospect" as string,
     email: "",
     telephone: "",
     adresse: "",
