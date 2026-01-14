@@ -23,11 +23,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,10 +35,11 @@ export default function Landing() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl text-foreground">BilvoxaERP</span>
+              <img 
+                src="/logo KTO.png" 
+                alt="BilvoxaERP" 
+                className="h-14 w-auto object-contain"
+              />
             </div>
 
             {/* Navigation Desktop */}
@@ -66,11 +65,11 @@ export default function Landing() {
               </Button>
             </div>
 
-            {/* Mobile Menu Button */}
-            {isMobile && (
+            {/* Mobile Menu Button - Always show on mobile, hide on desktop */}
+            <div className="md:hidden">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -115,7 +114,7 @@ export default function Landing() {
                   </nav>
                 </SheetContent>
               </Sheet>
-            )}
+            </div>
           </div>
         </div>
       </header>
@@ -504,10 +503,11 @@ export default function Landing() {
           <div className="grid sm:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="font-bold text-lg">BilvoxaERP</span>
+                <img 
+                  src="/logo KTO.png" 
+                  alt="BilvoxaERP" 
+                  className="h-12 w-auto object-contain"
+                />
               </div>
               <p className="text-sm text-muted-foreground">
                 ERP complet pour les entreprises du Maghreb

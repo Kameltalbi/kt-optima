@@ -2,13 +2,17 @@
 -- BILVOXA ERP - CORE TABLES
 -- ============================================
 
--- Create app_role enum for user roles
-CREATE TYPE public.app_role AS ENUM ('admin', 'manager', 'user', 'accountant', 'hr', 'sales');
+-- Create app_role enum for user roles (if not exists)
+DO $$ BEGIN
+    CREATE TYPE public.app_role AS ENUM ('admin', 'manager', 'user', 'accountant', 'hr', 'sales');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================
 -- COMPANIES TABLE
 -- ============================================
-CREATE TABLE public.companies (
+CREATE TABLE IF NOT EXISTS public.companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     logo TEXT,
@@ -28,7 +32,7 @@ ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
 -- ============================================
 -- USER ROLES TABLE (separate from profiles for security)
 -- ============================================
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE NOT NULL,
@@ -43,7 +47,7 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 -- ============================================
 -- PROFILES TABLE
 -- ============================================
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
     company_id UUID REFERENCES public.companies(id) ON DELETE SET NULL,
@@ -108,6 +112,7 @@ $$;
 -- ============================================
 -- RLS POLICIES FOR COMPANIES
 -- ============================================
+DROP POLICY IF EXISTS "Users can view their own company" ON public.companies;
 CREATE POLICY "Users can view their own company"
 ON public.companies
 FOR SELECT
@@ -115,6 +120,7 @@ USING (
     id IN (SELECT company_id FROM public.profiles WHERE user_id = auth.uid())
 );
 
+DROP POLICY IF EXISTS "Admins can update their company" ON public.companies;
 CREATE POLICY "Admins can update their company"
 ON public.companies
 FOR UPDATE
@@ -123,6 +129,7 @@ USING (
     AND public.has_role(auth.uid(), 'admin')
 );
 
+DROP POLICY IF EXISTS "Authenticated users can create companies" ON public.companies;
 CREATE POLICY "Authenticated users can create companies"
 ON public.companies
 FOR INSERT
@@ -131,6 +138,7 @@ WITH CHECK (auth.uid() IS NOT NULL);
 -- ============================================
 -- RLS POLICIES FOR PROFILES
 -- ============================================
+DROP POLICY IF EXISTS "Users can view profiles in same company" ON public.profiles;
 CREATE POLICY "Users can view profiles in same company"
 ON public.profiles
 FOR SELECT
@@ -139,11 +147,13 @@ USING (
     OR user_id = auth.uid()
 );
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
 ON public.profiles
 FOR UPDATE
 USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile"
 ON public.profiles
 FOR INSERT
@@ -152,6 +162,7 @@ WITH CHECK (user_id = auth.uid());
 -- ============================================
 -- RLS POLICIES FOR USER_ROLES
 -- ============================================
+DROP POLICY IF EXISTS "Users can view roles in their company" ON public.user_roles;
 CREATE POLICY "Users can view roles in their company"
 ON public.user_roles
 FOR SELECT
@@ -159,6 +170,7 @@ USING (
     company_id IN (SELECT company_id FROM public.profiles WHERE user_id = auth.uid())
 );
 
+DROP POLICY IF EXISTS "Admins can manage roles in their company" ON public.user_roles;
 CREATE POLICY "Admins can manage roles in their company"
 ON public.user_roles
 FOR ALL
@@ -178,10 +190,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_companies_updated_at ON public.companies;
 CREATE TRIGGER update_companies_updated_at
 BEFORE UPDATE ON public.companies
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

@@ -71,13 +71,24 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          {!effectiveCollapsed && (
-            <span className="font-bold text-lg tracking-tight animate-fade-in text-white drop-shadow-sm">
-              BilvoxaERP
-            </span>
+          {company?.logo ? (
+            <img 
+              src={company.logo} 
+              alt={company.name || "Logo entreprise"} 
+              className="h-14 w-auto object-contain"
+              onError={(e) => {
+                // Fallback si l'image ne charge pas
+                e.currentTarget.style.display = 'none';
+                if (e.currentTarget.nextElementSibling) {
+                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                }
+              }}
+            />
+          ) : null}
+          {(!company?.logo || !company) && (
+            <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
           )}
         </div>
         <button

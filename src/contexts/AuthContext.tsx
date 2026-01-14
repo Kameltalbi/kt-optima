@@ -22,6 +22,7 @@ interface Company {
   language: string;
   logo: string | null;
   footer: string | null;
+  plan?: "core" | "business" | "enterprise";
 }
 
 interface AuthContextType {
