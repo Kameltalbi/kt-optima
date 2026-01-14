@@ -38,35 +38,149 @@ import {
   Mail,
   MapPin,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Client } from "@/types/database";
-
-const mockClients: Client[] = [
-  { id: "1", name: "Société Alpha", phone: "+212 522 123 456", email: "contact@alpha.ma", address: "Casablanca", tax_number: "123456789", company_id: "1", balance: 15000 },
-  { id: "2", name: "Entreprise Beta", phone: "+212 537 654 321", email: "info@beta.ma", address: "Rabat", tax_number: "987654321", company_id: "1", balance: 8500 },
-  { id: "3", name: "Commerce Gamma", phone: "+212 528 987 654", email: "sales@gamma.ma", address: "Marrakech", tax_number: "456789123", company_id: "1", balance: -2200 },
-  { id: "4", name: "Services Delta", phone: "+212 535 111 222", email: "contact@delta.ma", address: "Fès", tax_number: "789123456", company_id: "1", balance: 0 },
-  { id: "5", name: "Tech Solutions", phone: "+212 522 999 888", email: "info@tech.ma", address: "Casablanca", tax_number: "321654987", company_id: "1", balance: 32000 },
-  { id: "6", name: "Global Trade", phone: "+212 537 777 666", email: "contact@global.ma", address: "Tanger", tax_number: "654987321", company_id: "1", balance: 12500 },
-];
+import { useClients } from "@/hooks/use-clients";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Clients() {
+  const { clients, loading, createClient, updateClient, deleteClient, searchClients } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    code: "",
+    nom: "",
+    type: "prospect" as "prospect" | "client",
+    email: "",
+    telephone: "",
+    adresse: "",
+    ville: "",
+    code_postal: "",
+    pays: "Tunisie",
+    numero_fiscal: "",
+    numero_registre_commerce: "",
+    site_web: "",
+    notes: "",
+  });
 
-  const filteredClients = mockClients.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone.includes(searchTerm) ||
-    c.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.tax_number && c.tax_number.includes(searchTerm))
-  );
+  const filteredClients = searchTerm 
+    ? searchClients(searchTerm)
+    : clients.filter(c => c.actif);
 
-  const totalClients = mockClients.length;
-  const totalBalance = mockClients.reduce((sum, c) => sum + (c.balance || 0), 0);
-  const activeClients = mockClients.filter(c => c.balance > 0).length;
+  const totalClients = clients.length;
+  const totalBalance = clients.reduce((sum, c) => sum + (c.solde_actuel || 0), 0);
+  const activeClients = clients.filter(c => c.actif && c.solde_actuel > 0).length;
+
+  const handleOpenDialog = (clientId?: string) => {
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        setEditingClient(clientId);
+        setFormData({
+          code: client.code || "",
+          nom: client.nom,
+          type: client.type,
+          email: client.email || "",
+          telephone: client.telephone || "",
+          adresse: client.adresse || "",
+          ville: client.ville || "",
+          code_postal: client.code_postal || "",
+          pays: client.pays || "Tunisie",
+          numero_fiscal: client.numero_fiscal || "",
+          numero_registre_commerce: client.numero_registre_commerce || "",
+          site_web: client.site_web || "",
+          notes: client.notes || "",
+        });
+      }
+    } else {
+      setEditingClient(null);
+      setFormData({
+        code: "",
+        nom: "",
+        type: "prospect",
+        email: "",
+        telephone: "",
+        adresse: "",
+        ville: "",
+        code_postal: "",
+        pays: "Tunisie",
+        numero_fiscal: "",
+        numero_registre_commerce: "",
+        site_web: "",
+        notes: "",
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingClient(null);
+    setFormData({
+      code: "",
+      nom: "",
+      type: "prospect",
+      email: "",
+      telephone: "",
+      adresse: "",
+      ville: "",
+      code_postal: "",
+      pays: "Tunisie",
+      numero_fiscal: "",
+      numero_registre_commerce: "",
+      site_web: "",
+      notes: "",
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.nom.trim()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (editingClient) {
+        await updateClient(editingClient, formData);
+      } else {
+        await createClient({
+          ...formData,
+          solde_initial: 0,
+          solde_actuel: 0,
+          actif: true,
+        });
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error saving client:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (clientId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
+      return;
+    }
+    try {
+      await deleteClient(clientId);
+    } catch (error) {
+      console.error("Error deleting client:", error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -92,7 +206,7 @@ export default function Clients() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Solde total</p>
                   <p className="text-2xl font-bold mt-1 text-success">
-                    {totalBalance.toLocaleString()} MAD
+                    {totalBalance.toLocaleString()} DT
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-success/10">
@@ -129,63 +243,175 @@ export default function Clients() {
             />
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) handleCloseDialog();
+          }}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau client
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Nouveau client</DialogTitle>
+                <DialogTitle>{editingClient ? "Modifier le client" : "Nouveau client"}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom du client *</Label>
-                  <Input id="name" placeholder="Société Alpha" />
+              <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Code client</Label>
+                    <Input 
+                      id="code" 
+                      placeholder="CLI-001" 
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type *</Label>
+                    <Select 
+                      value={formData.type} 
+                      onValueChange={(value: "prospect" | "client") => setFormData({ ...formData, type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prospect">Prospect</SelectItem>
+                        <SelectItem value="client">Client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tax_number">Code TVA / Identifiant fiscal</Label>
-                  <Input id="tax_number" placeholder="123456789" />
+                  <Label htmlFor="nom">Nom du client *</Label>
+                  <Input 
+                    id="nom" 
+                    placeholder="Société Alpha" 
+                    value={formData.nom}
+                    onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <Input id="phone" placeholder="+212 522 123 456" />
+                    <Label htmlFor="telephone">Téléphone</Label>
+                    <Input 
+                      id="telephone" 
+                      placeholder="+216 12 345 678" 
+                      value={formData.telephone}
+                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="contact@example.ma" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="contact@example.tn" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">Adresse</Label>
-                  <Input id="address" placeholder="123 Rue Principale, Casablanca" />
+                  <Label htmlFor="adresse">Adresse</Label>
+                  <Input 
+                    id="adresse" 
+                    placeholder="123 Rue Principale" 
+                    value={formData.adresse}
+                    onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ville">Ville</Label>
+                    <Input 
+                      id="ville" 
+                      placeholder="Tunis" 
+                      value={formData.ville}
+                      onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="code_postal">Code postal</Label>
+                    <Input 
+                      id="code_postal" 
+                      placeholder="1000" 
+                      value={formData.code_postal}
+                      onChange={(e) => setFormData({ ...formData, code_postal: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pays">Pays</Label>
+                    <Input 
+                      id="pays" 
+                      placeholder="Tunisie" 
+                      value={formData.pays}
+                      onChange={(e) => setFormData({ ...formData, pays: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="city">Ville</Label>
-                    <Input id="city" placeholder="Casablanca" />
+                    <Label htmlFor="numero_fiscal">Numéro fiscal</Label>
+                    <Input 
+                      id="numero_fiscal" 
+                      placeholder="12345678" 
+                      value={formData.numero_fiscal}
+                      onChange={(e) => setFormData({ ...formData, numero_fiscal: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="postal">Code postal</Label>
-                    <Input id="postal" placeholder="20000" />
+                    <Label htmlFor="numero_registre_commerce">N° Registre Commerce</Label>
+                    <Input 
+                      id="numero_registre_commerce" 
+                      placeholder="RC123456" 
+                      value={formData.numero_registre_commerce}
+                      onChange={(e) => setFormData({ ...formData, numero_registre_commerce: e.target.value })}
+                    />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site_web">Site web</Label>
+                  <Input 
+                    id="site_web" 
+                    placeholder="https://www.example.tn" 
+                    value={formData.site_web}
+                    onChange={(e) => setFormData({ ...formData, site_web: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <textarea
+                    id="notes"
+                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="Notes internes sur le client..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <Button 
+                    type="button"
                     variant="outline" 
                     className="flex-1"
-                    onClick={() => setIsDialogOpen(false)}
+                    onClick={handleCloseDialog}
+                    disabled={isSubmitting}
                   >
                     Annuler
                   </Button>
-                  <Button className="flex-1 bg-primary hover:bg-primary/90">
-                    Enregistrer
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    disabled={isSubmitting || !formData.nom.trim()}
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {editingClient ? "Modifier" : "Créer"}
                   </Button>
                 </div>
-              </div>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -193,129 +419,147 @@ export default function Clients() {
         {/* Clients Table */}
         <Card className="border-border/50">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Client</TableHead>
-                    <TableHead className="font-semibold">Contact</TableHead>
-                    <TableHead className="font-semibold">Code TVA</TableHead>
-                    <TableHead className="font-semibold">Localisation</TableHead>
-                    <TableHead className="text-right font-semibold">Solde</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClients.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Aucun client trouvé
-                      </TableCell>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Chargement...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Client</TableHead>
+                      <TableHead className="font-semibold">Type</TableHead>
+                      <TableHead className="font-semibold">Contact</TableHead>
+                      <TableHead className="font-semibold">Numéro fiscal</TableHead>
+                      <TableHead className="font-semibold">Localisation</TableHead>
+                      <TableHead className="text-right font-semibold">Solde</TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
-                  ) : (
-                    filteredClients.map((client) => (
-                      <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-bold text-primary">
-                                {client.name.charAt(0)}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="font-semibold">{client.name}</p>
-                              <p className="text-xs text-muted-foreground">ID: {client.id}</p>
-                            </div>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClients.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {searchTerm ? "Aucun client trouvé" : "Aucun client pour le moment"}
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {client.phone && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span>{client.phone}</span>
+                      </TableRow>
+                    ) : (
+                      filteredClients.map((client) => (
+                        <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-bold text-primary">
+                                  {client.nom.charAt(0).toUpperCase()}
+                                </span>
                               </div>
-                            )}
-                            {client.email && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-muted-foreground">{client.email}</span>
+                              <div>
+                                <p className="font-semibold">{client.nom}</p>
+                                {client.code && (
+                                  <p className="text-xs text-muted-foreground">{client.code}</p>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {client.tax_number ? (
-                            <span className="text-sm font-medium">{client.tax_number}</span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {client.address && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span>{client.address}</span>
                             </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex flex-col items-end gap-1">
-                            <span
-                              className={cn(
-                                "font-bold text-sm",
-                                client.balance > 0 && "text-success",
-                                client.balance < 0 && "text-destructive",
-                                client.balance === 0 && "text-muted-foreground"
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={client.type === "client" ? "default" : "outline"}>
+                              {client.type === "client" ? "Client" : "Prospect"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {client.telephone && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span>{client.telephone}</span>
+                                </div>
                               )}
-                            >
-                              {client.balance.toLocaleString()} MAD
-                            </span>
-                            {client.balance < 0 && (
-                              <Badge variant="destructive" className="text-[10px]">
-                                Dette
-                              </Badge>
+                              {client.email && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="text-muted-foreground">{client.email}</span>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {client.numero_fiscal ? (
+                              <span className="text-sm font-medium">{client.numero_fiscal}</span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
                             )}
-                            {client.balance > 0 && (
-                              <Badge className="bg-success/10 text-success border-0 text-[10px]">
-                                Crédit
-                              </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {client.ville && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>{client.ville}{client.pays && `, ${client.pays}`}</span>
+                              </div>
                             )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end gap-1">
+                              <span
+                                className={cn(
+                                  "font-bold text-sm",
+                                  client.solde_actuel > 0 && "text-success",
+                                  client.solde_actuel < 0 && "text-destructive",
+                                  client.solde_actuel === 0 && "text-muted-foreground"
+                                )}
+                              >
+                                {client.solde_actuel.toLocaleString()} DT
+                              </span>
+                              {client.solde_actuel < 0 && (
+                                <Badge variant="destructive" className="text-[10px]">
+                                  Dette
+                                </Badge>
+                              )}
+                              {client.solde_actuel > 0 && (
+                                <Badge className="bg-success/10 text-success border-0 text-[10px]">
+                                  Crédit
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => window.location.href = `/crm/clients/${client.id}`}>
                                 <Eye className="w-4 h-4 mr-2" />
                                 Voir détails
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <FileText className="w-4 h-4 mr-2" />
-                                Factures
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Modifier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                                <DropdownMenuItem>
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Factures
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleOpenDialog(client.id)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDelete(client.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

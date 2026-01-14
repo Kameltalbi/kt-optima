@@ -1,44 +1,209 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, Building2, Star } from "lucide-react";
+import { Check, X, ArrowRight, Building2, Shield, Cloud, Download, Users, Building } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  annualPrice: number;
+  color: string;
+  badge?: string;
+  modules: {
+    crm: boolean;
+    ventes: boolean;
+    achats: boolean;
+    stocks: boolean;
+    comptabilite: boolean;
+    tresorerie: "basique" | "standard" | "avancee" | false;
+    rh: boolean;
+    parc: boolean;
+  };
+  moduleDetails: {
+    crm?: string[];
+    ventes?: string[];
+    achats?: string[];
+    stocks?: string[];
+    comptabilite?: string[];
+    tresorerie?: string[];
+    rh?: string[];
+    parc?: string[];
+  };
+}
+
+const plans: Plan[] = [
+  {
+    id: "essentiel",
+    name: "Essentiel",
+    description: "Pour petites structures qui veulent facturer proprement",
+    monthlyPrice: 49,
+    annualPrice: 490,
+    color: "blue",
+    modules: {
+      crm: true,
+      ventes: true,
+      achats: false,
+      stocks: false,
+      comptabilite: false,
+      tresorerie: "basique",
+      rh: false,
+      parc: false,
+    },
+    moduleDetails: {
+      crm: ["Clients & prospects", "Fiche client", "Historique des ventes"],
+      ventes: ["Devis", "Factures", "Avoirs clients"],
+      tresorerie: ["Encaissements clients", "Suivi des paiements"],
+    },
+  },
+  {
+    id: "business",
+    name: "Business",
+    description: "Pour entreprises structurées (le plus vendu)",
+    monthlyPrice: 99,
+    annualPrice: 990,
+    color: "green",
+    badge: "Le plus choisi",
+    modules: {
+      crm: true,
+      ventes: true,
+      achats: true,
+      stocks: true,
+      comptabilite: false,
+      tresorerie: "standard",
+      rh: false,
+      parc: false,
+    },
+    moduleDetails: {
+      crm: ["Clients & prospects", "Opportunités", "Historique complet"],
+      ventes: ["Devis", "Factures", "Avoirs"],
+      achats: ["Fournisseurs", "Factures fournisseurs"],
+      stocks: ["Produits", "Mouvements de stock", "Valorisation simple"],
+      tresorerie: ["Encaissements", "Décaissements", "Soldes"],
+    },
+  },
+  {
+    id: "complet",
+    name: "ERP Complet",
+    description: "Pour entreprises organisées ou en croissance",
+    monthlyPrice: 149,
+    annualPrice: 1490,
+    color: "orange",
+    modules: {
+      crm: true,
+      ventes: true,
+      achats: true,
+      stocks: true,
+      comptabilite: true,
+      tresorerie: "avancee",
+      rh: true,
+      parc: true,
+    },
+    moduleDetails: {
+      crm: ["Clients & prospects", "Opportunités", "Historique complet"],
+      ventes: ["Devis", "Factures", "Avoirs"],
+      achats: ["Fournisseurs", "Factures fournisseurs"],
+      stocks: ["Produits", "Mouvements de stock", "Valorisation simple"],
+      comptabilite: ["Écritures automatiques", "Journaux", "TVA"],
+      tresorerie: ["Prévision", "Rapprochement"],
+      rh: ["Employés", "Salaires"],
+      parc: ["Véhicules / matériel", "Amortissements"],
+    },
+  },
+];
+
+const additionalOptions = [
+  { id: "user", name: "Utilisateur supplémentaire", price: 10, icon: Users },
+  { id: "company", name: "Société supplémentaire", price: 30, icon: Building },
+  { id: "reports", name: "Rapports avancés", price: 20, icon: Download },
+  { id: "permissions", name: "Droits & permissions avancés", price: 15, icon: Shield },
+  { id: "storage", name: "Stockage fichiers", price: 10, icon: Cloud },
+];
 
 export default function Pricing() {
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [users, setUsers] = useState(1);
+  const [companies, setCompanies] = useState(1);
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+
+  const calculatePrice = (plan: Plan) => {
+    let total = isAnnual ? plan.annualPrice : plan.monthlyPrice * 12;
+    
+    // Add additional users (first user is included)
+    if (users > 1) {
+      const userPrice = additionalOptions[0].price * (isAnnual ? 12 * 0.8 : 12);
+      total += (users - 1) * userPrice;
+    }
+    
+    // Add additional companies (first company is included)
+    if (companies > 1) {
+      const companyPrice = additionalOptions[1].price * (isAnnual ? 12 * 0.8 : 12);
+      total += (companies - 1) * companyPrice;
+    }
+    
+    // Add selected options
+    selectedOptions.forEach((optionId) => {
+      const option = additionalOptions.find((o) => o.id === optionId);
+      if (option) {
+        total += option.price * (isAnnual ? 12 * 0.8 : 12);
+      }
+    });
+    
+    return total;
+  };
+
+  const formatPrice = (price: number) => {
+    if (isAnnual) {
+      return `${Math.round(price)} DT / an`;
+    }
+    return `${Math.round(price / 12)} DT / mois`;
+  };
+
+  const toggleOption = (optionId: string) => {
+    const newSelected = new Set(selectedOptions);
+    if (newSelected.has(optionId)) {
+      newSelected.delete(optionId);
+    } else {
+      newSelected.add(optionId);
+    }
+    setSelectedOptions(newSelected);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-primary-foreground" />
               </div>
               <span className="font-bold text-xl text-foreground">BilvoxaERP</span>
             </Link>
-
-            {/* Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              <a href="#offres" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Offres
+              <a href="#plans" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Plans
               </a>
-              <a href="#modules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Modules
+              <a href="#comparison" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Comparaison
               </a>
-              <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Questions
+              <a href="#options" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Options
               </a>
             </nav>
-
-            {/* CTA Buttons */}
             <div className="flex items-center gap-3">
               <Button variant="ghost" asChild>
                 <Link to="/login">Se connecter</Link>
@@ -51,466 +216,393 @@ export default function Pricing() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Section 1 - Titre & Promesse */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Des offres simples pour piloter votre entreprise
+              Une solution ERP modulaire, claire et évolutive
             </h1>
             <p className="text-xl text-muted-foreground">
-              Commencez avec l'essentiel, ajoutez ce dont vous avez besoin.
+              Payez uniquement les modules dont vous avez besoin.
+              <br />
+              Aucune complexité. Aucune surprise.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Plans principaux */}
-      <section id="offres" className="py-16 bg-background">
+      {/* Section 2 - Sélecteurs */}
+      <section className="py-8 bg-background border-b border-border/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-              {/* Plan 1 - Gestion Essentielle */}
-              <Card className="border-2 border-primary shadow-lg relative">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    Le plus utilisé
-                  </Badge>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              {/* Toggle Mensuel/Annuel */}
+              <div className="flex items-center gap-3">
+                <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : ""}>
+                  Mensuel
+                </Label>
+                <Switch
+                  id="billing-toggle"
+                  checked={isAnnual}
+                  onCheckedChange={setIsAnnual}
+                />
+                <Label htmlFor="billing-toggle" className={isAnnual ? "font-semibold" : ""}>
+                  Annuel <span className="text-primary">(-20%)</span>
+                </Label>
                 </div>
-                <CardHeader className="text-center pb-4 pt-6">
-                  <CardTitle className="text-2xl font-bold">Gestion Essentielle</CardTitle>
-                  <p className="text-muted-foreground mt-2">
-                    Pour gérer l'activité quotidienne simplement.
-                  </p>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">79</span>
-                    <span className="text-xl text-muted-foreground ml-2">DT / mois</span>
+
+              {/* Nombre d'utilisateurs */}
+              <div className="flex items-center gap-3">
+                <Label htmlFor="users">Utilisateurs:</Label>
+                <Select value={users.toString()} onValueChange={(v) => setUsers(parseInt(v))}>
+                  <SelectTrigger id="users" className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                  </div>
+
+              {/* Nombre de sociétés */}
+              <div className="flex items-center gap-3">
+                <Label htmlFor="companies">Sociétés:</Label>
+                <Select value={companies.toString()} onValueChange={(v) => setCompanies(parseInt(v))}>
+                  <SelectTrigger id="companies" className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                      </div>
+                      </div>
+                    </div>
+                  </div>
+      </section>
+
+      {/* Section 3 - Les Plans */}
+      <section id="plans" className="py-16 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8">
+              {plans.map((plan) => (
+                <Card
+                  key={plan.id}
+                  className={`relative ${
+                    plan.id === "business"
+                      ? "border-2 border-primary shadow-lg scale-105"
+                      : "border border-border"
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm font-semibold">
+                        {plan.badge}
+                      </Badge>
+                    </div>
+                  )}
+                  <CardHeader className="text-center pb-4 pt-6">
+                    <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                    <CardDescription className="mt-2">{plan.description}</CardDescription>
+                    <div className="mt-6">
+                      <div className="text-4xl font-bold">
+                        {formatPrice(calculatePrice(plan))}
+                      </div>
+                      {isAnnual && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Économisez {Math.round(plan.monthlyPrice * 12 - plan.annualPrice)} DT/an
+                        </p>
+                      )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">ACHATS</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Bons de commande</span>
+                    {/* Modules inclus */}
+                    <div className="space-y-4">
+                      {Object.entries(plan.moduleDetails).map(([moduleKey, features]) => {
+                        if (!features || features.length === 0) return null;
+                        return (
+                          <div key={moduleKey} className="space-y-2">
+                            <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                              {moduleKey.toUpperCase()}
+                  </div>
+                            <div className="space-y-1.5">
+                              {features.map((feature, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                  <span className="text-sm">{feature}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Factures fournisseurs</span>
+                              ))}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Avoirs fournisseurs</span>
                       </div>
+                        );
+                      })}
                     </div>
+
+                    {/* Modules non inclus */}
+                    <div className="pt-4 border-t border-border space-y-2">
+                      {!plan.modules.achats && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <X className="w-4 h-4" />
+                          <span className="text-sm">Achats</span>
+                        </div>
+                      )}
+                      {!plan.modules.stocks && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <X className="w-4 h-4" />
+                          <span className="text-sm">Stocks</span>
+                        </div>
+                      )}
+                      {!plan.modules.comptabilite && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <X className="w-4 h-4" />
+                          <span className="text-sm">Comptabilité</span>
+                        </div>
+                      )}
+                      {!plan.modules.rh && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <X className="w-4 h-4" />
+                          <span className="text-sm">RH</span>
+                  </div>
+                      )}
+                      {!plan.modules.parc && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <X className="w-4 h-4" />
+                          <span className="text-sm">Gestion de parc</span>
+                      </div>
+                      )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">VENTES</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Devis</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Factures clients</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Avoirs clients</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Encaissements</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">FINANCE</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Trésorerie</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Échéanciers</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-border space-y-2 text-sm text-muted-foreground">
-                    <p>• Jusqu'à 3 utilisateurs</p>
-                    <p>• Jusqu'à 300 documents par mois</p>
-                    <p>• 1 société</p>
-                  </div>
-
-                  <div className="pt-2 pb-2">
-                    <p className="text-xs text-muted-foreground italic">
-                      Le module Stock peut être ajouté à tout moment.
-                    </p>
-                  </div>
-
-                  <Button asChild className="w-full" size="lg">
+                    <Button
+                      asChild
+                      className="w-full"
+                      size="lg"
+                      variant={plan.id === "business" ? "default" : "outline"}
+                    >
                     <Link to="/register">
-                      Créer un compte
+                        {plan.id === "essentiel" && "Commencer avec Essentiel"}
+                        {plan.id === "business" && "Choisir Business"}
+                        {plan.id === "complet" && "Passer à l'ERP complet"}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardContent>
               </Card>
-
-              {/* Plan 2 - Gestion Commerce */}
-              <Card className="border-2 border-border hover:border-primary/50 transition-colors">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-orange-500 text-white px-4 py-1 text-sm font-semibold">
-                    Pour entreprises avec stock
-                  </Badge>
-                </div>
-                <CardHeader className="text-center pb-4 pt-6">
-                  <CardTitle className="text-2xl font-bold">Gestion Commerce</CardTitle>
-                  <p className="text-muted-foreground mt-2">
-                    Pour les entreprises qui gèrent des marchandises.
-                  </p>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">129</span>
-                    <span className="text-xl text-muted-foreground ml-2">DT / mois</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-primary">✓ Gestion Essentielle incluse</div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">STOCK (inclus)</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Inventaire</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Mouvements</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Alertes</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Dépôts</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">ACHATS (complets)</div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="text-sm">Réceptions</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-border space-y-2 text-sm text-muted-foreground">
-                    <p>• Jusqu'à 5 utilisateurs</p>
-                    <p>• Jusqu'à 800 documents par mois</p>
-                    <p>• 1 société</p>
-                  </div>
-
-                  <Button asChild className="w-full" size="lg">
-                    <Link to="/register">
-                      Commencer
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Modules à ajouter */}
-      <section id="modules" className="py-16 bg-muted/20">
+      {/* Section 4 - Tableau Comparatif */}
+      <section id="comparison" className="py-16 bg-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-4">
-              Modules à ajouter selon vos besoins
+              Comparaison des modules
             </h2>
-            <p className="text-center text-muted-foreground mb-12">
-              Ajoutez uniquement les modules dont vous avez besoin
+            <p className="text-center text-muted-foreground mb-8">
+              Tout est visible, rien n'est caché
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Module Stock</h3>
-                    <Badge variant="outline">30 DT / mois</Badge>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-4 font-semibold">Modules</th>
+                        <th className="text-center p-4 font-semibold">Essentiel</th>
+                        <th className="text-center p-4 font-semibold">Business</th>
+                        <th className="text-center p-4 font-semibold">ERP Complet</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { name: "CRM", essentiel: true, business: true, complet: true },
+                        { name: "Ventes", essentiel: true, business: true, complet: true },
+                        { name: "Achats", essentiel: false, business: true, complet: true },
+                        { name: "Stocks", essentiel: false, business: true, complet: true },
+                        { name: "Comptabilité", essentiel: false, business: false, complet: true },
+                        { name: "Trésorerie", essentiel: "Basique", business: "Standard", complet: "Avancée" },
+                        { name: "RH", essentiel: false, business: false, complet: true },
+                        { name: "Gestion de parc", essentiel: false, business: false, complet: true },
+                      ].map((row, idx) => (
+                        <tr key={idx} className="border-b border-border/50">
+                          <td className="p-4 font-medium">{row.name}</td>
+                          <td className="p-4 text-center">
+                            {typeof row.essentiel === "boolean" ? (
+                              row.essentiel ? (
+                                <Check className="w-5 h-5 text-primary mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-muted-foreground mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-sm">{row.essentiel}</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            {typeof row.business === "boolean" ? (
+                              row.business ? (
+                                <Check className="w-5 h-5 text-primary mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-muted-foreground mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-sm">{row.business}</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            {typeof row.complet === "boolean" ? (
+                              row.complet ? (
+                                <Check className="w-5 h-5 text-primary mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-muted-foreground mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-sm">{row.complet}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Si non inclus dans votre offre
-                  </p>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Ressources humaines avancées</h3>
-                    <Badge variant="outline">40 DT / mois</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Jusqu'à 10 employés
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    +5 DT par employé supplémentaire
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Comptabilité</h3>
-                    <Badge variant="outline">50 DT / mois</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Plan comptable, écritures, balance
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Gestion de parc</h3>
-                    <Badge variant="outline">20 DT / mois</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Suivi des équipements et entretiens
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Multi-site</h3>
-                    <Badge variant="outline">30 DT / mois</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Gestion de plusieurs sites/dépôts
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Support prioritaire</h3>
-                    <Badge variant="outline">20 DT / mois</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Support en priorité par email et chat
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="text-center mt-8">
-              <Button variant="outline" size="lg" asChild>
-                <Link to="/register">
-                  Ajouter un module
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
           </div>
-        </div>
+                  </div>
       </section>
 
-      {/* Détail des modules (Accordéon) */}
-      <section className="py-16 bg-background">
+      {/* Section 5 - Options Additionnelles */}
+      <section id="options" className="py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Voir le détail des modules
+            <h2 className="text-3xl font-bold text-center mb-4">
+              Options à la carte
             </h2>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="achats">
-                <AccordionTrigger className="text-lg font-semibold">
-                  ACHATS
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Bons de commande</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Réceptions</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Factures fournisseurs</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Avoirs fournisseurs</span>
-                    </div>
+            <p className="text-center text-muted-foreground mb-8">
+              Tu monétises sans complexifier les plans
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {additionalOptions.map((option) => {
+                const Icon = option.icon;
+                const isSelected = selectedOptions.has(option.id);
+                return (
+                  <Card
+                    key={option.id}
+                    className={`cursor-pointer transition-all ${
+                      isSelected ? "border-primary border-2" : "border-border"
+                    }`}
+                    onClick={() => toggleOption(option.id)}
+                  >
+                <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-semibold">{option.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                              +{option.price} DT / mois
+                            </p>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="ventes">
-                <AccordionTrigger className="text-lg font-semibold">
-                  VENTES
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Devis</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Factures clients</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Avoirs clients</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Encaissements</span>
-                    </div>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="stock">
-                <AccordionTrigger className="text-lg font-semibold">
-                  STOCK
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Inventaire</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Mouvements</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Alertes</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Dépôts</span>
-                    </div>
+                        <Switch
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOption(option.id)}
+                        />
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="finance">
-                <AccordionTrigger className="text-lg font-semibold">
-                  FINANCE
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 pl-4">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Trésorerie</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Échéanciers</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span>Rapprochements (Gestion Commerce)</span>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                </CardContent>
+              </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-16 bg-muted/20">
+      {/* Section 6 - Rassurance */}
+      <section className="py-16 bg-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Questions fréquentes
-            </h2>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger className="text-left">
-                  Puis-je changer d'offre à tout moment ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Oui, vous pouvez passer à une offre supérieure ou inférieure à tout moment depuis votre espace. La transition se fait sans interruption de service et vos données sont conservées.
-                </AccordionContent>
-              </AccordionItem>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-primary" />
+                    Sécurité & technique
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Données sécurisées (PostgreSQL)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Hébergement cloud</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Sauvegardes automatiques</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <AccordionItem value="item-2">
-                <AccordionTrigger className="text-left">
-                  Puis-je ajouter ou retirer des modules ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Oui, vous pouvez activer ou désactiver des modules à tout moment depuis votre tableau de bord. Les modules sont facturés au prorata et prennent effet immédiatement.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
-                <AccordionTrigger className="text-left">
-                  Mes données sont-elles sécurisées ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Oui, vos données sont chiffrées et stockées de manière sécurisée. Nous effectuons des sauvegardes quotidiennes et respectons les normes de sécurité les plus strictes pour protéger vos informations.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4">
-                <AccordionTrigger className="text-left">
-                  Y a-t-il un engagement ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  Non, il n'y a aucun engagement. Vous pouvez résilier votre abonnement à tout moment. Aucun frais de résiliation n'est appliqué.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="w-5 h-5 text-primary" />
+                    Engagement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Sans engagement</span>
+                  </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Résiliable à tout moment</span>
+                  </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm">Export des données possible</span>
+                  </div>
+                </CardContent>
+              </Card>
+        </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Final */}
-      <section className="py-16 bg-gradient-to-b from-muted/20 to-background">
+      {/* Section 7 - CTA Final */}
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Commencez dès aujourd'hui avec l'offre qui vous convient.
+              Vous ne savez pas quel plan choisir ?
             </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+            <p className="text-muted-foreground mb-8">
+              Contactez-nous pour une démonstration personnalisée
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild className="text-lg px-8">
                 <Link to="/register">
-                  Créer un compte
+                  Demander une démo
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                <Link to="/login">Se connecter</Link>
+                <Link to="/register">Nous contacter</Link>
               </Button>
             </div>
           </div>
