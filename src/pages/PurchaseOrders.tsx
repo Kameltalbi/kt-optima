@@ -37,7 +37,8 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
+import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Local type for purchase orders with extended status
 type PurchaseOrderStatus = 'draft' | 'sent' | 'confirmed' | 'received' | 'cancelled';
@@ -85,11 +86,24 @@ const statusLabels = {
 };
 
 export default function PurchaseOrders() {
+  const { company } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Construire les infos entreprise depuis le contexte Auth
+  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+    nom: company.name,
+    adresse: company.address || '',
+    ville: '',
+    tel: company.phone || '',
+    email: company.email || '',
+    mf: company.tax_number || '',
+    logo: company.logo || undefined,
+    piedDePage: company.footer || ''
+  } : undefined;
 
   const filteredOrders = mockPurchaseOrders.filter((order) => {
     const matchesSearch = order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -309,6 +323,7 @@ export default function PurchaseOrders() {
           <div className="overflow-y-auto max-h-[95vh]">
             <DocumentTemplate
               docType="bon_commande"
+              entreprise={entrepriseInfo}
               readOnly={false}
               onSave={handleSaveOrder}
             />
@@ -363,6 +378,7 @@ export default function PurchaseOrders() {
           <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
               docType="bon_commande"
+              entreprise={entrepriseInfo}
               readOnly={true}
             />
           </div>
