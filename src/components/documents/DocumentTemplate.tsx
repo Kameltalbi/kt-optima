@@ -765,7 +765,7 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                   <img 
                     src={entreprise.logo} 
                     alt={entreprise.nom}
-                    className="h-16 w-auto mb-2 object-contain"
+                    className="h-20 w-auto mb-3 object-contain"
                     crossOrigin="anonymous"
                   />
                 ) : (
