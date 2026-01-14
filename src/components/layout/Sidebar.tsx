@@ -154,12 +154,12 @@ export function Sidebar({ onClose }: SidebarProps) {
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-md">
             <span className="text-sm font-bold text-white">
-              {user?.name?.charAt(0).toUpperCase() || 'A'}
+              {user?.email?.charAt(0).toUpperCase() || 'A'}
             </span>
           </div>
           {!effectiveCollapsed && (
             <div className="animate-fade-in min-w-0">
-              <p className="text-sm font-bold truncate text-white">{user?.name || 'Utilisateur'}</p>
+              <p className="text-sm font-bold truncate text-white">{user?.email?.split('@')[0] || 'Utilisateur'}</p>
               <p className="text-xs text-white/70 truncate font-medium">{company?.name || 'Entreprise'}</p>
             </div>
           )}

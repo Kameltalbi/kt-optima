@@ -23,11 +23,11 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         navigate("/dashboard");
       } else {
-        setError("Email ou mot de passe incorrect");
+        setError(result.error || "Email ou mot de passe incorrect");
       }
     } catch (err) {
       setError("Une erreur est survenue lors de la connexion");
@@ -67,15 +67,12 @@ export default function Login() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@entreprise.tn"
+                  placeholder="votre@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Emails de test : admin@entreprise.tn ou user@test.com
-                </p>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
