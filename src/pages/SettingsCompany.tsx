@@ -63,37 +63,22 @@ export default function SettingsCompany() {
 
         if (error) throw error;
       } else {
-        // Create new company and link to profile
-        const { data: newCompany, error: createError } = await supabase
-          .from("companies")
-          .insert({
-            name: formData.name,
-            tax_number: formData.tax_number,
-            address: formData.address,
-            phone: formData.phone,
-            email: formData.email,
-            currency: "TND",
-            language: "fr",
-          })
-          .select()
-          .single();
+        // Create new company and link to profile via a SECURITY DEFINER RPC (avoids RLS multi-step issues)
+        const { data: companyId, error: rpcError } = await supabase.rpc(
+          "create_company_and_link_profile",
+          {
+            _name: formData.name,
+            _tax_number: formData.tax_number || null,
+            _address: formData.address || null,
+            _phone: formData.phone || null,
+            _email: formData.email || null,
+            _currency: "TND",
+            _language: "fr",
+          }
+        );
 
-        if (createError) throw createError;
-
-        // Update profile with company_id
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ company_id: newCompany.id })
-          .eq("user_id", user?.id);
-
-        if (profileError) throw profileError;
-
-        // Add admin role
-        await supabase.from("user_roles").insert({
-          user_id: user?.id,
-          company_id: newCompany.id,
-          role: "admin",
-        });
+        if (rpcError) throw rpcError;
+        if (!companyId) throw new Error("Impossible de créer l'entreprise");
 
         // Reload page to refresh context
         window.location.reload();

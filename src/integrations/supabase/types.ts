@@ -1528,6 +1528,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_company_and_link_profile: {
+        Args: {
+          _address?: string
+          _currency?: string
+          _email?: string
+          _language?: string
+          _name: string
+          _phone?: string
+          _tax_number?: string
+        }
+        Returns: string
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_company_id_from_roles: {
         Args: { _user_id: string }
