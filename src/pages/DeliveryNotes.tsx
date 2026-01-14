@@ -38,10 +38,23 @@ import {
   Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Invoice } from "@/types/database";
 import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 
-const mockDeliveryNotes: Invoice[] = [
+// Local type for delivery notes with extended status
+type DeliveryNoteStatus = 'draft' | 'pending' | 'in_transit' | 'delivered';
+
+interface DeliveryNote {
+  id: string;
+  number: string;
+  client_id: string;
+  date: string;
+  total: number;
+  tax: number;
+  status: DeliveryNoteStatus;
+  company_id: string;
+}
+
+const mockDeliveryNotes: DeliveryNote[] = [
   { id: "1", number: "BL-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "delivered", company_id: "1" },
   { id: "2", number: "BL-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "in_transit", company_id: "1" },
   { id: "3", number: "BL-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "pending", company_id: "1" },
@@ -73,7 +86,7 @@ const statusLabels = {
 export default function DeliveryNotes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<Invoice | null>(null);
+  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -93,7 +106,7 @@ export default function DeliveryNotes() {
     .filter(n => n.status === "in_transit" || n.status === "pending")
     .reduce((sum, n) => sum + n.total, 0);
 
-  const handleViewDeliveryNote = (note: Invoice) => {
+  const handleViewDeliveryNote = (note: DeliveryNote) => {
     setSelectedDeliveryNote(note);
     setIsViewModalOpen(true);
   };

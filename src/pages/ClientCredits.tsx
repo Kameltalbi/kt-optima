@@ -40,10 +40,26 @@ import {
 import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
 import { useNavigate, useLocation } from "react-router-dom";
-import type { ClientCredit, Invoice } from "@/types/database";
+import type { ClientCredit } from "@/types/database";
+
+// Local extended Invoice type for this page
+interface ExtendedInvoice {
+  id: string;
+  number: string;
+  client_id: string;
+  date: string;
+  due_date?: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  company_id: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 // Mock client invoices (en production, viendrait d'un hook)
-const mockClientInvoices: Invoice[] = [
+const mockClientInvoices: ExtendedInvoice[] = [
   {
     id: 'inv_1',
     number: 'FAC-2024-001',
@@ -81,7 +97,7 @@ const mockClients: Record<string, string> = {
 
 const reasonLabels: Record<ClientCredit['reason'], string> = {
   return: 'Retour marchandise',
-  price_error: 'Erreur de prix',
+  billing_error: 'Erreur de facturation',
   commercial_gesture: 'Geste commercial',
   other: 'Autre',
 };
@@ -93,11 +109,9 @@ const statusLabels: Record<ClientCredit['status'], string> = {
   refunded: 'Remboursé',
 };
 
-const refundMethodLabels: Record<ClientCredit['refund_method'], string> = {
+const refundMethodLabels: Record<NonNullable<ClientCredit['refund_method']>, string> = {
   future_invoice: 'Sur prochaine facture',
-  bank_transfer: 'Virement bancaire',
-  check: 'Chèque',
-  cash: 'Espèces',
+  cash_refund: 'Remboursement espèces',
 };
 
 export default function ClientCredits() {
@@ -126,7 +140,8 @@ export default function ClientCredits() {
     tax: 0,
     total: 0,
     stock_impact: false,
-    refund_method: "future_invoice" as ClientCredit['refund_method'],
+    refund_method: "future_invoice" as NonNullable<ClientCredit['refund_method']>,
+    status: "draft" as ClientCredit['status'],
     comments: "",
   });
 
@@ -153,6 +168,7 @@ export default function ClientCredits() {
         total: 0,
         stock_impact: false,
         refund_method: "future_invoice",
+        status: "draft",
         comments: "",
       });
     } else {
@@ -169,6 +185,7 @@ export default function ClientCredits() {
           total: invoice.total * 0.1,
           stock_impact: false,
           refund_method: "future_invoice",
+          status: "draft",
           comments: "",
         });
       }
@@ -206,7 +223,8 @@ export default function ClientCredits() {
       tax: credit.tax,
       total: credit.total,
       stock_impact: credit.stock_impact,
-      refund_method: credit.refund_method,
+      refund_method: credit.refund_method || "future_invoice",
+      status: credit.status,
       comments: credit.comments || "",
     });
     setIsCreateModalOpen(true);

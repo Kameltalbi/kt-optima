@@ -620,7 +620,7 @@ export function useHR() {
     if (!contract) throw new Error('Contrat introuvable');
 
     const calculated = calculatePayroll(employeeId, period, salaryBrut);
-    const avantagesFinal = avantages || { prime: 0, indemnites: 0, autres: 0 };
+    const avantagesFinal = { prime: avantages?.prime ?? 0, indemnites: avantages?.indemnites ?? 0, autres: avantages?.autres ?? 0 };
     const netAPayer = calculated.netAPayer + (avantagesFinal.prime || 0) + (avantagesFinal.indemnites || 0);
 
     const payroll: Payroll = {

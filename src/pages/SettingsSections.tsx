@@ -603,6 +603,10 @@ function AccountingSettings() {
     tvaCollectee: "TVA collectée (4457xx)",
     achats: "Achats (60xxx)",
     ventes: "Ventes (70xxx)",
+    salaires: "Salaires (641xxx)",
+    cnss: "CNSS (431xxx)",
+    irpp: "IRPP (444xxx)",
+    organismesSociaux: "Organismes sociaux (431xxx)",
   };
 
   return (

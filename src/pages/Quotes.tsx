@@ -36,10 +36,23 @@ import {
   AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Invoice } from "@/types/database";
 import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 
-const mockQuotes: Invoice[] = [
+// Local type for quotes with extended status
+type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired';
+
+interface Quote {
+  id: string;
+  number: string;
+  client_id: string;
+  date: string;
+  total: number;
+  tax: number;
+  status: QuoteStatus;
+  company_id: string;
+}
+
+const mockQuotes: Quote[] = [
   { id: "1", number: "DEV-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "sent", company_id: "1" },
   { id: "2", number: "DEV-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "accepted", company_id: "1" },
   { id: "3", number: "DEV-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "expired", company_id: "1" },
@@ -71,7 +84,7 @@ const statusLabels = {
 export default function Quotes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedQuote, setSelectedQuote] = useState<Invoice | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -91,7 +104,7 @@ export default function Quotes() {
     .filter(q => q.status === "sent" || q.status === "expired")
     .reduce((sum, q) => sum + q.total, 0);
 
-  const handleViewQuote = (quote: Invoice) => {
+  const handleViewQuote = (quote: Quote) => {
     setSelectedQuote(quote);
     setIsViewModalOpen(true);
   };

@@ -118,6 +118,7 @@ export default function SupplierCredits() {
     tax: 0,
     total: 0,
     stock_impact: false,
+    status: "draft" as SupplierCredit['status'],
     comments: "",
   });
 
@@ -144,6 +145,7 @@ export default function SupplierCredits() {
         tax: 0,
         total: 0,
         stock_impact: false,
+        status: "draft",
         comments: "",
       });
     } else {
@@ -156,10 +158,11 @@ export default function SupplierCredits() {
           date: new Date().toISOString().split('T')[0],
           type: "partial",
           reason: "return",
-          subtotal: invoice.subtotal * 0.1, // Exemple: 10% de la facture
+          subtotal: invoice.subtotal * 0.1,
           tax: invoice.tax * 0.1,
           total: invoice.total * 0.1,
           stock_impact: false,
+          status: "draft",
           comments: "",
         });
       }
@@ -198,6 +201,7 @@ export default function SupplierCredits() {
       tax: credit.tax,
       total: credit.total,
       stock_impact: credit.stock_impact,
+      status: credit.status,
       comments: credit.comments || "",
     });
     setIsCreateModalOpen(true);
