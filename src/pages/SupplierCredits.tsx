@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { SupplierCredit, SupplierInvoice } from "@/types/database";
 
@@ -93,8 +94,9 @@ const statusLabels: Record<SupplierCredit['status'], string> = {
 };
 
 export default function SupplierCredits() {
+  const { company } = useAuth();
   const { supplierCredits, createSupplierCredit, updateSupplierCredit, applySupplierCredit } = useCredits();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const navigate = useNavigate();
   const location = useLocation();
   

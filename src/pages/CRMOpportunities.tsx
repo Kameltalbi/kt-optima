@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { useCRM } from "@/hooks/use-crm";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import type { CRMOpportunity } from "@/types/database";
 
@@ -55,6 +56,7 @@ const stageLabels: Record<CRMOpportunity['stage'], string> = {
 };
 
 export default function CRMOpportunities() {
+  const { company } = useAuth();
   const {
     opportunities,
     companies,
@@ -65,7 +67,7 @@ export default function CRMOpportunities() {
     markOpportunityWon,
     markOpportunityLost,
   } = useCRM();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");

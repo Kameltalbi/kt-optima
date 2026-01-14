@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { Currency } from "@/types/currency";
 import { useTaxes } from "@/hooks/use-taxes";
 import { useAccounting } from "@/hooks/use-accounting";
@@ -270,7 +271,8 @@ function TaxesSettings() {
 }
 
 function RegionalSettings() {
-  const { currencies, defaultCurrency, addCurrency, updateCurrency, deleteCurrency, setAsDefault } = useCurrency();
+  const { company } = useAuth();
+  const { currencies, defaultCurrency, addCurrency, updateCurrency, deleteCurrency, setAsDefault } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null);
   const [formData, setFormData] = useState({

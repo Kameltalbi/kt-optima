@@ -88,9 +88,9 @@ const statusLabels: Record<ClientCredit['status'], string> = {
 };
 
 export default function ClientCredits() {
-  const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
-  const { formatCurrency } = useCurrency();
   const { company } = useAuth();
+  const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
