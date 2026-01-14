@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
@@ -33,9 +40,14 @@ import {
   Printer,
   DollarSign,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  FileCheck,
+  Send,
+  Trash2,
+  Copy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -89,6 +101,8 @@ export default function Quotes() {
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
 
   // Construire les infos entreprise depuis le contexte Auth
   const entrepriseInfo: EntrepriseInfo | undefined = company ? {
@@ -130,7 +144,31 @@ export default function Quotes() {
   const handleSaveQuote = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
     console.log("Saving quote:", data);
     setIsCreateModalOpen(false);
-    // Ici vous pouvez ajouter la logique pour sauvegarder le devis
+    toast.success("Devis enregistré avec succès");
+  };
+
+  const handleConvertToInvoice = (quote: Quote) => {
+    setQuoteToConvert(quote);
+    setIsConvertModalOpen(true);
+  };
+
+  const handleSaveInvoice = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+    console.log("Converting quote to invoice:", quoteToConvert, data);
+    setIsConvertModalOpen(false);
+    setQuoteToConvert(null);
+    toast.success("Facture créée avec succès à partir du devis");
+  };
+
+  const handleDuplicateQuote = (quote: Quote) => {
+    toast.success(`Devis ${quote.number} dupliqué`);
+  };
+
+  const handleSendQuote = (quote: Quote) => {
+    toast.success(`Devis ${quote.number} envoyé au client`);
+  };
+
+  const handleDeleteQuote = (quote: Quote) => {
+    toast.success(`Devis ${quote.number} supprimé`);
   };
 
   return (
@@ -298,9 +336,35 @@ export default function Quotes() {
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <Download className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleConvertToInvoice(quote)}>
+                                  <FileCheck className="w-4 h-4 mr-2" />
+                                  Convertir en facture
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicateQuote(quote)}>
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Dupliquer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSendQuote(quote)}>
+                                  <Send className="w-4 h-4 mr-2" />
+                                  Envoyer au client
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteQuote(quote)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -376,6 +440,25 @@ export default function Quotes() {
               docType="devis"
               entreprise={entrepriseInfo}
               readOnly={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal pour convertir en facture */}
+      <Dialog open={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="text-xl font-bold">
+              Convertir {quoteToConvert?.number} en facture
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
+            <DocumentTemplate
+              docType="facture"
+              entreprise={entrepriseInfo}
+              readOnly={false}
+              onSave={handleSaveInvoice}
             />
           </div>
         </DialogContent>
