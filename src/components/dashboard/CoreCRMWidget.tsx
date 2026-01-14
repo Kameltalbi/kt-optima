@@ -3,10 +3,13 @@ import { useClients } from "@/hooks/use-clients";
 import { StatCard } from "./StatCard";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function CoreCRMWidget() {
   const { clients, loading } = useClients();
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   const stats = {
     total: clients?.length || 0,

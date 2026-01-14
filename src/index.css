@@ -4,127 +4,128 @@
 
 /* ============================================
    BILVOXA ERP - DESIGN SYSTEM
-   Color Palette extracted from Logo KTO
-   Primary: #669f41 (Green), Secondary: #172563 (Dark Blue)
+   Palette de Couleurs Recommandée
+   Primary: #2563eb (Bleu Principal), Secondary: #1e293b (Gris Foncé)
+   Accent: #10b981 (Vert Accent), Light: #3b82f6 (Bleu Clair), Background: #f8f9fa (Gris Léger)
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* Primary - Logo Green #669f41 */
-    --primary: 96 41% 43%;
+    /* Primary - Bleu Principal #2563eb */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Logo Dark Blue #172563 */
-    --secondary: 228 62% 23%;
+    /* Secondary - Gris Foncé #1e293b */
+    --secondary: 217 32% 17%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Accent - Logo Dark Green #588d3b */
-    --accent: 98 41% 39%;
+    /* Accent - Vert Accent #10b981 */
+    --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
 
-    /* Background - Soft Light Gray */
-    --background: 210 20% 98%;
-    --foreground: 198 10% 21%;
+    /* Background - Gris Léger #f8f9fa */
+    --background: 210 16% 97%;
+    --foreground: 217 32% 17%;
 
     /* Card surfaces - Pure White */
     --card: 0 0% 100%;
-    --card-foreground: 198 10% 21%;
+    --card-foreground: 217 32% 17%;
 
     /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 198 10% 21%;
+    --popover-foreground: 217 32% 17%;
 
-    /* Muted - Soft Gray */
-    --muted: 210 20% 96%;
-    --muted-foreground: 198 10% 50%;
+    /* Muted - Gris Léger #f8f9fa */
+    --muted: 210 16% 97%;
+    --muted-foreground: 217 32% 50%;
 
-    /* Sand - Soft Orange (for variety) */
-    --sand: 29 47% 57%;
+    /* Sand - Bleu Clair #3b82f6 */
+    --sand: 217 91% 59%;
     --sand-foreground: 0 0% 100%;
 
     /* Destructive - Modern Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Logo Green */
-    --success: 96 41% 43%;
+    /* Success - Vert Accent #10b981 */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Logo Dark Green */
-    --warning: 98 41% 39%;
+    /* Warning - Bleu Clair #3b82f6 */
+    --warning: 217 91% 59%;
     --warning-foreground: 0 0% 100%;
 
-    /* Info - Logo Dark Blue */
-    --info: 228 62% 23%;
+    /* Info - Bleu Principal #2563eb */
+    --info: 221 83% 53%;
     --info-foreground: 0 0% 100%;
 
     /* Border & Input - Soft Gray */
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 96 41% 43%;
+    --border: 210 16% 90%;
+    --input: 210 16% 90%;
+    --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
-    /* Sidebar - Logo Dark Green #588d3b */
-    --sidebar-background: 98 41% 39%;
+    /* Sidebar - Gris Foncé #1e293b */
+    --sidebar-background: 217 32% 17%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 96 41% 43%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 98 41% 42%;
+    --sidebar-accent: 217 32% 22%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 98 41% 35%;
-    --sidebar-ring: 96 41% 43%;
+    --sidebar-border: 217 32% 15%;
+    --sidebar-ring: 221 83% 53%;
 
-    /* Modern Shadows with Logo Green Tints */
-    --shadow-sm: 0 1px 2px 0 hsl(96 41% 43% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(96 41% 43% / 0.1), 0 2px 4px -2px hsl(96 41% 43% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(96 41% 43% / 0.1), 0 4px 6px -4px hsl(96 41% 43% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(96 41% 43% / 0.1), 0 8px 10px -6px hsl(96 41% 43% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(96 41% 43% / 0.08), 0 1px 2px -1px hsl(96 41% 43% / 0.08);
+    /* Modern Shadows with Primary Blue Tints */
+    --shadow-sm: 0 1px 2px 0 hsl(221 83% 53% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(221 83% 53% / 0.1), 0 2px 4px -2px hsl(221 83% 53% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(221 83% 53% / 0.1), 0 4px 6px -4px hsl(221 83% 53% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(221 83% 53% / 0.1), 0 8px 10px -6px hsl(221 83% 53% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(221 83% 53% / 0.08), 0 1px 2px -1px hsl(221 83% 53% / 0.08);
   }
 
   .dark {
-    --primary: 96 41% 48%;
+    --primary: 221 83% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 228 62% 28%;
+    --secondary: 217 32% 22%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 98 41% 44%;
+    --accent: 160 84% 44%;
     --accent-foreground: 0 0% 100%;
 
-    --background: 198 10% 8%;
-    --foreground: 210 20% 98%;
+    --background: 217 32% 8%;
+    --foreground: 210 16% 98%;
 
-    --card: 198 10% 10%;
-    --card-foreground: 210 20% 98%;
+    --card: 217 32% 10%;
+    --card-foreground: 210 16% 98%;
 
-    --popover: 198 10% 10%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 217 32% 10%;
+    --popover-foreground: 210 16% 98%;
 
-    --muted: 198 10% 15%;
-    --muted-foreground: 198 10% 65%;
+    --muted: 217 32% 15%;
+    --muted-foreground: 217 32% 65%;
 
-    --sand: 98 41% 44%;
+    --sand: 217 91% 64%;
     --sand-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 198 10% 18%;
-    --input: 198 10% 18%;
-    --ring: 96 41% 48%;
+    --border: 217 32% 18%;
+    --input: 217 32% 18%;
+    --ring: 221 83% 58%;
 
-    --sidebar-background: 98 41% 39%;
+    --sidebar-background: 217 32% 17%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 96 41% 48%;
+    --sidebar-primary: 221 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 98 41% 42%;
+    --sidebar-accent: 217 32% 22%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 98 41% 35%;
-    --sidebar-ring: 96 41% 48%;
+    --sidebar-border: 217 32% 15%;
+    --sidebar-ring: 221 83% 58%;
   }
 }
 

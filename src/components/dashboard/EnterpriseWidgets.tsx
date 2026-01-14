@@ -1,6 +1,7 @@
 import { Calculator, Users, Car, TrendingUp } from "lucide-react";
 import { StatCard } from "./StatCard";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Mock data - À remplacer par de vraies données
@@ -28,6 +29,9 @@ const mockTresorerie = {
 };
 
 export function EnterpriseWidgets() {
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+
   return (
     <div className="space-y-6">
       {/* Comptabilité */}

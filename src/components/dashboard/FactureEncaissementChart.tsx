@@ -11,7 +11,8 @@ import {
 } from "recharts";
 import { useMemo } from "react";
 import { useFacturesVentes } from "@/hooks/use-factures-ventes";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FactureEncaissementChartProps {
   period: "month" | "quarter" | "year";
@@ -19,6 +20,8 @@ interface FactureEncaissementChartProps {
 
 export function FactureEncaissementChart({ period }: FactureEncaissementChartProps) {
   const { factures, loading } = useFacturesVentes();
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   const data = useMemo(() => {
     if (!factures || factures.length === 0) {

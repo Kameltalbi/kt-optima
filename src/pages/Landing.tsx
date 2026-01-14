@@ -36,21 +36,21 @@ export default function Landing() {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img 
-                src="/logo KTO.png" 
-                alt="BilvoxaERP" 
-                className="h-14 w-auto object-contain"
+                src="/kt optima.png" 
+                alt="KTOptima" 
+                className="h-20 w-auto object-contain"
               />
             </div>
 
             {/* Navigation Desktop */}
             <nav className="hidden md:flex items-center gap-6">
-              <a href="#fonctionnalites" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#fonctionnalites" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
                 Fonctionnalités
               </a>
-              <a href="#modules" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#modules" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
                 Modules
               </a>
-              <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/pricing" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
                 Tarifs
               </Link>
             </nav>
@@ -119,26 +119,46 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Texte et Vidéo côte à côte */}
       <section className="py-20 sm:py-32 bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Une seule plateforme pour piloter l'ensemble de votre entreprise
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Centralisez vos opérations, maîtrisez votre trésorerie et structurez vos processus avec un ERP pensé pour la croissance.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="text-lg px-8">
-                <Link to="/register">
-                  Créer un compte
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                <Link to="/login">Se connecter</Link>
-              </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
+            {/* Section 1 - Texte et CTA */}
+            <div className="text-center lg:text-left">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+                Une seule plateforme pour piloter l'ensemble de votre entreprise
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0">
+                Centralisez vos opérations, maîtrisez votre trésorerie et structurez vos processus avec un ERP pensé pour la croissance.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button size="lg" asChild className="text-lg px-8">
+                  <Link to="/register">
+                    Créer un compte
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild className="text-lg px-8">
+                  <Link to="/login">Se connecter</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Section 2 - Vidéo */}
+            <div className="w-full">
+              <div className="rounded-2xl overflow-hidden shadow-2xl bg-muted/30">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-[400px] object-cover"
+                  aria-label="Présentation KTOptima"
+                >
+                  <source src="/video ktoptima.mp4" type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+              </div>
             </div>
           </div>
         </div>
@@ -504,9 +524,9 @@ export default function Landing() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <img 
-                  src="/logo KTO.png" 
-                  alt="BilvoxaERP" 
-                  className="h-12 w-auto object-contain"
+                  src="/kt optima.png" 
+                  alt="KTOptima" 
+                  className="h-16 w-auto object-contain"
                 />
               </div>
               <p className="text-sm text-muted-foreground">

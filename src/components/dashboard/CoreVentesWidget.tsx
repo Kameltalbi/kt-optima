@@ -2,7 +2,8 @@ import { FileText, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacturesVentes } from "@/hooks/use-factures-ventes";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,6 +23,8 @@ const statusLabels = {
 
 export function CoreVentesWidget() {
   const { factures, loading } = useFacturesVentes();
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   const recentFactures = factures
     ?.filter((f) => f.statut !== "annulee")

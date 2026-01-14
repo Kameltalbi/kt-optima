@@ -2,7 +2,8 @@ import { StatCard } from "./StatCard";
 import { TrendingUp, Wallet, FileText, DollarSign } from "lucide-react";
 import { useMemo } from "react";
 import { useFacturesVentes } from "@/hooks/use-factures-ventes";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CoreKPIsProps {
   period: "month" | "quarter" | "year";
@@ -10,6 +11,8 @@ interface CoreKPIsProps {
 
 export function CoreKPIs({ period }: CoreKPIsProps) {
   const { factures, loading } = useFacturesVentes();
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   const stats = useMemo(() => {
     if (!factures || factures.length === 0) {
