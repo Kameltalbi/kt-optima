@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -26,8 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Search,
@@ -35,74 +33,51 @@ import {
   Eye,
   FileText,
   CheckCircle,
-  ArrowLeft,
   Download,
   Printer,
+  TrendingDown,
+  AlertCircle,
 } from "lucide-react";
-import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
 import type { ClientCredit } from "@/types/database";
 
-// Local extended Invoice type for this page
-interface ExtendedInvoice {
-  id: string;
-  number: string;
-  client_id: string;
-  date: string;
-  due_date?: string;
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
-  company_id: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Mock client invoices (en production, viendrait d'un hook)
-const mockClientInvoices: ExtendedInvoice[] = [
+// Mock invoices for current month
+const mockClientInvoices = [
   {
     id: 'inv_1',
-    number: 'FAC-2024-001',
+    number: 'FAC-2025-001',
     client_id: 'cli_1',
-    date: '2024-03-01',
-    due_date: '2024-03-31',
-    subtotal: 5000,
-    tax: 950,
+    client_name: 'Client Alpha',
+    date: '2025-01-05',
     total: 5950,
-    status: 'sent',
-    company_id: '1',
-    createdAt: '2024-03-01T10:00:00Z',
-    updatedAt: '2024-03-01T10:00:00Z',
   },
   {
     id: 'inv_2',
-    number: 'FAC-2024-002',
-    client_id: 'cli_2',
-    date: '2024-03-05',
-    due_date: '2024-04-05',
-    subtotal: 8000,
-    tax: 1520,
+    number: 'FAC-2025-002',
+    client_id: 'cli_1',
+    client_name: 'Client Alpha',
+    date: '2025-01-10',
     total: 9520,
-    status: 'paid',
-    company_id: '1',
-    createdAt: '2024-03-05T10:00:00Z',
-    updatedAt: '2024-03-05T10:00:00Z',
+  },
+  {
+    id: 'inv_3',
+    number: 'FAC-2025-003',
+    client_id: 'cli_2',
+    client_name: 'Entreprise Beta',
+    date: '2025-01-08',
+    total: 3200,
   },
 ];
 
-const mockClients: Record<string, string> = {
-  'cli_1': 'Client Alpha',
-  'cli_2': 'Entreprise Beta',
-};
-
-const reasonLabels: Record<ClientCredit['reason'], string> = {
-  return: 'Retour marchandise',
-  billing_error: 'Erreur de facturation',
-  commercial_gesture: 'Geste commercial',
-  other: 'Autre',
+const statusStyles = {
+  draft: "bg-warning/10 text-warning border-0",
+  sent: "bg-info/10 text-info border-0",
+  applied: "bg-success/10 text-success border-0",
+  refunded: "bg-secondary/10 text-secondary border-0",
 };
 
 const statusLabels: Record<ClientCredit['status'], string> = {
@@ -112,130 +87,79 @@ const statusLabels: Record<ClientCredit['status'], string> = {
   refunded: 'Remboursé',
 };
 
-const refundMethodLabels: Record<NonNullable<ClientCredit['refund_method']>, string> = {
-  future_invoice: 'Sur prochaine facture',
-  cash_refund: 'Remboursement espèces',
-};
-
 export default function ClientCredits() {
   const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
   const { formatCurrency } = useCurrency();
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Récupérer invoice_id depuis l'URL si présent
-  const searchParams = new URLSearchParams(location.search);
-  const invoiceIdFromUrl = searchParams.get('invoice_id');
+  const { company } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCredit, setSelectedCredit] = useState<ClientCredit | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(!!invoiceIdFromUrl);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  // Toggle pour avoir liée à une facture
+  const [isLinkedToInvoice, setIsLinkedToInvoice] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
 
-  const [formData, setFormData] = useState({
-    invoice_id: invoiceIdFromUrl || "",
-    client_id: "",
-    date: new Date().toISOString().split('T')[0],
-    type: "partial" as ClientCredit['type'],
-    reason: "commercial_gesture" as ClientCredit['reason'],
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    stock_impact: false,
-    refund_method: "future_invoice" as NonNullable<ClientCredit['refund_method']>,
-    status: "draft" as ClientCredit['status'],
-    comments: "",
+  // Construire les infos entreprise depuis le contexte Auth
+  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+    nom: company.name,
+    adresse: company.address || '',
+    ville: '',
+    tel: company.phone || '',
+    email: company.email || '',
+    mf: company.tax_number || '',
+    logo: company.logo || undefined,
+    piedDePage: company.footer || ''
+  } : undefined;
+
+  // Obtenir les clients uniques
+  const uniqueClients = Array.from(
+    new Map(mockClientInvoices.map(inv => [inv.client_id, { id: inv.client_id, name: inv.client_name }])).values()
+  );
+
+  // Filtrer les factures du client sélectionné pour le mois en cours
+  const currentMonthInvoices = mockClientInvoices.filter(inv => {
+    if (!selectedClientId) return false;
+    const invoiceDate = new Date(inv.date);
+    const now = new Date();
+    return inv.client_id === selectedClientId && 
+           invoiceDate.getMonth() === now.getMonth() && 
+           invoiceDate.getFullYear() === now.getFullYear();
   });
 
   const filteredCredits = clientCredits.filter((credit) => {
-    const matchesSearch =
-      credit.number.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = credit.number.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || credit.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalCredits = clientCredits.reduce((sum, c) => sum + c.total, 0);
-  const appliedCredits = clientCredits.filter(c => c.status === 'applied').length;
+  const totalCredits = clientCredits.length;
+  const totalAmount = clientCredits.reduce((sum, c) => sum + c.total, 0);
+  const appliedAmount = clientCredits
+    .filter(c => c.status === 'applied')
+    .reduce((sum, c) => sum + c.total, 0);
+  const pendingAmount = clientCredits
+    .filter(c => c.status === 'draft' || c.status === 'sent')
+    .reduce((sum, c) => sum + c.total, 0);
 
-  const handleCreate = () => {
-    if (!invoiceIdFromUrl) {
-      setFormData({
-        invoice_id: "",
-        client_id: "",
-        date: new Date().toISOString().split('T')[0],
-        type: "partial",
-        reason: "commercial_gesture",
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-        stock_impact: false,
-        refund_method: "future_invoice",
-        status: "draft",
-        comments: "",
-      });
-    } else {
-      const invoice = mockClientInvoices.find(i => i.id === invoiceIdFromUrl);
-      if (invoice) {
-        setFormData({
-          invoice_id: invoice.id,
-          client_id: invoice.client_id,
-          date: new Date().toISOString().split('T')[0],
-          type: "partial",
-          reason: "commercial_gesture",
-          subtotal: invoice.subtotal * 0.1,
-          tax: invoice.tax * 0.1,
-          total: invoice.total * 0.1,
-          stock_impact: false,
-          refund_method: "future_invoice",
-          status: "draft",
-          comments: "",
-        });
-      }
-    }
-    setIsCreateModalOpen(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.invoice_id) {
-      alert("Vous devez sélectionner une facture client d'origine");
-      return;
-    }
-
-    if (selectedCredit) {
-      updateClientCredit(selectedCredit.id, formData);
-    } else {
-      createClientCredit(formData);
-    }
-    setIsCreateModalOpen(false);
-    setSelectedCredit(null);
-    navigate(location.pathname, { replace: true });
-  };
-
-  const handleEdit = (credit: ClientCredit) => {
-    setSelectedCredit(credit);
-    const invoice = mockClientInvoices.find(i => i.id === credit.invoice_id);
-    setFormData({
-      invoice_id: credit.invoice_id,
-      client_id: credit.client_id,
-      date: credit.date,
-      type: credit.type,
-      reason: credit.reason,
-      subtotal: credit.subtotal,
-      tax: credit.tax,
-      total: credit.total,
-      stock_impact: credit.stock_impact,
-      refund_method: credit.refund_method || "future_invoice",
-      status: credit.status,
-      comments: credit.comments || "",
-    });
-    setIsCreateModalOpen(true);
-  };
-
-  const handleView = (credit: ClientCredit) => {
+  const handleViewCredit = (credit: ClientCredit) => {
     setSelectedCredit(credit);
     setIsViewModalOpen(true);
+  };
+
+  const handleCreateCredit = () => {
+    setIsLinkedToInvoice(false);
+    setSelectedClientId("");
+    setSelectedInvoiceId("");
+    setIsCreateModalOpen(true);
+  };
+
+  const handleSaveCredit = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+    console.log("Saving credit note:", data, { isLinkedToInvoice, selectedInvoiceId });
+    setIsCreateModalOpen(false);
   };
 
   const handleApply = (id: string) => {
@@ -250,95 +174,92 @@ export default function ClientCredits() {
     }
   };
 
-  const handleInvoiceChange = (invoiceId: string) => {
-    const invoice = mockClientInvoices.find(i => i.id === invoiceId);
-    if (invoice) {
-      setFormData({
-        ...formData,
-        invoice_id: invoice.id,
-        client_id: invoice.client_id,
-        subtotal: invoice.subtotal * 0.1,
-        tax: invoice.tax * 0.1,
-        total: invoice.total * 0.1,
-      });
-    }
-  };
-
-  const selectedInvoice = mockClientInvoices.find(i => i.id === formData.invoice_id);
-
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total avoirs</p>
-                <p className="text-2xl font-bold">{clientCredits.length}</p>
+    <>
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total avoirs</p>
+                  <p className="text-2xl font-bold mt-1">{totalCredits}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Montant total</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalCredits)}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avoirs imputés</p>
-                <p className="text-2xl font-bold text-green-600">{appliedCredits}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
 
-      {/* Filters and Actions */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>Avoirs clients</CardTitle>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Créer un avoir
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
+          <Card className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Montant total</p>
+                  <p className="text-2xl font-bold mt-1 text-foreground">
+                    {formatCurrency(totalAmount)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/10">
+                  <TrendingDown className="w-5 h-5 text-secondary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Imputés</p>
+                  <p className="text-2xl font-bold mt-1 text-success">
+                    {formatCurrency(appliedAmount)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-success/10">
+                  <CheckCircle className="w-5 h-5 text-success" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">En attente</p>
+                  <p className="text-2xl font-bold mt-1 text-accent">
+                    {formatCurrency(pendingAmount)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-accent/10">
+                  <AlertCircle className="w-5 h-5 text-accent" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher par numéro..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 w-64"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-40">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="draft">Brouillon</SelectItem>
                 <SelectItem value="sent">Envoyé</SelectItem>
                 <SelectItem value="applied">Imputé</SelectItem>
@@ -347,72 +268,81 @@ export default function ClientCredits() {
             </Select>
           </div>
 
-          {/* Table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Numéro</TableHead>
-                  <TableHead>Facture d'origine</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Motif</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCredits.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                      Aucun avoir trouvé
-                    </TableCell>
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={handleCreateCredit}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvel avoir
+          </Button>
+        </div>
+
+        {/* Table */}
+        <Card className="border-border/50">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">N° Avoir</TableHead>
+                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">Facture liée</TableHead>
+                    <TableHead className="font-semibold">Date</TableHead>
+                    <TableHead className="text-right font-semibold">HT</TableHead>
+                    <TableHead className="text-right font-semibold">TVA</TableHead>
+                    <TableHead className="text-right font-semibold">TTC</TableHead>
+                    <TableHead className="font-semibold">Statut</TableHead>
+                    <TableHead className="w-32 font-semibold">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredCredits.map((credit) => {
-                    const invoice = mockClientInvoices.find(i => i.id === credit.invoice_id);
-                    return (
-                      <TableRow key={credit.id}>
-                        <TableCell className="font-medium">{credit.number}</TableCell>
+                </TableHeader>
+                <TableBody>
+                  {filteredCredits.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        Aucun avoir trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCredits.map((credit) => (
+                      <TableRow key={credit.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell>
-                          <Button
-                            variant="link"
-                            className="p-0 h-auto"
-                            onClick={() => navigate(`/ventes/factures?invoice_id=${credit.invoice_id}`)}
-                          >
-                            {invoice?.number || 'N/A'}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-semibold">{credit.number}</span>
+                          </div>
                         </TableCell>
-                        <TableCell>{mockClients[credit.client_id] || credit.client_id}</TableCell>
+                        <TableCell>{credit.client_id}</TableCell>
                         <TableCell>
-                          {new Date(credit.date).toLocaleDateString('fr-FR')}
+                          {credit.invoice_id ? (
+                            <Badge variant="outline" className="text-xs">
+                              {credit.invoice_id}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {credit.type === 'full' ? 'Total' : 'Partiel'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{reasonLabels[credit.reason]}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(credit.total)}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              credit.status === 'applied' ? 'default' :
-                              credit.status === 'refunded' ? 'secondary' :
-                              'secondary'
-                            }
-                          >
-                            {statusLabels[credit.status]}
-                          </Badge>
+                        <TableCell>{new Date(credit.date).toLocaleDateString('fr-FR')}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(credit.subtotal)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleView(credit)}
+                          {formatCurrency(credit.tax)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(credit.total)}
+                        </TableCell>
+                        <TableCell>
+                          <span className={cn("erp-badge text-xs", statusStyles[credit.status])}>
+                            {statusLabels[credit.status]}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleViewCredit(credit)}
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -420,14 +350,8 @@ export default function ClientCredits() {
                               <>
                                 <Button
                                   variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEdit(credit)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
                                   size="sm"
+                                  className="h-8 text-xs"
                                   onClick={() => handleApply(credit.id)}
                                 >
                                   Imputer
@@ -438,6 +362,7 @@ export default function ClientCredits() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 text-xs"
                                 onClick={() => handleRefund(credit.id)}
                               >
                                 Rembourser
@@ -446,214 +371,117 @@ export default function ClientCredits() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Create/Edit Modal */}
+      {/* Modal pour créer un nouvel avoir */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedCredit ? "Modifier l'avoir client" : "Créer un avoir client"}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedInvoice && (
-                <div className="mt-2 p-3 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">Facture d'origine : {selectedInvoice.number}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Montant facture : {formatCurrency(selectedInvoice.total)}
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <div className="overflow-y-auto max-h-[95vh]">
+            {/* Section toggle avoir liée */}
+            <div className="px-8 pt-6 pb-4 border-b bg-muted/30">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Type d'avoir</h3>
+              </div>
+              
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="linked-invoice"
+                    checked={isLinkedToInvoice}
+                    onCheckedChange={setIsLinkedToInvoice}
+                  />
+                  <Label htmlFor="linked-invoice" className="font-medium">
+                    Avoir lié à une facture
+                  </Label>
+                </div>
+              </div>
+
+              {isLinkedToInvoice && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-background rounded-lg border">
+                  <div className="space-y-2">
+                    <Label htmlFor="client-select">Client</Label>
+                    <Select value={selectedClientId} onValueChange={(val) => {
+                      setSelectedClientId(val);
+                      setSelectedInvoiceId("");
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueClients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice-select">Facture du mois en cours</Label>
+                    <Select 
+                      value={selectedInvoiceId} 
+                      onValueChange={setSelectedInvoiceId}
+                      disabled={!selectedClientId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={selectedClientId ? "Sélectionner une facture" : "Choisir d'abord un client"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currentMonthInvoices.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            Aucune facture ce mois
+                          </SelectItem>
+                        ) : (
+                          currentMonthInvoices.map((invoice) => (
+                            <SelectItem key={invoice.id} value={invoice.id}>
+                              {invoice.number} - {formatCurrency(invoice.total)} ({new Date(invoice.date).toLocaleDateString('fr-FR')})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedInvoiceId && (
+                    <div className="col-span-2 p-3 bg-info/10 rounded-lg border border-info/20">
+                      <p className="text-sm text-info">
+                        <strong>Facture sélectionnée :</strong> {mockClientInvoices.find(i => i.id === selectedInvoiceId)?.number} 
+                        {" - "}
+                        {formatCurrency(mockClientInvoices.find(i => i.id === selectedInvoiceId)?.total || 0)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isLinkedToInvoice && (
+                <div className="p-3 bg-warning/10 rounded-lg border border-warning/20">
+                  <p className="text-sm text-warning">
+                    Cet avoir ne sera pas lié à une facture spécifique. Il pourra être imputé sur n'importe quelle facture future du client.
                   </p>
                 </div>
               )}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="invoice_id">Facture client d'origine *</Label>
-              <Select
-                value={formData.invoice_id}
-                onValueChange={handleInvoiceChange}
-                required
-                disabled={!!selectedCredit}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une facture" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockClientInvoices.map((invoice) => (
-                    <SelectItem key={invoice.id} value={invoice.id}>
-                      {invoice.number} - {formatCurrency(invoice.total)} - {mockClients[invoice.client_id]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                L'avoir doit être lié à une facture client existante
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">Type *</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) => setFormData({ ...formData, type: value as ClientCredit['type'] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full">Avoir total</SelectItem>
-                    <SelectItem value="partial">Avoir partiel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motif *</Label>
-              <Select
-                value={formData.reason}
-                onValueChange={(value) => setFormData({ ...formData, reason: value as ClientCredit['reason'] })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="return">Retour marchandise</SelectItem>
-                  <SelectItem value="price_error">Erreur de prix</SelectItem>
-                  <SelectItem value="commercial_gesture">Geste commercial</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="subtotal">Sous-total HT (TND) *</Label>
-                <Input
-                  id="subtotal"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.subtotal}
-                  onChange={(e) => {
-                    const subtotal = parseFloat(e.target.value) || 0;
-                    const tax = subtotal * 0.19; // TVA 19%
-                    setFormData({
-                      ...formData,
-                      subtotal,
-                      tax,
-                      total: subtotal + tax,
-                    });
-                  }}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tax">TVA (TND)</Label>
-                <Input
-                  id="tax"
-                  type="number"
-                  step="0.01"
-                  value={formData.tax}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="total">Total TTC (TND) *</Label>
-                <Input
-                  id="total"
-                  type="number"
-                  step="0.01"
-                  value={formData.total}
-                  readOnly
-                  className="bg-muted font-medium"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="stock_impact"
-                  checked={formData.stock_impact}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, stock_impact: checked as boolean })
-                  }
-                />
-                <Label htmlFor="stock_impact" className="cursor-pointer">
-                  Impact sur le stock (retour marchandise)
-                </Label>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="refund_method">Méthode de remboursement</Label>
-                <Select
-                  value={formData.refund_method}
-                  onValueChange={(value) => setFormData({ ...formData, refund_method: value as ClientCredit['refund_method'] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="future_invoice">Sur prochaine facture</SelectItem>
-                    <SelectItem value="bank_transfer">Virement bancaire</SelectItem>
-                    <SelectItem value="check">Chèque</SelectItem>
-                    <SelectItem value="cash">Espèces</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="comments">Commentaires</Label>
-              <Textarea
-                id="comments"
-                value={formData.comments}
-                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-                rows={3}
-                placeholder="Notes supplémentaires..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsCreateModalOpen(false);
-                  setSelectedCredit(null);
-                  navigate(location.pathname, { replace: true });
-                }}
-              >
-                Annuler
-              </Button>
-              <Button type="submit">
-                {selectedCredit ? "Modifier" : "Créer l'avoir"}
-              </Button>
-            </div>
-          </form>
+            <DocumentTemplate
+              docType="avoir"
+              entreprise={entrepriseInfo}
+              readOnly={false}
+              onSave={handleSaveCredit}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* View Modal avec DocumentTemplate */}
+      {/* Modal pour voir un avoir existant */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
@@ -700,11 +528,12 @@ export default function ClientCredits() {
           <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
               docType="avoir"
+              entreprise={entrepriseInfo}
               readOnly={true}
             />
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
