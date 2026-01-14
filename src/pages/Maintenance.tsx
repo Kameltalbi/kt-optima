@@ -38,11 +38,13 @@ import {
 } from "lucide-react";
 import { useFleet } from "@/hooks/use-fleet";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Maintenance } from "@/types/database";
 
 export default function Maintenance() {
+  const { company } = useAuth();
   const { equipment, maintenance, createMaintenance, updateMaintenance, deleteMaintenance, getMaintenanceHistory } = useFleet();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);

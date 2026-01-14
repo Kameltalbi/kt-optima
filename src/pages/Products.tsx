@@ -38,11 +38,13 @@ import {
 } from "lucide-react";
 import { useProducts } from "@/hooks/use-products";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/types/database";
 
 export default function Products() {
+  const { company } = useAuth();
   const { products, categories, createProduct, updateProduct, deleteProduct, getProductCategories } = useProducts();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");

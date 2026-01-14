@@ -44,10 +44,12 @@ import {
 } from "lucide-react";
 import { useCRM } from "@/hooks/use-crm";
 import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { CRMCompany } from "@/types/database";
 
 export default function CRMCompanies() {
+  const { company } = useAuth();
   const {
     companies,
     contacts,
@@ -59,7 +61,7 @@ export default function CRMCompanies() {
     getOpportunitiesByCompany,
     getActivitiesByCompany,
   } = useCRM();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const navigate = useNavigate();
   const location = useLocation();
   
