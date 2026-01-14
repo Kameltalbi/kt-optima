@@ -48,19 +48,11 @@ export function MainLayout({
         />
       )}
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - always visible */}
       {!isMobile && !hideSidebar && (
-        <div className="fixed lg:sticky inset-y-0 left-0 z-50">
-          <Sidebar onClose={() => setSidebarOpen(false)} />
+        <div className="sticky top-0 h-screen z-30 flex-shrink-0">
+          <Sidebar />
         </div>
-      )}
-
-      {/* Mobile Overlay for Desktop Sidebar */}
-      {!isMobile && sidebarOpen && !hideSidebar && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
       )}
 
       {/* Main Content */}
