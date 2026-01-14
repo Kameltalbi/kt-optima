@@ -12,6 +12,8 @@ export default function SettingsCompany() {
   const { company, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingFooter, setSavingFooter] = useState(false);
+  const [footer, setFooter] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     tax_number: "",
@@ -31,6 +33,7 @@ export default function SettingsCompany() {
         email: company.email || "",
         logo: company.logo || "",
       });
+      setFooter((company as any).footer || "");
     }
   }, [company]);
 
@@ -250,12 +253,38 @@ export default function SettingsCompany() {
           <div className="space-y-2">
             <Label className="text-xs">Contenu du pied de page</Label>
             <textarea 
+              value={footer}
+              onChange={(e) => setFooter(e.target.value)}
               className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
               placeholder="Capital: 100 000 DH | RC: 123456 | IF: 12345678 | ICE: 001234567890123 | Patente: 12345678 | CNSS: 1234567&#10;RIB: XXX XXX XXXX XXXX XXXX XXXX XXX&#10;Conditions de paiement, mentions légales..."
             />
           </div>
           <div className="pt-2">
-            <Button size="sm" className="text-xs">
+            <Button 
+              size="sm" 
+              className="text-xs" 
+              disabled={savingFooter || !company?.id}
+              onClick={async () => {
+                if (!company?.id) {
+                  toast.error("Veuillez d'abord enregistrer les informations de l'entreprise");
+                  return;
+                }
+                setSavingFooter(true);
+                try {
+                  const { error } = await supabase
+                    .from("companies")
+                    .update({ footer } as any)
+                    .eq("id", company.id);
+                  if (error) throw error;
+                  toast.success("Pied de page enregistré avec succès");
+                } catch (error: any) {
+                  toast.error(error.message || "Erreur lors de l'enregistrement");
+                } finally {
+                  setSavingFooter(false);
+                }
+              }}
+            >
+              {savingFooter && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
               Enregistrer le pied de page
             </Button>
           </div>
