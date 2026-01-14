@@ -22,6 +22,15 @@ export function Header({ title, subtitle, onMenuClick, showBackButton = false }:
   const navigate = useNavigate();
   const { company, logout } = useAuth();
 
+  const handleBack = () => {
+    // If there's history, go back; otherwise go to dashboard
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
     <header className="h-16 bg-card/95 backdrop-blur-sm border-b border-border/50 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -31,7 +40,7 @@ export function Header({ title, subtitle, onMenuClick, showBackButton = false }:
             variant="ghost"
             size="icon"
             className="bg-primary/10 hover:bg-primary/20 transition-colors flex-shrink-0 rounded-lg"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
           >
             <ArrowLeft className="w-5 h-5 text-primary font-semibold" />
           </Button>
