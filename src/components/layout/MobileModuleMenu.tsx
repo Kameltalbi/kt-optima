@@ -38,7 +38,7 @@ export function MobileModuleMenu({ open, onClose }: MobileModuleMenuProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-72 p-0">
+      <SheetContent side="left" className="w-72 p-0 z-[60]">
         <SheetHeader className="px-6 py-4 border-b">
           <SheetTitle className="text-lg font-bold">Modules</SheetTitle>
         </SheetHeader>

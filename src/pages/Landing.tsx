@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,10 +18,17 @@ import {
   Lock,
   Cloud,
   FileCheck,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Landing() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -35,7 +43,7 @@ export default function Landing() {
               <span className="font-bold text-xl text-foreground">BilvoxaERP</span>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation Desktop */}
             <nav className="hidden md:flex items-center gap-6">
               <a href="#fonctionnalites" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Fonctionnalités
@@ -48,8 +56,8 @@ export default function Landing() {
               </Link>
             </nav>
 
-            {/* CTA Buttons */}
-            <div className="flex items-center gap-3">
+            {/* CTA Buttons Desktop */}
+            <div className="hidden md:flex items-center gap-3">
               <Button variant="ghost" asChild>
                 <Link to="/login">Se connecter</Link>
               </Button>
@@ -57,6 +65,57 @@ export default function Landing() {
                 <Link to="/register">Créer un compte</Link>
               </Button>
             </div>
+
+            {/* Mobile Menu Button */}
+            {isMobile && (
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 mt-6">
+                    <a 
+                      href="#fonctionnalites" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Fonctionnalités
+                    </a>
+                    <a 
+                      href="#modules" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Modules
+                    </a>
+                    <Link 
+                      to="/pricing" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Tarifs
+                    </Link>
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          Se connecter
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                          Créer un compte
+                        </Link>
+                      </Button>
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
       </header>
