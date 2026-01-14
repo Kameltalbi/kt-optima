@@ -21,6 +21,7 @@ interface Company {
   currency: string;
   language: string;
   logo: string | null;
+  footer: string | null;
 }
 
 interface AuthContextType {

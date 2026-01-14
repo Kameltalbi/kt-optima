@@ -8,7 +8,7 @@ export interface Client {
   id: string;
   code: string | null;
   nom: string;
-  type: 'prospect' | 'client';
+  type: string | null;
   email: string | null;
   telephone: string | null;
   adresse: string | null;
@@ -19,12 +19,12 @@ export interface Client {
   numero_registre_commerce: string | null;
   site_web: string | null;
   notes: string | null;
-  solde_initial: number;
-  solde_actuel: number;
-  actif: boolean;
+  solde_initial: number | null;
+  solde_actuel: number | null;
+  actif: boolean | null;
   company_id: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function useClients() {

@@ -13,7 +13,8 @@ import {
   FileText,
   DollarSign,
   Calendar,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -55,12 +56,12 @@ export default function ClientDetail() {
         setLoadingFactures(true);
         const { data, error } = await supabase
           .from('factures_ventes')
-          .select('*')
+          .select('id, numero, date_facture, montant_ttc, montant_paye, montant_restant, statut')
           .eq('client_id', id)
           .order('date_facture', { ascending: false });
 
         if (error) throw error;
-        setFactures(data || []);
+        setFactures((data as FactureVente[]) || []);
       } catch (err) {
         console.error('Error fetching factures:', err);
         toast.error('Erreur lors du chargement de l\'historique');
