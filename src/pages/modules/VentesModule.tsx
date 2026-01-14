@@ -5,12 +5,14 @@ import Quotes from "../Quotes";
 import Invoices from "../Invoices";
 import Clients from "../Clients";
 import ClientCredits from "../ClientCredits";
+import DeliveryNotes from "../DeliveryNotes";
 import ComingSoon from "../ComingSoon";
 
 const tabs: ModuleTab[] = [
   { id: "clients", label: "Clients", path: "/ventes/clients" },
   { id: "quotes", label: "Devis", path: "/ventes/devis" },
   { id: "invoices", label: "Factures clients", path: "/ventes/factures" },
+  { id: "delivery", label: "Bons de livraison", path: "/ventes/bons-livraison" },
   { id: "credits", label: "Avoirs clients", path: "/ventes/avoirs" },
   { id: "payments", label: "Encaissements", path: "/ventes/encaissements" },
 ];
@@ -55,6 +57,19 @@ export default function VentesModule() {
             moduleName="Ventes"
           >
             <Invoices />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="bons-livraison"
+        element={
+          <MainLayout
+            title="Ventes"
+            subtitle="Gestion des ventes et clients"
+            moduleTabs={tabs}
+            moduleName="Ventes"
+          >
+            <DeliveryNotes />
           </MainLayout>
         }
       />

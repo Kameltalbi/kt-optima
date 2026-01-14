@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +37,8 @@ import {
   Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
+import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Local type for delivery notes with extended status
 type DeliveryNoteStatus = 'draft' | 'pending' | 'in_transit' | 'delivered';
@@ -84,11 +84,24 @@ const statusLabels = {
 };
 
 export default function DeliveryNotes() {
+  const { company } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Construire les infos entreprise depuis le contexte Auth
+  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+    nom: company.name,
+    adresse: company.address || '',
+    ville: '',
+    tel: company.phone || '',
+    email: company.email || '',
+    mf: company.tax_number || '',
+    logo: company.logo || undefined,
+    piedDePage: company.footer || ''
+  } : undefined;
 
   const filteredDeliveryNotes = mockDeliveryNotes.filter((note) => {
     const matchesSearch = note.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,10 +135,7 @@ export default function DeliveryNotes() {
   };
 
   return (
-    <MainLayout
-      title="Bons de livraison"
-      subtitle="Gérez vos bons de livraison"
-    >
+    <>
       <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -310,6 +320,7 @@ export default function DeliveryNotes() {
           <div className="overflow-y-auto max-h-[95vh]">
             <DocumentTemplate
               docType="bon_livraison"
+              entreprise={entrepriseInfo}
               readOnly={false}
               onSave={handleSaveDeliveryNote}
             />
@@ -364,11 +375,12 @@ export default function DeliveryNotes() {
           <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
               docType="bon_livraison"
+              entreprise={entrepriseInfo}
               readOnly={true}
             />
           </div>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 }

@@ -14,6 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
+      bon_livraison_lignes: {
+        Row: {
+          bon_livraison_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          ordre: number | null
+          produit_id: string | null
+          quantite: number
+          unite: string | null
+        }
+        Insert: {
+          bon_livraison_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number | null
+          produit_id?: string | null
+          quantite?: number
+          unite?: string | null
+        }
+        Update: {
+          bon_livraison_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number | null
+          produit_id?: string | null
+          quantite?: number
+          unite?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bon_livraison_lignes_bon_livraison_id_fkey"
+            columns: ["bon_livraison_id"]
+            isOneToOne: false
+            referencedRelation: "bons_livraison"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bon_livraison_lignes_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "produits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bons_livraison: {
+        Row: {
+          adresse_livraison: string | null
+          client_id: string
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          date_livraison: string
+          facture_vente_id: string | null
+          id: string
+          notes: string | null
+          numero: string
+          statut: string
+          updated_at: string | null
+        }
+        Insert: {
+          adresse_livraison?: string | null
+          client_id: string
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date_livraison?: string
+          facture_vente_id?: string | null
+          id?: string
+          notes?: string | null
+          numero: string
+          statut?: string
+          updated_at?: string | null
+        }
+        Update: {
+          adresse_livraison?: string | null
+          client_id?: string
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_livraison?: string
+          facture_vente_id?: string | null
+          id?: string
+          notes?: string | null
+          numero?: string
+          statut?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bons_livraison_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_livraison_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_livraison_facture_vente_id_fkey"
+            columns: ["facture_vente_id"]
+            isOneToOne: false
+            referencedRelation: "factures_ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           actif: boolean | null
