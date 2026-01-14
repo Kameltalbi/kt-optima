@@ -39,7 +39,7 @@ export interface EntrepriseInfo {
 }
 
 interface DocumentTemplateProps {
-  docType?: 'facture' | 'devis' | 'bon_commande' | 'bon_livraison';
+  docType?: 'facture' | 'devis' | 'bon_commande' | 'bon_livraison' | 'avoir';
   entreprise?: EntrepriseInfo;
   readOnly?: boolean;
   onSave?: (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => void;
@@ -648,6 +648,7 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
       case 'devis': return 'DEVIS';
       case 'bon_commande': return 'BON DE COMMANDE';
       case 'bon_livraison': return 'BON DE LIVRAISON';
+      case 'avoir': return 'AVOIR';
       default: return 'DOCUMENT';
     }
   };
@@ -671,6 +672,7 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                     <option value="devis">Devis</option>
                     <option value="bon_commande">Bon de Commande</option>
                     <option value="bon_livraison">Bon de Livraison</option>
+                    <option value="avoir">Avoir</option>
                   </select>
                   <Input
                     value={formData.numero}
