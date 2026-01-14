@@ -36,7 +36,10 @@ import {
   FileText,
   CheckCircle,
   ArrowLeft,
+  Download,
+  Printer,
 } from "lucide-react";
+import DocumentTemplate, { DocumentFormData, DocumentLine } from "@/components/documents/DocumentTemplate";
 import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -650,67 +653,56 @@ export default function ClientCredits() {
         </DialogContent>
       </Dialog>
 
-      {/* View Modal */}
+      {/* View Modal avec DocumentTemplate */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedCredit?.number}</DialogTitle>
-            <DialogDescription>Détails de l'avoir client</DialogDescription>
-          </DialogHeader>
-          {selectedCredit && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Facture d'origine</p>
-                  <p className="font-medium">
-                    {mockClientInvoices.find(i => i.id === selectedCredit.invoice_id)?.number || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Client</p>
-                  <p className="font-medium">
-                    {mockClients[selectedCredit.client_id] || selectedCredit.client_id}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">
-                    {new Date(selectedCredit.date).toLocaleDateString('fr-FR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <Badge variant="outline">
-                    {selectedCredit.type === 'full' ? 'Total' : 'Partiel'}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Motif</p>
-                  <p className="font-medium">{reasonLabels[selectedCredit.reason]}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Méthode de remboursement</p>
-                  <p className="font-medium">{refundMethodLabels[selectedCredit.refund_method]}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Montant</p>
-                  <p className="font-medium text-lg">{formatCurrency(selectedCredit.total)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Statut</p>
-                  <Badge variant={selectedCredit.status === 'applied' ? 'default' : 'secondary'}>
-                    {statusLabels[selectedCredit.status]}
-                  </Badge>
-                </div>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold">
+                {selectedCredit?.number}
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => {
+                    setTimeout(() => {
+                      const pdfButton = document.querySelector('[data-pdf-button]') as HTMLElement;
+                      if (pdfButton) {
+                        pdfButton.click();
+                      }
+                    }, 100);
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  PDF
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => {
+                    setTimeout(() => {
+                      const printButton = document.querySelector('[data-print-button]') as HTMLElement;
+                      if (printButton) {
+                        printButton.click();
+                      }
+                    }, 100);
+                  }}
+                >
+                  <Printer className="w-4 h-4" />
+                  Imprimer
+                </Button>
               </div>
-              {selectedCredit.comments && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Commentaires</p>
-                  <p className="text-sm">{selectedCredit.comments}</p>
-                </div>
-              )}
             </div>
-          )}
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
+            <DocumentTemplate
+              docType="avoir"
+              readOnly={true}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
