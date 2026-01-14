@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function SettingsCompany() {
-  const { company } = useAuth();
+  const { company, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,26 +40,64 @@ export default function SettingsCompany() {
   };
 
   const handleSave = async () => {
-    if (!company?.id) {
-      toast.error("Aucune entreprise trouvée");
+    if (!formData.name.trim()) {
+      toast.error("Le nom de l'entreprise est requis");
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("companies")
-        .update({
-          name: formData.name,
-          tax_number: formData.tax_number,
-          address: formData.address,
-          phone: formData.phone,
-          email: formData.email,
-          logo: formData.logo,
-        })
-        .eq("id", company.id);
+      if (company?.id) {
+        // Update existing company
+        const { error } = await supabase
+          .from("companies")
+          .update({
+            name: formData.name,
+            tax_number: formData.tax_number,
+            address: formData.address,
+            phone: formData.phone,
+            email: formData.email,
+            logo: formData.logo,
+          })
+          .eq("id", company.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create new company and link to profile
+        const { data: newCompany, error: createError } = await supabase
+          .from("companies")
+          .insert({
+            name: formData.name,
+            tax_number: formData.tax_number,
+            address: formData.address,
+            phone: formData.phone,
+            email: formData.email,
+            currency: "TND",
+            language: "fr",
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+
+        // Update profile with company_id
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ company_id: newCompany.id })
+          .eq("user_id", user?.id);
+
+        if (profileError) throw profileError;
+
+        // Add admin role
+        await supabase.from("user_roles").insert({
+          user_id: user?.id,
+          company_id: newCompany.id,
+          role: "admin",
+        });
+
+        // Reload page to refresh context
+        window.location.reload();
+      }
       toast.success("Informations enregistrées avec succès");
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de l'enregistrement");
