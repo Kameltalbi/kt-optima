@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, EyeOff } from "lucide-react";
+import { Building2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -20,6 +20,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -40,16 +41,20 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const success = await register(
+      const result = await register(
         formData.name,
         formData.email,
         formData.password,
         formData.companyName
       );
-      if (success) {
-        navigate("/dashboard");
+      if (result.success) {
+        setSuccess(true);
+        // Wait a moment then redirect
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
       } else {
-        setError("Cet email est déjà utilisé");
+        setError(result.error || "Une erreur est survenue lors de l'inscription");
       }
     } catch (err) {
       setError("Une erreur est survenue lors de l'inscription");
@@ -57,6 +62,29 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                <h2 className="text-2xl font-bold text-foreground">Compte créé !</h2>
+                <p className="text-muted-foreground">
+                  Votre compte a été créé avec succès. Vous allez être redirigé vers le tableau de bord.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Vérifiez votre email pour confirmer votre compte.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
