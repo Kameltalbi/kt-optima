@@ -761,13 +761,22 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
             {/* En-tête */}
             <div className="flex justify-between items-start mb-8 pb-6 border-b-2 border-primary/20">
               <div className="flex-1">
-                <div className="text-4xl mb-2">🏢</div>
+                {entreprise.logo ? (
+                  <img 
+                    src={entreprise.logo} 
+                    alt={entreprise.nom}
+                    className="h-16 w-auto mb-2 object-contain"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="text-4xl mb-2">🏢</div>
+                )}
                 <h1 className="text-xl font-bold text-foreground">{entreprise.nom}</h1>
                 <p className="text-sm text-muted-foreground">{entreprise.adresse}</p>
-                <p className="text-sm text-muted-foreground">{entreprise.ville}</p>
-                <p className="text-sm text-muted-foreground">Tél: {entreprise.tel}</p>
-                <p className="text-sm text-muted-foreground">{entreprise.email}</p>
-                <p className="text-sm font-medium mt-1">IF: {entreprise.mf}</p>
+                {entreprise.ville && <p className="text-sm text-muted-foreground">{entreprise.ville}</p>}
+                {entreprise.tel && <p className="text-sm text-muted-foreground">Tél: {entreprise.tel}</p>}
+                {entreprise.email && <p className="text-sm text-muted-foreground">{entreprise.email}</p>}
+                {entreprise.mf && <p className="text-sm font-medium mt-1">IF: {entreprise.mf}</p>}
               </div>
 
               <div className="text-right">
