@@ -45,25 +45,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePayroll, FichePaie, CalculPaieResult } from "@/hooks/use-payroll";
-import { supabase } from "@/integrations/supabase/client";
+import { useHR } from "@/hooks/use-hr";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import jsPDF from "jspdf";
 
-interface Employe {
-  id: string;
-  nom: string;
-  prenom: string;
-  code: string | null;
-  poste: string | null;
-  departement: string | null;
-  salaire_base: number;
-  numero_cnss: string | null;
-}
-
 export default function PayrollNewPage() {
   const { companyId } = useAuth();
+  const { employees } = useHR();
   const {
     fichesPaie,
     loading,
@@ -77,7 +67,6 @@ export default function PayrollNewPage() {
     initDefaultParams,
   } = usePayroll();
 
-  const [employes, setEmployes] = useState<Employe[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [periodFilter, setPeriodFilter] = useState<string>("");
@@ -98,24 +87,8 @@ export default function PayrollNewPage() {
     notes: "",
   });
 
-  // Charger les employés
-  useEffect(() => {
-    const loadEmployes = async () => {
-      if (!companyId) return;
-
-      const { data, error } = await supabase
-        .from("employes")
-        .select("id, nom, prenom, code, poste, departement, salaire_base, numero_cnss")
-        .eq("company_id", companyId)
-        .eq("actif", true);
-
-      if (!error && data) {
-        setEmployes(data);
-      }
-    };
-
-    loadEmployes();
-  }, [companyId]);
+  // Filtrer les employés actifs
+  const activeEmployees = employees.filter(e => e.status === 'active');
 
   // Initialiser les paramètres si vides
   useEffect(() => {
@@ -171,13 +144,12 @@ export default function PayrollNewPage() {
     setIsCreateModalOpen(true);
   };
 
-  // Quand on sélectionne un employé, charger son salaire de base
+  // Quand on sélectionne un employé
   const handleEmployeSelect = (employeId: string) => {
-    const employe = employes.find((e) => e.id === employeId);
     setFormData((prev) => ({
       ...prev,
       employe_id: employeId,
-      salaire_base: employe?.salaire_base || 0,
+      salaire_base: 0, // L'utilisateur saisit le salaire manuellement
     }));
     setCalculResult(null);
   };
@@ -633,9 +605,9 @@ export default function PayrollNewPage() {
                     <SelectValue placeholder="Sélectionner un employé" />
                   </SelectTrigger>
                   <SelectContent>
-                    {employes.map((emp) => (
+                    {activeEmployees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
-                        {emp.prenom} {emp.nom} ({emp.code || "N/A"})
+                        {emp.firstName} {emp.lastName} ({emp.matricule || "N/A"})
                       </SelectItem>
                     ))}
                   </SelectContent>
