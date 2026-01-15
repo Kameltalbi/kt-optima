@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export interface CompteComptable {
@@ -63,7 +63,7 @@ export interface EcritureLigne {
 }
 
 export function useComptabilite() {
-  const { company, user, companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [comptes, setComptes] = useState<CompteComptable[]>([]);
   const [journaux, setJournaux] = useState<Journal[]>([]);
