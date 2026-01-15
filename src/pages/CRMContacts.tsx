@@ -473,14 +473,14 @@ export default function CRMContacts() {
               <div className="space-y-2">
                 <Label htmlFor="companyId">Société</Label>
                 <Select
-                  value={formData.companyId}
-                  onValueChange={(value) => setFormData({ ...formData, companyId: value })}
+                  value={formData.companyId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, companyId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une société" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune</SelectItem>
+                    <SelectItem value="none">Aucune</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
