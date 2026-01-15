@@ -183,40 +183,64 @@ export function usePayroll() {
     return param ? param.valeur : 0;
   }, [parametres]);
 
-  // Calculer l'IRPP annuel par tranches
+  // Calculer l'IRPP annuel par tranches (seulement les tranches réellement utilisées)
   const calculerIRPPAnnuel = useCallback((baseImposableAnnuelle: number): { 
     irpp: number; 
     details: { tranche: string; montant_tranche: number; taux: number; impot: number }[] 
   } => {
+    if (baseImposableAnnuelle <= 0 || tranches.length === 0) {
+      return { irpp: 0, details: [] };
+    }
+
     let irppTotal = 0;
     const details: { tranche: string; montant_tranche: number; taux: number; impot: number }[] = [];
+    
+    // Trier les tranches par ordre croissant
+    const tranchesTriees = [...tranches].sort((a, b) => a.ordre - b.ordre);
+    
+    // Calculer uniquement les tranches réellement atteintes
+    // Les tranches sont calculées par accumulation : chaque tranche s'applique sur la partie qui dépasse son minimum
     let resteAImposer = baseImposableAnnuelle;
     
-    for (const tranche of tranches) {
-      if (resteAImposer <= 0) break;
-      
+    for (let i = 0; i < tranchesTriees.length && resteAImposer > 0; i++) {
+      const tranche = tranchesTriees[i];
       const min = tranche.tranche_min;
       const max = tranche.tranche_max ?? Infinity;
       const taux = tranche.taux / 100;
       
-      // Calculer le montant dans cette tranche
-      let montantDansTranche = 0;
+      // Si la base imposable n'atteint pas le minimum de cette tranche, on passe à la suivante
+      if (baseImposableAnnuelle <= min) {
+        continue;
+      }
       
-      if (baseImposableAnnuelle > min) {
-        const plafondTranche = max === Infinity ? baseImposableAnnuelle : Math.min(baseImposableAnnuelle, max);
-        montantDansTranche = plafondTranche - min;
+      // Calculer le montant réellement imposé dans cette tranche
+      // Le plafond est soit la base imposable, soit le max de la tranche
+      const plafondTranche = max === Infinity ? baseImposableAnnuelle : Math.min(baseImposableAnnuelle, max);
+      
+      // Le montant dans cette tranche = plafond - minimum
+      const montantDansTranche = Math.max(0, plafondTranche - min);
+      
+      // Ne garder que les tranches avec un montant > 0
+      if (montantDansTranche > 0) {
+        const impotTranche = montantDansTranche * taux;
+        irppTotal += impotTranche;
         
-        if (montantDansTranche > 0) {
-          const impotTranche = montantDansTranche * taux;
-          irppTotal += impotTranche;
-          
-          details.push({
-            tranche: max === Infinity ? `> ${min.toLocaleString()} TND` : `${min.toLocaleString()} - ${max.toLocaleString()} TND`,
-            montant_tranche: montantDansTranche,
-            taux: tranche.taux,
-            impot: impotTranche
-          });
-        }
+        // Format de la tranche : "0 – 5 000 TND" ou "5 000 – 20 000 TND"
+        // Pour la première tranche, on affiche "0 – 5 000" même si min > 0
+        const minDisplay = i === 0 ? 0 : Math.ceil(min);
+        const maxDisplay = max === Infinity 
+          ? baseImposableAnnuelle 
+          : Math.floor(max);
+        const trancheLabel = max === Infinity 
+          ? `${minDisplay.toLocaleString('fr-FR')} – ${baseImposableAnnuelle.toLocaleString('fr-FR')} TND`
+          : `${minDisplay.toLocaleString('fr-FR')} – ${maxDisplay.toLocaleString('fr-FR')} TND`;
+        
+        details.push({
+          tranche: trancheLabel,
+          montant_tranche: montantDansTranche,
+          taux: tranche.taux,
+          impot: impotTranche
+        });
       }
     }
     

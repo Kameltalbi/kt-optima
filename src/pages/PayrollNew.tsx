@@ -28,6 +28,11 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Search,
   FileText,
   CheckCircle,
@@ -42,6 +47,7 @@ import {
   Eye,
   RefreshCw,
   Settings,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePayroll, FichePaie, CalculPaieResult } from "@/hooks/use-payroll";
@@ -62,6 +68,7 @@ export default function PayrollNewPage() {
     parametres,
     tranches,
     calculerPaie,
+    calculerIRPPAnnuel,
     creerFichePaie,
     validerFichePaie,
     marquerPayee,
@@ -630,69 +637,67 @@ export default function PayrollNewPage() {
 
             {/* Résultat du calcul */}
             {calculResult && (
-              <Card className="bg-muted/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Résultat du calcul</CardTitle>
+              <Card className="bg-white border-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">Résultat du calcul</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Salaire brut</p>
-                      <p className="text-xl font-bold">{calculResult.brut.toFixed(2)} TND</p>
+                  {/* SECTION 1 — Résumé (prioritaire) */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Salaire brut</span>
+                      <span className="text-base font-semibold">{calculResult.brut.toFixed(2)} TND</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        CNSS Salarié ({calculResult.taux_cnss_salarie.toFixed(2)}%)
-                      </p>
-                      <p className="text-xl font-bold text-destructive">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">
+                        CNSS salarié ({calculResult.taux_cnss_salarie.toFixed(2)} %)
+                      </span>
+                      <span className="text-base font-semibold text-[#DC2626]">
                         -{calculResult.cnss_salarie.toFixed(2)} TND
-                      </p>
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Base imposable</span>
+                      <span className="text-base font-semibold">{calculResult.base_imposable.toFixed(2)} TND</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">IRPP</span>
+                      <span className="text-base font-semibold text-[#DC2626]">
+                        -{calculResult.irpp_mensuel.toFixed(2)} TND
+                      </span>
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-base font-bold text-foreground">Net à payer</span>
+                      <span className="text-xl font-bold text-[#16A34A]">
+                        {calculResult.net_a_payer.toFixed(2)} TND
+                      </span>
                     </div>
                   </div>
 
-                  <Separator />
-
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Base imposable mensuelle</p>
-                    <p className="font-medium">{calculResult.base_imposable.toFixed(2)} TND</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Détail IRPP (base annualisée)</p>
-                    <div className="space-y-1 text-sm">
-                      {calculResult.details_irpp.map((detail, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span>
-                            {detail.tranche} @ {detail.taux}%
-                          </span>
-                          <span>{detail.impot.toFixed(2)} TND</span>
+                  {/* SECTION 2 — Détail IRPP (repliable) */}
+                  {calculResult.details_irpp.length > 0 && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        <span>Détail IRPP (base annualisée)</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <div className="space-y-2 text-sm bg-[#F8FAFC] p-3 rounded-lg border border-[#E5E7EB]">
+                          {calculResult.details_irpp.map((detail, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className="text-foreground">
+                                {detail.tranche} @ {detail.taux}%
+                              </span>
+                              <span className="font-medium text-foreground">
+                                {detail.impot.toFixed(2)} TND
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      <Separator className="my-2" />
-                      <div className="flex justify-between font-medium">
-                        <span>IRPP Annuel</span>
-                        <span>{calculResult.irpp_annuel.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between font-medium text-destructive">
-                        <span>IRPP Mensuel (÷12)</span>
-                        <span>-{calculResult.irpp_mensuel.toFixed(2)} TND</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold">Net à payer</p>
-                    <p className="text-2xl font-bold text-success">
-                      {calculResult.net_a_payer.toFixed(2)} TND
-                    </p>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground">
-                    Coût employeur (CNSS {calculResult.taux_cnss_employeur.toFixed(2)}%):{" "}
-                    {calculResult.cnss_employeur.toFixed(2)} TND
-                  </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -718,128 +723,95 @@ export default function PayrollNewPage() {
           <DialogHeader>
             <DialogTitle>Fiche de paie - {selectedFiche?.periode}</DialogTitle>
           </DialogHeader>
-          {selectedFiche && (
+          {selectedFiche && (() => {
+            // Recalculer les détails IRPP pour l'affichage
+            const baseImposableAnnuelle = selectedFiche.base_imposable * 12;
+            const { details: detailsIRPP } = calculerIRPPAnnuel(baseImposableAnnuelle);
+            
+            return (
             <div className="space-y-6 mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Détails</CardTitle>
+              <Card className="bg-white border-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">Résumé</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Employé</p>
-                      <p className="font-medium">
-                        {selectedFiche.employe?.prenom} {selectedFiche.employe?.nom}
-                      </p>
+                <CardContent className="space-y-3">
+                  {/* SECTION 1 — Résumé (prioritaire) */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Salaire brut</span>
+                      <span className="text-base font-semibold">{selectedFiche.brut.toFixed(2)} TND</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Période</p>
-                      <p className="font-medium">{selectedFiche.periode}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">
+                        CNSS salarié ({selectedFiche.taux_cnss_salarie.toFixed(2)} %)
+                      </span>
+                      <span className="text-base font-semibold text-[#DC2626]">
+                        -{selectedFiche.cnss_salarie.toFixed(2)} TND
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date de paiement</p>
-                      <p className="font-medium">
-                        {new Date(selectedFiche.date_paiement).toLocaleDateString("fr-FR")}
-                      </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Base imposable</span>
+                      <span className="text-base font-semibold">{selectedFiche.base_imposable.toFixed(2)} TND</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Statut</p>
-                      <Badge className={cn("text-xs", statusStyles[selectedFiche.statut])}>
-                        {statusLabels[selectedFiche.statut]}
-                      </Badge>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">IRPP</span>
+                      <span className="text-base font-semibold text-[#DC2626]">
+                        -{selectedFiche.irpp_mensuel.toFixed(2)} TND
+                      </span>
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-semibold mb-3">Rémunération</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Salaire de base</span>
-                        <span>{selectedFiche.salaire_base.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Primes</span>
-                        <span>{selectedFiche.primes.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Indemnités</span>
-                        <span>{selectedFiche.indemnites.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Heures supplémentaires</span>
-                        <span>{selectedFiche.heures_sup.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between font-bold border-t pt-2">
-                        <span>Salaire brut</span>
-                        <span>{selectedFiche.brut.toFixed(2)} TND</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-semibold mb-3">Cotisations CNSS</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>CNSS Salarié ({selectedFiche.taux_cnss_salarie.toFixed(2)}%)</span>
-                        <span className="text-destructive">
-                          -{selectedFiche.cnss_salarie.toFixed(2)} TND
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>CNSS Employeur ({selectedFiche.taux_cnss_employeur.toFixed(2)}%)</span>
-                        <span>{selectedFiche.cnss_employeur.toFixed(2)} TND</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-semibold mb-3">IRPP</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Base imposable mensuelle</span>
-                        <span>{selectedFiche.base_imposable.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>IRPP Annuel</span>
-                        <span>{selectedFiche.irpp_annuel.toFixed(2)} TND</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>IRPP Mensuel</span>
-                        <span className="text-destructive">
-                          -{selectedFiche.irpp_mensuel.toFixed(2)} TND
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedFiche.autres_retenues > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span>Autres retenues</span>
-                        <span className="text-destructive">
+                    {selectedFiche.autres_retenues > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-foreground">Autres retenues</span>
+                        <span className="text-base font-semibold text-[#DC2626]">
                           -{selectedFiche.autres_retenues.toFixed(2)} TND
                         </span>
                       </div>
-                    </>
-                  )}
-
-                  <Separator />
-
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-lg font-bold">Net à payer</h4>
-                    <p className="text-2xl font-bold text-success">
-                      {selectedFiche.net_a_payer.toFixed(2)} TND
-                    </p>
+                    )}
+                    <Separator className="my-3" />
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-base font-bold text-foreground">Net à payer</span>
+                      <span className="text-xl font-bold text-[#16A34A]">
+                        {selectedFiche.net_a_payer.toFixed(2)} TND
+                      </span>
+                    </div>
                   </div>
+
+                  {/* SECTION 2 — Détail IRPP (repliable) */}
+                  {detailsIRPP.length > 0 && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        <span>Détail IRPP (base annualisée)</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <div className="space-y-2 text-sm bg-[#F8FAFC] p-3 rounded-lg border border-[#E5E7EB]">
+                          {detailsIRPP.map((detail, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className="text-foreground">
+                                {detail.tranche} @ {detail.taux}%
+                              </span>
+                              <span className="font-medium text-foreground">
+                                {detail.impot.toFixed(2)} TND
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </CardContent>
               </Card>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => generatePDF(selectedFiche)}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger PDF
+                </Button>
+                <Button onClick={() => setIsViewModalOpen(false)}>Fermer</Button>
+              </div>
+            </div>
+            );
+          })()}
 
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => generatePDF(selectedFiche)}>
