@@ -192,13 +192,21 @@ export function useCredits() {
   }, [supplierCredits, updateSupplierCredit]);
 
   // Client Credit methods
-  const createClientCredit = useCallback((
-    creditData: Omit<ClientCredit, 'id' | 'number' | 'createdAt' | 'updatedAt' | 'company_id'>
+  const createClientCredit = useCallback(async (
+    creditData: Omit<ClientCredit, 'id' | 'number' | 'createdAt' | 'updatedAt' | 'company_id'>,
+    numero?: string
   ) => {
     if (!companyId) {
       throw new Error('Company ID is required');
     }
-    const creditNumber = `AV-CLI-${new Date().getFullYear()}-${String(clientCredits.length + 1).padStart(3, '0')}`;
+    
+    // Utiliser le numéro fourni ou générer un nouveau via la séquence unifiée
+    let creditNumber = numero;
+    if (!creditNumber || creditNumber.trim() === '') {
+      const { getNextDocumentNumber } = await import('./use-document-numbering');
+      creditNumber = await getNextDocumentNumber('avoir', creditData.date);
+    }
+    
     const newCredit: ClientCredit = {
       ...creditData,
       number: creditNumber,

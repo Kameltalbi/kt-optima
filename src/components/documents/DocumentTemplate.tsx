@@ -1,12 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { Search, Plus, X, Download, Save, Printer } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Plus, X, Download, Save, Printer, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useCurrency } from '@/hooks/use-currency';
 import { useTaxes } from '@/hooks/use-taxes';
+import { useEncaissements, Encaissement } from '@/hooks/use-encaissements';
+import { getNextDocumentNumber } from '@/hooks/use-document-numbering';
 
 export interface DocumentLine {
   id: number;
@@ -39,10 +42,10 @@ export interface EntrepriseInfo {
 }
 
 interface DocumentTemplateProps {
-  docType?: 'facture' | 'devis' | 'bon_commande' | 'bon_livraison' | 'avoir';
+  docType?: 'facture' | 'facture_acompte' | 'devis' | 'bon_commande' | 'bon_livraison' | 'avoir';
   entreprise?: EntrepriseInfo;
   readOnly?: boolean;
-  onSave?: (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => void;
+  onSave?: (data: { formData: DocumentFormData; lignes: DocumentLine[]; acomptesAlloues?: Array<{ encaissement_id: string; montant_alloue: number }> }) => void;
 }
 
 const defaultEntreprise: EntrepriseInfo = {
@@ -63,9 +66,11 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
 }) => {
   const { defaultCurrency, formatAmount } = useCurrency();
   const { enabledTaxes, calculateTax } = useTaxes();
+  const { getAcomptesDisponibles } = useEncaissements();
   const [docType, setDocType] = useState(initialDocType);
+  const isFactureAcompte = docType === 'facture_acompte';
   const [formData, setFormData] = useState<DocumentFormData>({
-    numero: 'F-2025-001',
+    numero: '',
     date: new Date().toISOString().split('T')[0],
     clientId: '',
     clientNom: '',
@@ -73,6 +78,46 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
     clientMF: '',
     notes: '',
   });
+
+  // Générer automatiquement le numéro au montage si vide
+  useEffect(() => {
+    if (!formData.numero && !readOnly) {
+      const generateNumero = async () => {
+        try {
+          let type: 'acompte' | 'facture' | 'avoir' = 'facture';
+          if (docType === 'facture_acompte') {
+            type = 'acompte';
+          } else if (docType === 'avoir') {
+            type = 'avoir';
+          }
+          
+          const numero = await getNextDocumentNumber(type, formData.date);
+          setFormData(prev => {
+            // Ne mettre à jour que si le numéro est toujours vide (évite les conflits)
+            if (!prev.numero) {
+              return { ...prev, numero };
+            }
+            return prev;
+          });
+        } catch (error) {
+          console.error('Error generating document number:', error);
+          // Fallback
+          const prefix = isFactureAcompte ? 'AC' : docType === 'avoir' ? 'AV' : 'F';
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          setFormData(prev => {
+            if (!prev.numero) {
+              return { ...prev, numero: `${prefix}-${year}-${month}-XXX` };
+            }
+            return prev;
+          });
+        }
+      };
+      generateNumero();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Uniquement au montage
 
   const [lignes, setLignes] = useState<DocumentLine[]>([
     { id: 1, designation: '', quantite: 1, prixHT: 0, remise: 0, tva: 20 }
@@ -82,6 +127,11 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
   const [searchProduit, setSearchProduit] = useState('');
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [showProduitSearch, setShowProduitSearch] = useState<number | null>(null);
+  
+  // États pour les acomptes
+  const [acomptesDisponibles, setAcomptesDisponibles] = useState<Encaissement[]>([]);
+  const [acomptesSelectionnes, setAcomptesSelectionnes] = useState<Record<string, { selected: boolean; montant_alloue: number }>>({});
+  const [loadingAcomptes, setLoadingAcomptes] = useState(false);
 
   // Données factices
   const clients = [
@@ -310,7 +360,7 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
     ));
   };
 
-  const selectionnerClient = (client: typeof clients[0]) => {
+  const selectionnerClient = async (client: typeof clients[0]) => {
     setFormData({
       ...formData,
       clientId: client.id.toString(),
@@ -320,6 +370,28 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
     });
     setShowClientSearch(false);
     setSearchClient('');
+    
+    // Charger les acomptes disponibles pour ce client (uniquement pour les factures normales, pas les factures d'acompte)
+    if (docType === 'facture' && !readOnly) {
+      setLoadingAcomptes(true);
+      try {
+        const acomptes = await getAcomptesDisponibles(client.id.toString());
+        setAcomptesDisponibles(acomptes);
+        // Réinitialiser les sélections
+        const initialSelection: Record<string, { selected: boolean; montant_alloue: number }> = {};
+        acomptes.forEach(acompte => {
+          initialSelection[acompte.id] = { selected: false, montant_alloue: 0 };
+        });
+        setAcomptesSelectionnes(initialSelection);
+      } catch (error) {
+        console.error('Error loading acomptes:', error);
+      } finally {
+        setLoadingAcomptes(false);
+      }
+    } else {
+      setAcomptesDisponibles([]);
+      setAcomptesSelectionnes({});
+    }
   };
 
   const selectionnerProduit = (ligneId: number, produit: typeof produits[0]) => {
@@ -347,10 +419,58 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
 
   const totaux = calculerTotaux();
 
+  // Calculer le montant total alloué des acomptes
+  const montantAcomptesAlloue = Object.values(acomptesSelectionnes).reduce((sum, acc) => {
+    return sum + (acc.selected ? acc.montant_alloue : 0);
+  }, 0);
+
+  // Calculer le solde à payer (TTC - acomptes alloués)
+  const soldeAPayer = Math.max(0, totaux.totalTTC - montantAcomptesAlloue);
+
   const documentRef = useRef<HTMLDivElement>(null);
 
   const handleSave = () => {
-    onSave?.({ formData, lignes });
+    const acomptesAlloues = Object.entries(acomptesSelectionnes)
+      .filter(([_, acc]) => acc.selected && acc.montant_alloue > 0)
+      .map(([encaissement_id, acc]) => ({
+        encaissement_id,
+        montant_alloue: acc.montant_alloue,
+      }));
+    
+    onSave?.({ formData, lignes, acomptesAlloues });
+  };
+
+  // Gérer la sélection d'un acompte
+  const handleAcompteToggle = (acompteId: string, available: number) => {
+    setAcomptesSelectionnes(prev => {
+      const current = prev[acompteId] || { selected: false, montant_alloue: 0 };
+      const newSelected = !current.selected;
+      return {
+        ...prev,
+        [acompteId]: {
+          selected: newSelected,
+          montant_alloue: newSelected ? Math.min(available, soldeAPayer) : 0,
+        },
+      };
+    });
+  };
+
+  // Gérer le changement du montant alloué
+  const handleAcompteMontantChange = (acompteId: string, value: number, maxAvailable: number) => {
+    // Calculer le solde actuel sans cet acompte
+    const currentAllocation = acomptesSelectionnes[acompteId]?.montant_alloue || 0;
+    const soldeSansCetAcompte = totaux.totalTTC - (montantAcomptesAlloue - currentAllocation);
+    
+    const maxAllowed = Math.min(maxAvailable, soldeSansCetAcompte);
+    const montant = Math.max(0, Math.min(value, maxAllowed));
+    
+    setAcomptesSelectionnes(prev => ({
+      ...prev,
+      [acompteId]: {
+        selected: montant > 0,
+        montant_alloue: montant,
+      },
+    }));
   };
 
   const handleDownloadPDF = async () => {
@@ -644,6 +764,7 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
 
   const getDocTypeLabel = () => {
     switch (docType) {
+      case 'facture_acompte': return 'FACTURE D\'ACOMPTE';
       case 'facture': return 'FACTURE';
       case 'devis': return 'DEVIS';
       case 'bon_commande': return 'BON DE COMMANDE';
@@ -667,8 +788,10 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                     value={docType}
                     onChange={(e) => setDocType(e.target.value as typeof docType)}
                     className="px-4 py-2 border rounded-lg font-medium bg-background text-sm"
+                    disabled={isFactureAcompte}
                   >
-                    <option value="facture">Facture</option>
+                    {!isFactureAcompte && <option value="facture">Facture</option>}
+                    {isFactureAcompte && <option value="facture_acompte">Facture d'acompte</option>}
                     <option value="devis">Devis</option>
                     <option value="bon_commande">Bon de Commande</option>
                     <option value="bon_livraison">Bon de Livraison</option>
@@ -837,6 +960,123 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Acomptes / avances disponibles (uniquement pour les factures normales, pas les factures d'acompte) */}
+            {docType === 'facture' && formData.clientId && !readOnly && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Label className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                    Acomptes / avances disponibles
+                  </Label>
+                </div>
+                
+                {loadingAcomptes ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : acomptesDisponibles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun acompte disponible pour ce client</p>
+                ) : (
+                  <div className="space-y-3">
+                    {acomptesDisponibles.map((acompte) => {
+                      const selection = acomptesSelectionnes[acompte.id] || { selected: false, montant_alloue: 0 };
+                      // Calculer le solde disponible sans cet acompte
+                      const currentAllocation = selection.montant_alloue || 0;
+                      const soldeSansCetAcompte = totaux.totalTTC - (montantAcomptesAlloue - currentAllocation);
+                      const maxAlloue = Math.min(acompte.remaining_amount, soldeSansCetAcompte);
+                      const montantInitial = acompte.montant;
+                      const montantUtilise = acompte.allocated_amount || 0;
+                      const montantDisponible = acompte.remaining_amount;
+                      
+                      return (
+                        <div key={acompte.id} className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={selection.selected}
+                              onCheckedChange={() => {
+                                handleAcompteToggle(acompte.id, acompte.remaining_amount);
+                                // Par défaut, utiliser tout le montant disponible (ou le solde restant si inférieur)
+                                if (!selection.selected) {
+                                  const defaultAmount = Math.min(montantDisponible, soldeSansCetAcompte);
+                                  handleAcompteMontantChange(acompte.id, defaultAmount, montantDisponible);
+                                }
+                              }}
+                              disabled={acompte.remaining_amount === 0 || soldeSansCetAcompte <= 0}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-semibold">
+                                    {acompte.reference || `Acompte du ${new Date(acompte.date).toLocaleDateString('fr-FR')}`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(acompte.date).toLocaleDateString('fr-FR')}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Informations détaillées */}
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                  <p className="text-muted-foreground">Montant initial</p>
+                                  <p className="font-medium">{formatAmount(montantInitial)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Déjà utilisé</p>
+                                  <p className="font-medium text-orange-600 dark:text-orange-400">{formatAmount(montantUtilise)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Disponible</p>
+                                  <p className="font-medium text-green-600 dark:text-green-400">{formatAmount(montantDisponible)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Champ montant à déduire */}
+                              {selection.selected && (
+                                <div className="pt-2 border-t">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <Label className="text-xs font-medium">Montant à déduire:</Label>
+                                    <Input
+                                      type="number"
+                                      value={selection.montant_alloue || ''}
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value) || 0;
+                                        handleAcompteMontantChange(acompte.id, value, montantDisponible);
+                                      }}
+                                      className="w-32 h-8 text-right text-sm font-semibold"
+                                      min="0"
+                                      max={maxAlloue}
+                                      step="0.01"
+                                    />
+                                  </div>
+                                  {selection.montant_alloue > maxAlloue && (
+                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                      Maximum: {formatAmount(maxAlloue)}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {montantAcomptesAlloue > 0 && (
+                      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Total acomptes alloués:
+                          </span>
+                          <span className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                            {formatAmount(montantAcomptesAlloue)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Tableau des produits */}
             <div className="mb-8 flex-1">
@@ -1027,10 +1267,35 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                       <span className="text-primary">{formatAmount(totaux.totalTTC)}</span>
                     </div>
 
-                  <div className="pt-2 text-xs text-muted-foreground italic">
-                    <p>Arrêté la présente facture à la somme de:</p>
-                    <p className="font-medium text-foreground">{nombreEnLettres(totaux.totalTTC)}</p>
-                  </div>
+                    {/* Acomptes alloués (uniquement pour les factures normales) */}
+                    {docType === 'facture' && montantAcomptesAlloue > 0 && (
+                      <>
+                        <div className="flex justify-between text-sm text-blue-600 dark:text-blue-400 pt-2 border-t border-primary/20">
+                          <span>Acomptes alloués:</span>
+                          <span>-{formatAmount(montantAcomptesAlloue)}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold text-success pt-2 border-t border-primary/20">
+                          <span>Solde à payer:</span>
+                          <span>{formatAmount(soldeAPayer)}</span>
+                        </div>
+                      </>
+                    )}
+
+                  {!isFactureAcompte && (
+                    <div className="pt-2 text-xs text-muted-foreground italic">
+                      <p>Arrêté la présente facture à la somme de:</p>
+                      <p className="font-medium text-foreground">{nombreEnLettres(totaux.totalTTC)}</p>
+                    </div>
+                  )}
+                  {isFactureAcompte && (
+                    <div className="pt-2 text-xs text-muted-foreground italic">
+                      <p>Arrêté la présente facture d'acompte à la somme de:</p>
+                      <p className="font-medium text-foreground">{nombreEnLettres(totaux.totalTTC)}</p>
+                      <p className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+                        Cette facture d'acompte représente une avance client qui sera déductible sur la facture finale.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

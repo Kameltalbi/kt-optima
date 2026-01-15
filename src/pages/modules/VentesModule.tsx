@@ -7,11 +7,14 @@ import Clients from "../Clients";
 import ClientCredits from "../ClientCredits";
 import DeliveryNotes from "../DeliveryNotes";
 import ComingSoon from "../ComingSoon";
+import Encaissements from "../Encaissements";
+import FactureAcompte from "../FactureAcompte";
 
 const tabs: ModuleTab[] = [
   { id: "clients", label: "Clients", path: "/ventes/clients" },
   { id: "quotes", label: "Devis", path: "/ventes/devis" },
   { id: "invoices", label: "Factures clients", path: "/ventes/factures" },
+  { id: "acomptes", label: "Factures d'acompte", path: "/ventes/factures-acompte" },
   { id: "delivery", label: "Bons de livraison", path: "/ventes/bons-livraison" },
   { id: "credits", label: "Avoirs clients", path: "/ventes/avoirs" },
   { id: "payments", label: "Encaissements", path: "/ventes/encaissements" },
@@ -87,6 +90,19 @@ export default function VentesModule() {
         }
       />
       <Route
+        path="factures-acompte"
+        element={
+          <MainLayout
+            title="Ventes"
+            subtitle="Gestion des ventes et clients"
+            moduleTabs={tabs}
+            moduleName="Ventes"
+          >
+            <FactureAcompte />
+          </MainLayout>
+        }
+      />
+      <Route
         path="encaissements"
         element={
           <MainLayout
@@ -95,7 +111,7 @@ export default function VentesModule() {
             moduleTabs={tabs}
             moduleName="Ventes"
           >
-            <ComingSoon title="Encaissements" subtitle="Gestion des encaissements clients" />
+            <Encaissements />
           </MainLayout>
         }
       />

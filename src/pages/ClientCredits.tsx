@@ -104,16 +104,25 @@ export default function ClientCredits() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
 
   // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
-    nom: company.name,
+  const entrepriseInfo: EntrepriseInfo = company ? {
+    nom: company.name || 'Mon Entreprise',
     adresse: company.address || '',
-    ville: '',
+    ville: company.address?.split(',')[1]?.trim() || '',
     tel: company.phone || '',
     email: company.email || '',
     mf: company.tax_number || '',
     logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : undefined;
+    piedDePage: company.footer || 'RC: | IF: | ICE: | Patente:\nIBAN:'
+  } : {
+    nom: 'Mon Entreprise',
+    adresse: '',
+    ville: '',
+    tel: '',
+    email: '',
+    mf: '',
+    logo: undefined,
+    piedDePage: 'RC: | IF: | ICE: | Patente:\nIBAN:'
+  };
 
   // Obtenir les clients uniques
   const uniqueClients = Array.from(
@@ -157,9 +166,42 @@ export default function ClientCredits() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveCredit = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    console.log("Saving credit note:", data, { isLinkedToInvoice, selectedInvoiceId });
-    setIsCreateModalOpen(false);
+  const handleSaveCredit = async (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+    try {
+      // Calculer les totaux depuis les lignes
+      const totaux = data.lignes.reduce((acc, ligne) => {
+        const sousTotal = ligne.quantite * ligne.prixHT;
+        const montantRemise = sousTotal * (ligne.remise / 100);
+        const htApresRemise = sousTotal - montantRemise;
+        const montantTVA = htApresRemise * (ligne.tva / 100);
+        const totalTTC = htApresRemise + montantTVA;
+        
+        return {
+          subtotal: acc.subtotal + htApresRemise,
+          tax: acc.tax + montantTVA,
+          total: acc.total + totalTTC,
+        };
+      }, { subtotal: 0, tax: 0, total: 0 });
+
+      // Créer l'avoir avec le numéro généré automatiquement
+      await createClientCredit({
+        invoice_id: isLinkedToInvoice && selectedInvoiceId ? selectedInvoiceId : '',
+        client_id: data.formData.clientId,
+        date: data.formData.date,
+        type: 'partial', // Par défaut, peut être modifié plus tard
+        reason: 'other',
+        subtotal: totaux.subtotal,
+        tax: totaux.tax,
+        total: totaux.total,
+        status: 'draft',
+        stock_impact: false,
+        comments: data.formData.notes || undefined,
+      }, data.formData.numero); // Passer le numéro généré par DocumentTemplate
+
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Error saving credit note:", error);
+    }
   };
 
   const handleApply = (id: string) => {

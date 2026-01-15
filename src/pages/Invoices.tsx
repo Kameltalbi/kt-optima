@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import type { Invoice } from "@/types/database";
 import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFacturesVentes } from "@/hooks/use-factures-ventes";
 
 const mockInvoices: Invoice[] = [
   { id: "1", number: "FAC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "paid", company_id: "1" },
@@ -72,6 +73,7 @@ const statusLabels = {
 
 export default function Invoices() {
   const { company } = useAuth();
+  const { createFacture } = useFacturesVentes();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -115,10 +117,46 @@ export default function Invoices() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveInvoice = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    console.log("Saving invoice:", data);
-    setIsCreateModalOpen(false);
-    // Ici vous pouvez ajouter la logique pour sauvegarder la facture
+  const handleSaveInvoice = async (data: { formData: DocumentFormData; lignes: DocumentLine[]; acomptesAlloues?: Array<{ encaissement_id: string; montant_alloue: number }> }) => {
+    try {
+      // Convertir les données du formulaire
+      const factureData = {
+        numero: data.formData.numero,
+        date_facture: data.formData.date,
+        client_id: data.formData.clientId,
+        notes: data.formData.notes || null,
+      };
+
+      // Convertir les lignes
+      const lignes = data.lignes.map((ligne, index) => {
+        const sousTotal = ligne.quantite * ligne.prixHT;
+        const montantRemise = sousTotal * (ligne.remise / 100);
+        const htApresRemise = sousTotal - montantRemise;
+        const montantTVA = htApresRemise * (ligne.tva / 100);
+        const montantTTC = htApresRemise + montantTVA;
+
+        return {
+          description: ligne.designation,
+          quantite: ligne.quantite,
+          prix_unitaire: ligne.prixHT,
+          taux_tva: ligne.tva,
+          montant_ht: htApresRemise,
+          montant_tva: montantTVA,
+          montant_ttc: montantTTC,
+          ordre: index,
+        };
+      });
+
+      // Convertir les acomptes alloués
+      const acomptesAlloues = data.acomptesAlloues || [];
+
+      // Créer la facture via le hook
+      await createFacture(factureData, lignes, acomptesAlloues);
+      
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Error saving invoice:", error);
+    }
   };
 
   return (

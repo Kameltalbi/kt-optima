@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { AllocationEncaissement } from './use-encaissements';
+import { getNextDocumentNumber } from './use-document-numbering';
 
 // Type pour une facture de vente
 export interface FactureVente {
@@ -10,6 +12,7 @@ export interface FactureVente {
   date_facture: string;
   date_echeance: string | null;
   client_id: string;
+  type_facture?: 'standard' | 'acompte';
   statut: 'brouillon' | 'validee' | 'annulee' | 'payee';
   montant_ht: number;
   montant_tva: number;
@@ -46,6 +49,7 @@ export interface CreateFactureVenteData {
   date_facture: string;
   date_echeance?: string | null;
   client_id: string;
+  type_facture?: 'standard' | 'acompte';
   statut?: 'brouillon' | 'validee' | 'annulee' | 'payee';
   montant_ht?: number;
   montant_tva?: number;
@@ -116,13 +120,21 @@ export function useFacturesVentes() {
   // Créer une facture
   const createFacture = useCallback(async (
     factureData: CreateFactureVenteData,
-    lignes: CreateFactureVenteLigneData[] = []
+    lignes: CreateFactureVenteLigneData[] = [],
+    acomptesAlloues: AllocationEncaissement[] = []
   ) => {
     if (!companyId) {
       throw new Error('Company ID is required');
     }
 
     try {
+      // Générer le numéro automatiquement si non fourni
+      let numero = factureData.numero;
+      if (!numero || numero.trim() === '') {
+        const type = factureData.type_facture === 'acompte' ? 'acompte' : 'facture';
+        numero = await getNextDocumentNumber(type, factureData.date_facture);
+      }
+
       // Calculer les montants si non fournis
       let montant_ht = factureData.montant_ht || 0;
       let montant_tva = factureData.montant_tva || 0;
@@ -134,16 +146,24 @@ export function useFacturesVentes() {
         montant_ttc = lignes.reduce((sum, l) => sum + l.montant_ttc, 0);
       }
 
+      // Calculer le montant payé via les acomptes
+      const montantAcomptes = acomptesAlloues.reduce((sum, acc) => sum + acc.montant_alloue, 0);
+      const montant_paye = (factureData.montant_paye || 0) + montantAcomptes;
+      const montant_restant = montant_ttc - montant_paye;
+
       const { data: facture, error: insertError } = await supabase
         .from('factures_ventes')
         .insert({
           ...factureData,
+          numero,
           company_id: companyId,
+          type_facture: factureData.type_facture || 'standard',
           montant_ht,
           montant_tva,
           montant_ttc,
-          montant_paye: factureData.montant_paye || 0,
-          montant_restant: montant_ttc - (factureData.montant_paye || 0),
+          montant_paye,
+          montant_restant,
+          statut: montant_restant <= 0 ? 'payee' : (factureData.statut || 'brouillon'),
         })
         .select()
         .single();
@@ -169,6 +189,23 @@ export function useFacturesVentes() {
         }
       }
 
+      // Allouer les acomptes si fournis
+      if (acomptesAlloues.length > 0 && facture) {
+        const factureEncaissements = acomptesAlloues.map(allocation => ({
+          facture_id: facture.id,
+          encaissement_id: allocation.encaissement_id,
+          montant_alloue: allocation.montant_alloue,
+        }));
+
+        const { error: allocationError } = await supabase
+          .from('facture_encaissements')
+          .insert(factureEncaissements);
+
+        if (allocationError) {
+          throw allocationError;
+        }
+      }
+
       toast.success('Facture créée avec succès');
       await fetchFactures();
       return facture;
@@ -186,24 +223,31 @@ export function useFacturesVentes() {
     updates: Partial<Omit<FactureVente, 'id' | 'created_at' | 'company_id'>>
   ) => {
     try {
+      const currentFacture = factures.find(f => f.id === id);
+      if (!currentFacture) {
+        throw new Error('Facture introuvable');
+      }
+
       // Recalculer montant_restant si montant_ttc ou montant_paye changent
       if (updates.montant_ttc !== undefined || updates.montant_paye !== undefined) {
-        const currentFacture = factures.find(f => f.id === id);
-        if (currentFacture) {
-          const montant_ttc = updates.montant_ttc ?? currentFacture.montant_ttc;
-          const montant_paye = updates.montant_paye ?? currentFacture.montant_paye;
-          updates.montant_restant = montant_ttc - montant_paye;
-          
-          // Mettre à jour le statut si payé
-          if (updates.montant_restant === 0 && montant_ttc > 0) {
-            updates.statut = 'payee';
-          } else if (updates.statut !== 'annulee' && updates.montant_restant !== undefined) {
-            if (updates.statut === 'validee' || currentFacture.statut === 'validee') {
-              updates.statut = 'validee';
-            }
+        const montant_ttc = updates.montant_ttc ?? currentFacture.montant_ttc;
+        const montant_paye = updates.montant_paye ?? currentFacture.montant_paye;
+        updates.montant_restant = montant_ttc - montant_paye;
+        
+        // Mettre à jour le statut si payé
+        if (updates.montant_restant === 0 && montant_ttc > 0) {
+          updates.statut = 'payee';
+        } else if (updates.statut !== 'annulee' && updates.montant_restant !== undefined) {
+          if (updates.statut === 'validee' || currentFacture.statut === 'validee') {
+            updates.statut = 'validee';
           }
         }
       }
+
+      // Vérifier si la facture passe à "payee" et si c'est une facture d'acompte
+      const devientPayee = (updates.statut === 'payee' && currentFacture.statut !== 'payee') ||
+                          (updates.montant_restant === 0 && currentFacture.montant_restant > 0);
+      const estFactureAcompte = currentFacture.type_facture === 'acompte';
 
       const { data, error: updateError } = await supabase
         .from('factures_ventes')
@@ -215,6 +259,51 @@ export function useFacturesVentes() {
 
       if (updateError) {
         throw updateError;
+      }
+
+      // Si la facture d'acompte devient payée, créer automatiquement un encaissement de type acompte
+      if (devientPayee && estFactureAcompte && data) {
+        try {
+          const montantPaye = updates.montant_paye ?? currentFacture.montant_paye;
+          
+          // Vérifier qu'un encaissement n'existe pas déjà pour cette facture
+          const { data: existingEncaissement } = await supabase
+            .from('encaissements')
+            .select('id')
+            .eq('client_id', data.client_id)
+            .eq('type_encaissement', 'acompte')
+            .eq('montant', montantPaye)
+            .eq('date', data.date_facture)
+            .limit(1)
+            .single();
+
+          if (!existingEncaissement) {
+            // Créer l'encaissement de type acompte
+            const { error: encaissementError } = await supabase
+              .from('encaissements')
+              .insert({
+                client_id: data.client_id,
+                date: data.date_facture,
+                montant: montantPaye,
+                mode_paiement: 'virement', // Par défaut, peut être modifié plus tard
+                reference: `Facture d'acompte ${data.numero}`,
+                type_encaissement: 'acompte',
+                allocated_amount: 0,
+                remaining_amount: montantPaye,
+                status: 'disponible',
+                notes: `Encaissement automatique - Facture d'acompte ${data.numero}`,
+                company_id: companyId,
+              });
+
+            if (encaissementError) {
+              console.error('Error creating encaissement for facture acompte:', encaissementError);
+              // Ne pas bloquer la mise à jour de la facture si l'encaissement échoue
+            }
+          }
+        } catch (err) {
+          console.error('Error creating encaissement for facture acompte:', err);
+          // Ne pas bloquer la mise à jour de la facture
+        }
       }
 
       toast.success('Facture mise à jour avec succès');
@@ -380,6 +469,29 @@ export function useFacturesVentes() {
     );
   }, [factures]);
 
+  // Obtenir les factures d'acompte payées pour un client (disponibles pour déduction)
+  const getFacturesAcomptePayees = useCallback(async (clientId: string): Promise<FactureVente[]> => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('factures_ventes')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('client_id', clientId)
+        .eq('type_facture', 'acompte')
+        .eq('statut', 'payee')
+        .order('date_facture', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      return (data || []) as FactureVente[];
+    } catch (err) {
+      console.error('Error fetching factures acompte payees:', err);
+      return [];
+    }
+  }, [companyId]);
+
   return {
     factures,
     loading,
@@ -396,6 +508,7 @@ export function useFacturesVentes() {
     getFacturesByStatut,
     getFacturesByClient,
     searchFactures,
+    getFacturesAcomptePayees,
     refreshFactures: fetchFactures,
   };
 }

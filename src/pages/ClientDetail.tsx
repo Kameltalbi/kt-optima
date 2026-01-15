@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useClients } from "@/hooks/use-clients";
+import { useEncaissements } from "@/hooks/use-encaissements";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,8 @@ import {
   DollarSign,
   Calendar,
   Loader2,
-  Eye
+  Eye,
+  Wallet
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -27,6 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface FactureVente {
   id: string;
@@ -42,8 +50,11 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getClientById, loading } = useClients();
+  const { getAcomptesDisponibles } = useEncaissements();
   const [factures, setFactures] = useState<FactureVente[]>([]);
   const [loadingFactures, setLoadingFactures] = useState(true);
+  const [acomptes, setAcomptes] = useState<any[]>([]);
+  const [loadingAcomptes, setLoadingAcomptes] = useState(true);
 
   const client = id ? getClientById(id) : null;
 
@@ -72,6 +83,26 @@ export default function ClientDetail() {
 
     fetchFactures();
   }, [id]);
+
+  // Charger les acomptes disponibles
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchAcomptes = async () => {
+      try {
+        setLoadingAcomptes(true);
+        const acomptesData = await getAcomptesDisponibles(id);
+        setAcomptes(acomptesData);
+      } catch (err) {
+        console.error('Error fetching acomptes:', err);
+        toast.error('Erreur lors du chargement des acomptes');
+      } finally {
+        setLoadingAcomptes(false);
+      }
+    };
+
+    fetchAcomptes();
+  }, [id, getAcomptesDisponibles]);
 
   if (loading) {
     return (
@@ -271,73 +302,140 @@ export default function ClientDetail() {
           )}
         </div>
 
-        {/* Historique des ventes */}
+        {/* Historique des ventes et acomptes */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Historique des ventes</CardTitle>
-              <CardDescription>Factures et documents liés à ce client</CardDescription>
+              <CardTitle className="text-base">Historique</CardTitle>
+              <CardDescription>Factures et acomptes liés à ce client</CardDescription>
             </CardHeader>
             <CardContent>
-              {loadingFactures ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : factures.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune facture pour ce client</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Numéro</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Montant TTC</TableHead>
-                        <TableHead>Payé</TableHead>
-                        <TableHead>Restant</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {factures.map((facture) => (
-                        <TableRow key={facture.id}>
-                          <TableCell className="font-medium">{facture.numero}</TableCell>
-                          <TableCell>
-                            {new Date(facture.date_facture).toLocaleDateString('fr-FR')}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {facture.montant_ttc.toLocaleString()} DT
-                          </TableCell>
-                          <TableCell>
-                            {facture.montant_paye.toLocaleString()} DT
-                          </TableCell>
-                          <TableCell className={
-                            facture.montant_restant > 0 ? 'text-warning font-medium' : 'text-success'
-                          }>
-                            {facture.montant_restant.toLocaleString()} DT
-                          </TableCell>
-                          <TableCell>
-                            {getStatutBadge(facture.statut)}
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => navigate(`/ventes/factures/${facture.id}`)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+              <Tabs defaultValue="factures" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="factures">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Factures
+                  </TabsTrigger>
+                  <TabsTrigger value="acomptes">
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Avances / Acomptes
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="factures" className="mt-4">
+                  {loadingFactures ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : factures.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucune facture pour ce client</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Numéro</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Montant TTC</TableHead>
+                            <TableHead>Payé</TableHead>
+                            <TableHead>Restant</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {factures.map((facture) => (
+                            <TableRow key={facture.id}>
+                              <TableCell className="font-medium">{facture.numero}</TableCell>
+                              <TableCell>
+                                {new Date(facture.date_facture).toLocaleDateString('fr-FR')}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {facture.montant_ttc.toLocaleString()} DT
+                              </TableCell>
+                              <TableCell>
+                                {facture.montant_paye.toLocaleString()} DT
+                              </TableCell>
+                              <TableCell className={
+                                facture.montant_restant > 0 ? 'text-warning font-medium' : 'text-success'
+                              }>
+                                {facture.montant_restant.toLocaleString()} DT
+                              </TableCell>
+                              <TableCell>
+                                {getStatutBadge(facture.statut)}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => navigate(`/ventes/factures/${facture.id}`)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="acomptes" className="mt-4">
+                  {loadingAcomptes ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : acomptes.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Wallet className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucun acompte disponible pour ce client</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Référence</TableHead>
+                            <TableHead className="text-right">Montant initial</TableHead>
+                            <TableHead className="text-right">Montant utilisé</TableHead>
+                            <TableHead className="text-right">Montant disponible</TableHead>
+                            <TableHead>Mode de paiement</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {acomptes.map((acompte) => (
+                            <TableRow key={acompte.id}>
+                              <TableCell>
+                                {new Date(acompte.date).toLocaleDateString('fr-FR')}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {acompte.reference || '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {acompte.montant.toLocaleString('fr-FR', { minimumFractionDigits: 3 })} DT
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {acompte.allocated_amount.toLocaleString('fr-FR', { minimumFractionDigits: 3 })} DT
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-success">
+                                {acompte.remaining_amount.toLocaleString('fr-FR', { minimumFractionDigits: 3 })} DT
+                              </TableCell>
+                              <TableCell>
+                                {acompte.mode_paiement}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
