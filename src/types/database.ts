@@ -412,6 +412,8 @@ export interface HRContract {
   status: 'active' | 'expired' | 'terminated';
   terminationDate?: string;
   terminationReason?: string;
+  contractFileUrl?: string; // URL du fichier contrat (PDF ou image)
+  contractFileName?: string; // Nom du fichier original
   company_id: string;
   createdAt: string;
   updatedAt: string;
