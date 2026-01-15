@@ -49,35 +49,11 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { QuoteCreateModal, QuoteFormData } from "@/components/quotes/QuoteCreateModal";
-
-// Local type for quotes with extended status
-type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired';
-
-interface Quote {
-  id: string;
-  number: string;
-  client_id: string;
-  date: string;
-  total: number;
-  tax: number;
-  status: QuoteStatus;
-  company_id: string;
-}
-
-const mockQuotes: Quote[] = [
-  { id: "1", number: "DEV-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "sent", company_id: "1" },
-  { id: "2", number: "DEV-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "accepted", company_id: "1" },
-  { id: "3", number: "DEV-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "expired", company_id: "1" },
-  { id: "4", number: "DEV-2024-004", client_id: "4", date: "2024-01-03", total: 5200, tax: 1040, status: "sent", company_id: "1" },
-  { id: "5", number: "DEV-2024-005", client_id: "1", date: "2024-01-02", total: 12800, tax: 2560, status: "draft", company_id: "1" },
-];
-
-const clientNames: Record<string, string> = {
-  "1": "Société Alpha",
-  "2": "Entreprise Beta",
-  "3": "Commerce Gamma",
-  "4": "Services Delta",
-};
+import { useQuotes, Quote } from "@/hooks/use-quotes";
+import { useClients } from "@/hooks/use-clients";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTaxes } from "@/hooks/use-taxes";
 
 const statusStyles = {
   accepted: "bg-success/10 text-success border-0",
@@ -94,6 +70,12 @@ const statusLabels = {
 };
 
 export default function Quotes() {
+  const { company } = useAuth();
+  const { quotes, loading, createQuote, updateQuote, deleteQuote, refreshQuotes } = useQuotes();
+  const { clients } = useClients();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+  const { taxes, calculateTax } = useTaxes();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -102,19 +84,24 @@ export default function Quotes() {
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
 
-  const filteredQuotes = mockQuotes.filter((quote) => {
+  // Créer un map des clients pour accès rapide
+  const clientMap = new Map(clients.map(client => [client.id, client]));
+
+  const filteredQuotes = quotes.filter((quote) => {
+    const client = clientMap.get(quote.client_id);
+    const clientName = client?.nom || '';
     const matchesSearch = quote.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clientNames[quote.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
+      clientName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalQuotes = mockQuotes.length;
-  const totalAmount = mockQuotes.reduce((sum, q) => sum + q.total, 0);
-  const acceptedAmount = mockQuotes
+  const totalQuotes = quotes.length;
+  const totalAmount = quotes.reduce((sum, q) => sum + q.total, 0);
+  const acceptedAmount = quotes
     .filter(q => q.status === "accepted")
     .reduce((sum, q) => sum + q.total, 0);
-  const pendingAmount = mockQuotes
+  const pendingAmount = quotes
     .filter(q => q.status === "sent" || q.status === "expired")
     .reduce((sum, q) => sum + q.total, 0);
 
@@ -128,10 +115,77 @@ export default function Quotes() {
   };
 
   // Handler pour le nouveau modal QuoteCreateModal
-  const handleSaveQuote = (data: QuoteFormData) => {
-    console.log("Saving quote:", data);
-    setIsCreateModalOpen(false);
-    toast.success("Devis enregistré avec succès");
+  const handleSaveQuote = async (data: QuoteFormData) => {
+    try {
+      // Calculer le total HT depuis les lignes
+      let totalHT = 0;
+      data.lines.forEach((line) => {
+        totalHT += line.quantity * line.unitPrice;
+      });
+
+      // Appliquer la remise si nécessaire
+      let discountAmount = 0;
+      if (data.applyDiscount) {
+        if (data.discountType === 'percentage') {
+          discountAmount = (totalHT * data.discountValue) / 100;
+        } else {
+          discountAmount = data.discountValue;
+        }
+      }
+
+      const totalHTAfterDiscount = totalHT - discountAmount;
+
+      // Calculer les taxes appliquées
+      const appliedTaxesList = taxes.filter(t => data.appliedTaxes.includes(t.id));
+      
+      const percentageTaxes = appliedTaxesList.filter(t => t.type === 'percentage');
+      let totalPercentageTaxes = 0;
+      percentageTaxes.forEach(tax => {
+        totalPercentageTaxes += calculateTax(totalHTAfterDiscount, tax);
+      });
+
+      const fixedTaxes = appliedTaxesList.filter(t => t.type === 'fixed');
+      let totalFixedTaxes = 0;
+      fixedTaxes.forEach(tax => {
+        totalFixedTaxes += tax.value;
+      });
+
+      const totalTax = totalPercentageTaxes + totalFixedTaxes;
+      const totalTTC = totalHTAfterDiscount + totalTax;
+
+      // Créer les items avec les taxes par ligne
+      const items = data.lines.map(line => {
+        const lineSubtotal = line.quantity * line.unitPrice;
+        const lineTax = line.taxRateId 
+          ? calculateTax(lineSubtotal, taxes.find(t => t.id === line.taxRateId)!)
+          : 0;
+        return {
+          description: line.description,
+          quantity: line.quantity,
+          unit_price: line.unitPrice,
+          tax_rate: line.taxRateId 
+            ? (taxes.find(t => t.id === line.taxRateId)?.value || 0)
+            : 0,
+          total: lineSubtotal + lineTax,
+        };
+      });
+
+      await createQuote({
+        client_id: data.clientId,
+        date: data.date,
+        expires_at: data.validityDays ? new Date(new Date(data.date).getTime() + data.validityDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
+        subtotal: totalHTAfterDiscount,
+        tax: totalTax,
+        total: totalTTC,
+        status: 'draft',
+        notes: data.notes || null,
+        items: items,
+      });
+
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Error saving quote:", error);
+    }
   };
 
 
@@ -155,8 +209,14 @@ export default function Quotes() {
     toast.success(`Devis ${quote.number} envoyé au client`);
   };
 
-  const handleDeleteQuote = (quote: Quote) => {
-    toast.success(`Devis ${quote.number} supprimé`);
+  const handleDeleteQuote = async (quote: Quote) => {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le devis ${quote.number} ?`)) {
+      try {
+        await deleteQuote(quote.id);
+      } catch (error) {
+        console.error("Error deleting quote:", error);
+      }
+    }
   };
 
   return (
@@ -184,7 +244,7 @@ export default function Quotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Montant total</p>
                   <p className="text-2xl font-bold mt-1 text-foreground">
-                    {totalAmount.toLocaleString()} MAD
+                    {formatCurrency(totalAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-secondary/10">
@@ -200,7 +260,7 @@ export default function Quotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Acceptés</p>
                   <p className="text-2xl font-bold mt-1 text-success">
-                    {acceptedAmount.toLocaleString()} MAD
+                    {formatCurrency(acceptedAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-success/10">
@@ -216,7 +276,7 @@ export default function Quotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">En attente</p>
                   <p className="text-2xl font-bold mt-1 text-accent">
-                    {pendingAmount.toLocaleString()} MAD
+                    {formatCurrency(pendingAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-accent/10">
@@ -280,7 +340,13 @@ export default function Quotes() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuotes.length === 0 ? (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        Chargement...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredQuotes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         Aucun devis trouvé
@@ -295,16 +361,16 @@ export default function Quotes() {
                             <span className="font-semibold">{quote.number}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{clientNames[quote.client_id]}</TableCell>
+                        <TableCell>{clientMap.get(quote.client_id)?.nom || '-'}</TableCell>
                         <TableCell>{new Date(quote.date).toLocaleDateString('fr-FR')}</TableCell>
                         <TableCell className="text-right">
-                          {(quote.total - quote.tax).toLocaleString()} MAD
+                          {formatCurrency(quote.subtotal)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {quote.tax.toLocaleString()} MAD
+                          {formatCurrency(quote.tax)}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {quote.total.toLocaleString()} MAD
+                          {formatCurrency(quote.total)}
                         </TableCell>
                         <TableCell>
                           <span className={cn("erp-badge text-xs", statusStyles[quote.status as keyof typeof statusStyles])}>

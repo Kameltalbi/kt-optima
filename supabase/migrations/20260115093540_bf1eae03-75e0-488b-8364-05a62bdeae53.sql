@@ -21,6 +21,7 @@ TO authenticated
 USING (auth.uid() = user_id);
 
 -- 2) Admins can read any profile in their company (uses user_roles, not profiles)
+DROP POLICY IF EXISTS "Admins can view profiles in their company" ON public.profiles;
 CREATE POLICY "Admins can view profiles in their company"
 ON public.profiles
 FOR SELECT

@@ -27,10 +27,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Calculator } from "lucide-react";
+import { Plus, Trash2, Calculator, Search, Package, Briefcase } from "lucide-react";
 import { useClients } from "@/hooks/use-clients";
 import { useTaxes, Tax } from "@/hooks/use-taxes";
 import { useCurrency } from "@/hooks/use-currency";
+import { useProducts } from "@/hooks/use-products";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 export interface QuoteLine {
   id: string;
@@ -60,6 +75,151 @@ interface QuoteCreateModalProps {
   onSave: (data: QuoteFormData) => void;
 }
 
+// Composant de recherche pour produits/services
+interface ProductServiceItem {
+  id: string;
+  name: string;
+  code: string;
+  type: 'product' | 'service';
+  sale_price?: number;
+  price?: number;
+  tax_rate?: number;
+}
+
+interface ProductServiceSearchProps {
+  value: string;
+  onSelect: (item: ProductServiceItem) => void;
+  onChange?: (value: string) => void;
+  products: any[];
+  services: any[];
+}
+
+function ProductServiceSearch({ value, onSelect, onChange, products, services }: ProductServiceSearchProps) {
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [inputValue, setInputValue] = useState(value);
+
+  // Combiner produits et services
+  const allItems: ProductServiceItem[] = [
+    ...products.map(p => ({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+      type: 'product' as const,
+      sale_price: p.sale_price,
+      tax_rate: p.tax_rate,
+    })),
+    ...services.map(s => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      type: 'service' as const,
+      price: s.price,
+      tax_rate: s.tax_rate,
+    })),
+  ];
+
+  // Filtrer selon le terme de recherche
+  const filteredItems = allItems.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Synchroniser inputValue avec value
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  return (
+    <div className="flex gap-2 w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="shrink-0"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[400px] p-0" align="start">
+          <Command>
+            <CommandInput 
+              placeholder="Rechercher par nom ou code..." 
+              value={searchTerm}
+              onValueChange={setSearchTerm}
+            />
+            <CommandList>
+              <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+              {filteredItems.filter(item => item.type === 'product').length > 0 && (
+                <CommandGroup heading="Produits">
+                  {filteredItems
+                    .filter(item => item.type === 'product')
+                    .map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        value={`${item.name} ${item.code}`}
+                        onSelect={() => {
+                          onSelect(item);
+                          setOpen(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        <Package className="mr-2 h-4 w-4" />
+                        <div className="flex flex-col flex-1">
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {item.code} - {item.sale_price?.toFixed(2)} TND
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              )}
+              {filteredItems.filter(item => item.type === 'service').length > 0 && (
+                <CommandGroup heading="Services">
+                  {filteredItems
+                    .filter(item => item.type === 'service')
+                    .map((item) => (
+                      <CommandItem
+                        key={item.id}
+                        value={`${item.name} ${item.code}`}
+                        onSelect={() => {
+                          onSelect(item);
+                          setOpen(false);
+                          setSearchTerm("");
+                        }}
+                      >
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        <div className="flex flex-col flex-1">
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {item.code} - {item.price?.toFixed(2)} TND
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <Input
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          onChange?.(e.target.value);
+        }}
+        placeholder="Description ou rechercher un produit/service..."
+        className="flex-1"
+      />
+    </div>
+  );
+}
+
 export function QuoteCreateModal({
   open,
   onOpenChange,
@@ -68,6 +228,8 @@ export function QuoteCreateModal({
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
   const { defaultCurrency, formatAmount } = useCurrency();
+  const { products, services } = useProducts();
+  const { products, services } = useProducts();
 
   const [formData, setFormData] = useState<QuoteFormData>({
     clientId: "",
@@ -152,20 +314,44 @@ export function QuoteCreateModal({
     }));
   };
 
-  const handleAddLine = () => {
-    const firstPercentageTax = taxes.find(t => t.type === 'percentage' && formData.appliedTaxes.includes(t.id));
+  const handleAddLine = (e?: React.MouseEvent) => {
+    console.log('handleAddLine called', e);
     
-    const newLine: QuoteLine = {
-      id: `line_${Date.now()}`,
-      description: "",
-      quantity: 1,
-      unitPrice: 0,
-      taxRateId: firstPercentageTax?.id || null,
-    };
-    setFormData(prev => ({
-      ...prev,
-      lines: [...prev.lines, newLine],
-    }));
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    try {
+      console.log('Current formData.lines:', formData.lines);
+      console.log('Available taxes:', taxes);
+      console.log('Applied taxes:', formData.appliedTaxes);
+      
+      const firstPercentageTax = taxes.find(t => t.type === 'percentage' && formData.appliedTaxes.includes(t.id));
+      console.log('First percentage tax:', firstPercentageTax);
+      
+      const newLine: QuoteLine = {
+        id: `line_${Date.now()}`,
+        description: "",
+        quantity: 1,
+        unitPrice: 0,
+        taxRateId: firstPercentageTax?.id || null,
+      };
+      
+      console.log('New line to add:', newLine);
+      
+      setFormData(prev => {
+        const newLines = [...prev.lines, newLine];
+        console.log('Updated lines:', newLines);
+        return {
+          ...prev,
+          lines: newLines,
+        };
+      });
+    } catch (error) {
+      console.error('Error adding line:', error);
+      alert('Erreur lors de l\'ajout de la ligne: ' + (error instanceof Error ? error.message : String(error)));
+    }
   };
 
   const handleRemoveLine = (lineId: string) => {
@@ -197,7 +383,11 @@ export function QuoteCreateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-5xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Nouveau devis</DialogTitle>
           <DialogDescription>
@@ -446,10 +636,21 @@ export function QuoteCreateModal({
                   <CardTitle className="text-base">Lignes de devis</CardTitle>
                   <CardDescription>Ajoutez les produits ou services</CardDescription>
                 </div>
-                <Button onClick={handleAddLine} size="sm" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Ajouter une ligne
-                </Button>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    type="button" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddLine(e);
+                    }} 
+                    size="sm" 
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Ajouter une ligne
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -477,12 +678,32 @@ export function QuoteCreateModal({
                       return (
                         <TableRow key={line.id}>
                           <TableCell>
-                            <Input
+                            <ProductServiceSearch
                               value={line.description}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, { description: e.target.value })
-                              }
-                              placeholder="Description"
+                              onChange={(value) => {
+                                handleUpdateLine(line.id, { description: value });
+                              }}
+                              onSelect={(item) => {
+                                handleUpdateLine(line.id, {
+                                  description: item.name,
+                                  unitPrice: item.type === 'product' ? (item.sale_price || 0) : (item.price || 0),
+                                  quantity: 1,
+                                });
+                                // Si c'est un produit, appliquer sa taxe par défaut
+                                if (item.tax_rate) {
+                                  const productTax = taxes.find(t => 
+                                    t.type === 'percentage' && 
+                                    Math.abs(t.value - item.tax_rate!) < 0.01
+                                  );
+                                  if (productTax && formData.appliedTaxes.includes(productTax.id)) {
+                                    handleUpdateLine(line.id, {
+                                      taxRateId: productTax.id,
+                                    });
+                                  }
+                                }
+                              }}
+                              products={products}
+                              services={services}
                             />
                           </TableCell>
                           <TableCell>
@@ -514,16 +735,16 @@ export function QuoteCreateModal({
                           <TableCell>
                             {availableLineTaxes.length > 0 ? (
                               <Select
-                                value={line.taxRateId || ""}
+                                value={line.taxRateId || undefined}
                                 onValueChange={(value) =>
-                                  handleUpdateLine(line.id, { taxRateId: value })
+                                  handleUpdateLine(line.id, { taxRateId: value === "none" ? null : value })
                                 }
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Taxe" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Aucune</SelectItem>
+                                  <SelectItem value="none">Aucune</SelectItem>
                                   {availableLineTaxes.map((tax) => (
                                     <SelectItem key={tax.id} value={tax.id}>
                                       {tax.name} ({tax.value}%)
@@ -540,6 +761,7 @@ export function QuoteCreateModal({
                           </TableCell>
                           <TableCell>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveLine(line.id)}
@@ -630,10 +852,11 @@ export function QuoteCreateModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
           <Button
+            type="button"
             onClick={handleSave}
             disabled={!formData.clientId || formData.lines.length === 0}
           >
