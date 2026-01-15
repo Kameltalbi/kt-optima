@@ -44,7 +44,7 @@ export interface AppContextType {
   isSuperadmin: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; isSuperadmin?: boolean }>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string, companyName: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -232,7 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; isSuperadmin?: boolean }> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -243,7 +243,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      return { success: true };
+      // Check if user is superadmin
+      if (data.user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('role', 'superadmin')
+          .maybeSingle();
+        
+        return { success: true, isSuperadmin: !!roleData };
+      }
+
+      return { success: true, isSuperadmin: false };
     } catch (error: any) {
       console.error('Login error:', error);
       return { success: false, error: 'Une erreur est survenue lors de la connexion' };

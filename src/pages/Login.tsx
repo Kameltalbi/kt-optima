@@ -25,7 +25,12 @@ export default function Login() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate("/dashboard");
+        // Redirect superadmins to their dedicated page
+        if (result.isSuperadmin) {
+          navigate("/superadmin");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         setError(result.error || "Email ou mot de passe incorrect");
       }
