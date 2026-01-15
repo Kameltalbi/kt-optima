@@ -3,7 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { ModuleTab } from "@/components/layout/ModuleTabs";
 import Employees from "../Employees";
 import HRContracts from "../HRContracts";
-import Payroll from "../Payroll";
+import PayrollNew from "../PayrollNew";
 import Leaves from "../Leaves";
 import HRDocuments from "../HRDocuments";
 import Evaluations from "../Evaluations";
@@ -56,7 +56,7 @@ export default function RHModule() {
             moduleTabs={tabs}
             moduleName="Ressources humaines"
           >
-            <Payroll />
+            <PayrollNew />
           </MainLayout>
         }
       />

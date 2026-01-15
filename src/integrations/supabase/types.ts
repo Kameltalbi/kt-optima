@@ -1146,6 +1146,105 @@ export type Database = {
           },
         ]
       }
+      fiches_paie: {
+        Row: {
+          autres_retenues: number | null
+          base_imposable: number
+          brut: number
+          cnss_employeur: number
+          cnss_salarie: number
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          date_paiement: string
+          employe_id: string
+          heures_sup: number | null
+          id: string
+          indemnites: number | null
+          irpp_annuel: number
+          irpp_mensuel: number
+          net_a_payer: number
+          notes: string | null
+          numero: string | null
+          periode: string
+          primes: number | null
+          salaire_base: number
+          statut: string
+          taux_cnss_employeur: number
+          taux_cnss_salarie: number
+          updated_at: string | null
+        }
+        Insert: {
+          autres_retenues?: number | null
+          base_imposable: number
+          brut: number
+          cnss_employeur: number
+          cnss_salarie: number
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date_paiement: string
+          employe_id: string
+          heures_sup?: number | null
+          id?: string
+          indemnites?: number | null
+          irpp_annuel: number
+          irpp_mensuel: number
+          net_a_payer: number
+          notes?: string | null
+          numero?: string | null
+          periode: string
+          primes?: number | null
+          salaire_base: number
+          statut?: string
+          taux_cnss_employeur: number
+          taux_cnss_salarie: number
+          updated_at?: string | null
+        }
+        Update: {
+          autres_retenues?: number | null
+          base_imposable?: number
+          brut?: number
+          cnss_employeur?: number
+          cnss_salarie?: number
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_paiement?: string
+          employe_id?: string
+          heures_sup?: number | null
+          id?: string
+          indemnites?: number | null
+          irpp_annuel?: number
+          irpp_mensuel?: number
+          net_a_payer?: number
+          notes?: string | null
+          numero?: string | null
+          periode?: string
+          primes?: number | null
+          salaire_base?: number
+          statut?: string
+          taux_cnss_employeur?: number
+          taux_cnss_salarie?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiches_paie_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiches_paie_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseurs: {
         Row: {
           actif: boolean | null
@@ -1381,6 +1480,50 @@ export type Database = {
             columns: ["compte_tresorerie_id"]
             isOneToOne: false
             referencedRelation: "comptes_tresorerie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parametres_paie: {
+        Row: {
+          actif: boolean | null
+          code: string
+          company_id: string
+          created_at: string | null
+          id: string
+          libelle: string
+          type: string
+          updated_at: string | null
+          valeur: number
+        }
+        Insert: {
+          actif?: boolean | null
+          code: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          libelle: string
+          type?: string
+          updated_at?: string | null
+          valeur: number
+        }
+        Update: {
+          actif?: boolean | null
+          code?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          libelle?: string
+          type?: string
+          updated_at?: string | null
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametres_paie_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -2037,6 +2180,50 @@ export type Database = {
           },
         ]
       }
+      tranches_irpp: {
+        Row: {
+          actif: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          ordre: number
+          taux: number
+          tranche_max: number | null
+          tranche_min: number
+          updated_at: string | null
+        }
+        Insert: {
+          actif?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          ordre: number
+          taux: number
+          tranche_max?: number | null
+          tranche_min?: number
+          updated_at?: string | null
+        }
+        Update: {
+          actif?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          ordre?: number
+          taux?: number
+          tranche_max?: number | null
+          tranche_min?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tranches_irpp_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_companies: {
         Row: {
           company_id: string
@@ -2215,6 +2402,10 @@ export type Database = {
           _tax_number?: string
         }
         Returns: string
+      }
+      create_default_payroll_params: {
+        Args: { _company_id: string }
+        Returns: undefined
       }
       create_default_taxes: {
         Args: { _company_id: string }
