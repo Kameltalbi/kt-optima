@@ -101,7 +101,7 @@ export function useFacturesVentes() {
         throw fetchError;
       }
 
-      setFactures(data || []);
+      setFactures((data || []) as unknown as FactureVente[]);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors du chargement des factures');
       setError(error);
@@ -198,8 +198,8 @@ export function useFacturesVentes() {
         }));
 
         const { error: allocationError } = await supabase
-          .from('facture_encaissements')
-          .insert(factureEncaissements);
+          .from('facture_encaissements' as any)
+          .insert(factureEncaissements as any);
 
         if (allocationError) {
           throw allocationError;

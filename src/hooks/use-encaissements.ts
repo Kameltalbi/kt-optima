@@ -73,7 +73,7 @@ export function useEncaissements() {
       setError(null);
 
       const { data, error: fetchError } = await supabase
-        .from('encaissements')
+        .from('encaissements' as any)
         .select(`
           *,
           client:clients(id, nom, code)
@@ -85,7 +85,7 @@ export function useEncaissements() {
         throw fetchError;
       }
 
-      setEncaissements((data || []) as Encaissement[]);
+      setEncaissements((data || []) as unknown as Encaissement[]);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors du chargement des encaissements');
       setError(error);
@@ -115,14 +115,14 @@ export function useEncaissements() {
       const status = isAcompte ? 'disponible' : 'totalement alloué';
 
       const { data, error: insertError } = await supabase
-        .from('encaissements')
+        .from('encaissements' as any)
         .insert({
           ...encaissementData,
           company_id: companyId,
           allocated_amount,
           remaining_amount,
           status,
-        })
+        } as any)
         .select(`
           *,
           client:clients(id, nom, code)
@@ -135,7 +135,7 @@ export function useEncaissements() {
 
       toast.success('Encaissement créé avec succès');
       await fetchEncaissements();
-      return data as Encaissement;
+      return data as unknown as Encaissement;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la création de l\'encaissement');
       toast.error(error.message);
@@ -151,8 +151,8 @@ export function useEncaissements() {
   ) => {
     try {
       const { data, error: updateError } = await supabase
-        .from('encaissements')
-        .update(updates)
+        .from('encaissements' as any)
+        .update(updates as any)
         .eq('id', id)
         .eq('company_id', companyId)
         .select(`
@@ -167,7 +167,7 @@ export function useEncaissements() {
 
       toast.success('Encaissement mis à jour avec succès');
       await fetchEncaissements();
-      return data as Encaissement;
+      return data as unknown as Encaissement;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erreur lors de la mise à jour de l\'encaissement');
       toast.error(error.message);
@@ -180,7 +180,7 @@ export function useEncaissements() {
   const deleteEncaissement = useCallback(async (id: string) => {
     try {
       const { error: deleteError } = await supabase
-        .from('encaissements')
+        .from('encaissements' as any)
         .delete()
         .eq('id', id)
         .eq('company_id', companyId);
@@ -200,12 +200,10 @@ export function useEncaissements() {
   }, [companyId, fetchEncaissements]);
 
   // Obtenir les acomptes disponibles pour un client
-  // Inclut : encaissements d'acompte non facturés + factures d'acompte payées (via leurs encaissements)
   const getAcomptesDisponibles = useCallback(async (clientId: string): Promise<Encaissement[]> => {
     try {
-      // 1. Charger les encaissements d'acompte avec remaining_amount > 0
       const { data: encaissementsData, error: fetchError } = await supabase
-        .from('encaissements')
+        .from('encaissements' as any)
         .select(`
           *,
           client:clients(id, nom, code)
@@ -220,37 +218,7 @@ export function useEncaissements() {
         throw fetchError;
       }
 
-      // 2. Charger aussi les factures d'acompte payées qui ont généré des encaissements
-      // On récupère les factures d'acompte payées et on vérifie si elles ont des encaissements associés
-      const { data: facturesAcompte, error: facturesError } = await supabase
-        .from('factures_ventes')
-        .select(`
-          id,
-          numero,
-          date_facture,
-          montant_ttc,
-          montant_paye,
-          montant_restant,
-          statut
-        `)
-        .eq('company_id', companyId)
-        .eq('client_id', clientId)
-        .eq('type_facture', 'acompte')
-        .eq('statut', 'payee')
-        .order('date_facture', { ascending: false });
-
-      if (facturesError) {
-        console.error('Error fetching factures acompte:', facturesError);
-      }
-
-      // 3. Pour chaque facture d'acompte payée, vérifier si elle a un encaissement associé
-      // Si oui, il devrait déjà être dans encaissementsData
-      // Si non, on peut créer un encaissement virtuel pour l'affichage
-      // Mais en réalité, les factures d'acompte payées créent automatiquement un encaissement
-      // donc elles devraient déjà être dans encaissementsData
-
-      // Retourner les encaissements disponibles
-      return (encaissementsData || []) as Encaissement[];
+      return (encaissementsData || []) as unknown as Encaissement[];
     } catch (err) {
       console.error('Error fetching acomptes disponibles:', err);
       return [];
@@ -282,8 +250,8 @@ export function useEncaissements() {
       }));
 
       const { error: insertError } = await supabase
-        .from('facture_encaissements')
-        .insert(factureEncaissements);
+        .from('facture_encaissements' as any)
+        .insert(factureEncaissements as any);
 
       if (insertError) {
         throw insertError;
@@ -325,7 +293,7 @@ export function useEncaissements() {
   const getEncaissementsByFacture = useCallback(async (factureId: string): Promise<FactureEncaissement[]> => {
     try {
       const { data, error: fetchError } = await supabase
-        .from('facture_encaissements')
+        .from('facture_encaissements' as any)
         .select('*')
         .eq('facture_id', factureId);
 
@@ -333,7 +301,7 @@ export function useEncaissements() {
         throw fetchError;
       }
 
-      return (data || []) as FactureEncaissement[];
+      return (data || []) as unknown as FactureEncaissement[];
     } catch (err) {
       console.error('Error fetching encaissements by facture:', err);
       return [];
