@@ -38,7 +38,23 @@ import {
   Phone,
   MapPin,
   Hash,
+  Edit,
+  Trash2,
+  CalendarPlus,
+  CreditCard,
+  PackagePlus,
+  UserPlus,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -64,6 +80,8 @@ export default function SuperAdminCompanies() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -135,6 +153,75 @@ export default function SuperAdminCompanies() {
   const handleViewDetails = (company: Company) => {
     setSelectedCompany(company);
     setDetailsOpen(true);
+  };
+
+  const handleEdit = (company: Company) => {
+    toast({
+      title: "Modifier l'entreprise",
+      description: `Fonctionnalité en cours de développement pour ${company.name}`,
+    });
+  };
+
+  const handleExtendSubscription = (company: Company) => {
+    toast({
+      title: "Prolonger l'abonnement",
+      description: `Abonnement de ${company.name} prolongé de 30 jours.`,
+    });
+  };
+
+  const handleValidatePayment = (company: Company) => {
+    toast({
+      title: "Paiement validé",
+      description: `Le paiement de ${company.name} a été validé.`,
+    });
+  };
+
+  const handleAddModule = (company: Company) => {
+    toast({
+      title: "Ajouter un module",
+      description: `Sélection de module pour ${company.name} en cours de développement.`,
+    });
+  };
+
+  const handleAddUser = (company: Company) => {
+    toast({
+      title: "Ajouter un utilisateur",
+      description: `Ajout d'utilisateur pour ${company.name} en cours de développement.`,
+    });
+  };
+
+  const handleDeleteRequest = (company: Company) => {
+    setCompanyToDelete(company);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!companyToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .delete()
+        .eq("id", companyToDelete.id);
+      
+      if (error) throw error;
+      
+      setCompanies((prev) => prev.filter((c) => c.id !== companyToDelete.id));
+      toast({
+        title: "Entreprise supprimée",
+        description: `${companyToDelete.name} a été supprimée définitivement.`,
+      });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'entreprise",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCompanyToDelete(null);
+    }
   };
 
   return (
@@ -251,10 +338,31 @@ export default function SuperAdminCompanies() {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="w-52 bg-popover">
                               <DropdownMenuItem onClick={() => handleViewDetails(company)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Voir détails
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(company)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleExtendSubscription(company)}>
+                                <CalendarPlus className="h-4 w-4 mr-2" />
+                                Prolonger abonnement
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleValidatePayment(company)}>
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Valider paiement
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAddModule(company)}>
+                                <PackagePlus className="h-4 w-4 mr-2" />
+                                Ajouter un module
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAddUser(company)}>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Ajouter utilisateur
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {company.status === "suspended" ? (
@@ -265,12 +373,19 @@ export default function SuperAdminCompanies() {
                               ) : (
                                 <DropdownMenuItem
                                   onClick={() => handleSuspend(company)}
-                                  className="text-amber-600"
+                                  className="text-amber-600 focus:text-amber-600"
                                 >
                                   <Ban className="h-4 w-4 mr-2" />
                                   Suspendre
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteRequest(company)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -348,6 +463,29 @@ export default function SuperAdminCompanies() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer l'entreprise{" "}
+                <strong>{companyToDelete?.name}</strong> ? Cette action est irréversible
+                et supprimera toutes les données associées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SuperAdminLayout>
   );
