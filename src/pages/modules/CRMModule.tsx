@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { ModuleTab } from "@/components/layout/ModuleTabs";
 import Clients from "../Clients";
 import ClientDetail from "../ClientDetail";
 import CRMContacts from "../CRMContacts";
@@ -11,7 +11,7 @@ import CRMActivities from "../CRMActivities";
 
 export default function CRMModule() {
   const moduleName = "CRM";
-  const tabs = [
+  const tabs: ModuleTab[] = [
     { id: "clients", label: "Clients", path: "/crm/clients" },
     { id: "contacts", label: "Contacts", path: "/crm/contacts" },
     { id: "companies", label: "Sociétés", path: "/crm/societes" },
@@ -21,18 +21,69 @@ export default function CRMModule() {
   ];
 
   return (
-    <MainLayout title={moduleName} subtitle="Gestion de la relation client">
-      <ModuleTabs moduleName={moduleName} tabs={tabs} />
-      <Routes>
-        <Route path="clients" element={<Clients />} />
-        <Route path="clients/:id" element={<ClientDetail />} />
-        <Route path="contacts" element={<CRMContacts />} />
-        <Route path="societes" element={<CRMCompanies />} />
-        <Route path="opportunites" element={<CRMOpportunities />} />
-        <Route path="pipeline" element={<CRMPipeline />} />
-        <Route path="activites" element={<CRMActivities />} />
-        <Route path="" element={<Navigate to="clients" replace />} />
-      </Routes>
-    </MainLayout>
+    <Routes>
+      <Route path="clients" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <Clients />
+        </MainLayout>
+      } />
+      <Route path="clients/:id" element={<ClientDetail />} />
+      <Route path="contacts" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <CRMContacts />
+        </MainLayout>
+      } />
+      <Route path="societes" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <CRMCompanies />
+        </MainLayout>
+      } />
+      <Route path="opportunites" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <CRMOpportunities />
+        </MainLayout>
+      } />
+      <Route path="pipeline" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <CRMPipeline />
+        </MainLayout>
+      } />
+      <Route path="activites" element={
+        <MainLayout
+          title={moduleName}
+          subtitle="Gestion de la relation client"
+          moduleTabs={tabs}
+          moduleName={moduleName}
+        >
+          <CRMActivities />
+        </MainLayout>
+      } />
+      <Route path="" element={<Navigate to="clients" replace />} />
+    </Routes>
   );
 }

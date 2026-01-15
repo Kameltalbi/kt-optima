@@ -58,8 +58,8 @@ export function MobilePageMenu({ tabs, moduleName }: MobilePageMenuProps) {
                   className={cn(
                     "block px-4 py-3 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary border-l-2 border-primary"
-                      : "text-foreground hover:bg-muted/50"
+                      ? "text-[#2563EB] font-semibold border-l-[3px] border-[#2563EB] bg-[#F8FAFC]"
+                      : "text-[#64748B] hover:text-[#1E40AF] hover:bg-[#F8FAFC]"
                   )}
                 >
                   {tab.label}

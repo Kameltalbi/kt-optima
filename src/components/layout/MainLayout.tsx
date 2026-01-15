@@ -74,9 +74,7 @@ export function MainLayout({
 
         {/* Desktop Module Tabs */}
         {!isMobile && moduleTabs && moduleName && (
-          <div className="px-4 sm:px-6 pt-4">
-            <ModuleTabs tabs={moduleTabs} moduleName={moduleName} />
-          </div>
+          <ModuleTabs tabs={moduleTabs} moduleName={moduleName} />
         )}
 
         <main className={`flex-1 overflow-auto ${isMobile ? (moduleTabs ? 'pt-28' : 'pt-14') : ''}`}>

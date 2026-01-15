@@ -100,25 +100,28 @@ export default function Landing() {
             </div>
 
             {/* Navigation Desktop */}
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#fonctionnalites" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105">
-                Fonctionnalités
+            <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
+              <a href="#fonctionnalites" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Produit
               </a>
-              <a href="#modules" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105">
+              <Link to="/modules" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
                 Modules
-              </a>
-              <Link to="/pricing" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105">
+              </Link>
+              <Link to="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
                 Tarifs
               </Link>
+              <a href="#entreprise" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Entreprise
+              </a>
             </nav>
 
             {/* CTA Buttons Desktop */}
-            <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" asChild className="transition-all duration-300 hover:scale-105">
-                <Link to="/login">Se connecter</Link>
+            <div className="hidden md:flex items-center gap-4">
+              <Button variant="ghost" asChild className="transition-all duration-300">
+                <Link to="/login">Connexion</Link>
               </Button>
-              <Button asChild className="transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                <Link to="/register">Créer un compte</Link>
+              <Button asChild className="transition-all duration-300 hover:shadow-lg">
+                <Link to="/demo">Demander une démo</Link>
               </Button>
             </div>
 
@@ -140,15 +143,15 @@ export default function Landing() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-base font-medium text-foreground hover:text-primary transition-colors"
                     >
-                      Fonctionnalités
+                      Produit
                     </a>
-                    <a 
-                      href="#modules" 
+                    <Link 
+                      to="/modules" 
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-base font-medium text-foreground hover:text-primary transition-colors"
                     >
                       Modules
-                    </a>
+                    </Link>
                     <Link 
                       to="/pricing" 
                       onClick={() => setMobileMenuOpen(false)}
@@ -156,17 +159,24 @@ export default function Landing() {
                     >
                       Tarifs
                     </Link>
+                    <a 
+                      href="#entreprise" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Entreprise
+                    </a>
                     <div className="border-t pt-4 mt-4 space-y-3">
                       <Button variant="outline" className="w-full" asChild>
                         <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                          Se connecter
+                          Connexion
                         </Link>
                       </Button>
-                      <Button className="w-full" asChild>
-                        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                          Créer un compte
-                        </Link>
-                      </Button>
+                        <Button className="w-full" asChild>
+                          <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                            Demander une démo
+                          </Link>
+                        </Button>
                     </div>
                   </nav>
                 </SheetContent>

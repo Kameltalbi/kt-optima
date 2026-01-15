@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import { ProtectedRoute } from "@/guards/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Modules from "./pages/Modules";
+import Demo from "./pages/Demo";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
@@ -47,6 +49,12 @@ const App = () => (
           <Routes>
             {/* Landing Page (Public) */}
             <Route path="/" element={<Landing />} />
+            
+            {/* Modules Page (Public) */}
+            <Route path="/modules" element={<Modules />} />
+            
+            {/* Demo Page (Public) */}
+            <Route path="/demo" element={<Demo />} />
             
             {/* Auth Pages (Public) */}
             <Route path="/login" element={<Login />} />
