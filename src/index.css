@@ -41,6 +41,13 @@
     --muted: 210 16% 97%;
     --muted-foreground: 217 32% 50%;
 
+    /* Paper (documents A4) - always readable even in dark mode */
+    --paper: 0 0% 100%;
+    --paper-foreground: 217 32% 17%;
+    --paper-muted: 210 16% 97%;
+    --paper-muted-foreground: 217 32% 50%;
+    --paper-border: 210 16% 90%;
+
     /* Sand - Bleu Clair #3b82f6 */
     --sand: 217 91% 59%;
     --sand-foreground: 0 0% 100%;
