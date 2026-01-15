@@ -268,12 +268,12 @@ export default function PayrollPage() {
               <SelectItem value="paid">Payé</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={periodFilter} onValueChange={setPeriodFilter}>
+          <Select value={periodFilter || "all"} onValueChange={(value) => setPeriodFilter(value === "all" ? "" : value)}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes les périodes</SelectItem>
+              <SelectItem value="all">Toutes les périodes</SelectItem>
               {generatePeriods().map(period => (
                 <SelectItem key={period} value={period}>{period}</SelectItem>
               ))}
