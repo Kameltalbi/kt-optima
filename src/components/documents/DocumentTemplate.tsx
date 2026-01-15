@@ -869,9 +869,9 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
         <div className="bg-card rounded-lg shadow-lg overflow-hidden border">
           <div 
             ref={documentRef}
-            className="bg-white flex flex-col" 
-            style={{ 
-              width: '210mm', 
+            className="bg-background text-foreground flex flex-col" 
+            style={{
+              width: '210mm',
               minHeight: '297mm',
               height: '297mm',
               margin: '0 auto',
@@ -879,8 +879,20 @@ const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
               paddingLeft: '10mm',
               paddingRight: '10mm',
               paddingTop: '15mm',
-              paddingBottom: '0mm'
-            }}
+              paddingBottom: '0mm',
+
+              // Force "paper" colors even in dark mode (print-friendly)
+              ['--background' as any]: 'var(--paper)',
+              ['--foreground' as any]: 'var(--paper-foreground)',
+              ['--card' as any]: 'var(--paper)',
+              ['--card-foreground' as any]: 'var(--paper-foreground)',
+              ['--popover' as any]: 'var(--paper)',
+              ['--popover-foreground' as any]: 'var(--paper-foreground)',
+              ['--muted' as any]: 'var(--paper-muted)',
+              ['--muted-foreground' as any]: 'var(--paper-muted-foreground)',
+              ['--border' as any]: 'var(--paper-border)',
+              ['--input' as any]: 'var(--paper-border)',
+            } as React.CSSProperties}
           >
             
             {/* En-tête */}
