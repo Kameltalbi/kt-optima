@@ -104,25 +104,16 @@ export default function ClientCredits() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
 
   // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo = company ? {
-    nom: company.name || 'Mon Entreprise',
+  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+    nom: company.name,
     adresse: company.address || '',
-    ville: company.address?.split(',')[1]?.trim() || '',
+    ville: '',
     tel: company.phone || '',
     email: company.email || '',
     mf: company.tax_number || '',
     logo: company.logo || undefined,
-    piedDePage: company.footer || 'RC: | IF: | ICE: | Patente:\nIBAN:'
-  } : {
-    nom: 'Mon Entreprise',
-    adresse: '',
-    ville: '',
-    tel: '',
-    email: '',
-    mf: '',
-    logo: undefined,
-    piedDePage: 'RC: | IF: | ICE: | Patente:\nIBAN:'
-  };
+    piedDePage: company.footer || ''
+  } : undefined;
 
   // Obtenir les clients uniques
   const uniqueClients = Array.from(
