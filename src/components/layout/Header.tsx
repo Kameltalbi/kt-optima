@@ -1,4 +1,4 @@
-import { Bell, Search, Settings, Menu, ArrowLeft, LogOut, Building2 } from "lucide-react";
+import { Bell, Search, Settings, Menu, ArrowLeft, LogOut, Building2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useApp } from "@/context/AppContext";
 
 interface HeaderProps {
   title: string;
@@ -20,7 +20,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, onMenuClick, showBackButton = false }: HeaderProps) {
   const navigate = useNavigate();
-  const { company, logout } = useAuth();
+  const { company, profile, logout } = useApp();
 
   const handleBack = () => {
     // If there's history, go back; otherwise go to dashboard
@@ -103,16 +103,20 @@ export function Header({ title, subtitle, onMenuClick, showBackButton = false }:
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {company && (
+          <DropdownMenuContent align="end" className="w-56 bg-popover">
+            {(company || profile) && (
               <>
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-semibold">{company.name}</p>
-                  <p className="text-xs text-muted-foreground">{company.email}</p>
+                  <p className="text-sm font-semibold">{company?.name || profile?.full_name}</p>
+                  <p className="text-xs text-muted-foreground">{company?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
               </>
             )}
+            <DropdownMenuItem onClick={() => navigate("/parametres/entreprise")}>
+              <User className="w-4 h-4 mr-2" />
+              Mon compte
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/parametres")}>
               <Settings className="w-4 h-4 mr-2" />
               Paramètres
