@@ -26,7 +26,13 @@ import DocumentPreview from "./pages/DocumentPreview";
 import InvoicePreviewPage from "./pages/documents/InvoicePreviewPage";
 import QuotePreviewPage from "./pages/documents/QuotePreviewPage";
 import CreditNotePreviewPage from "./pages/documents/CreditNotePreviewPage";
-import SuperAdmin from "./pages/SuperAdmin";
+import {
+  SuperAdminDashboard,
+  SuperAdminCompanies,
+  SuperAdminUsers,
+  SuperAdminSettings,
+  SuperAdminLogs,
+} from "./pages/superadmin";
 import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -61,10 +67,30 @@ const App = () => (
               </ProtectedRoute>
             } />
             
-            {/* Super Admin - Superadmin only */}
+            {/* Super Admin Routes */}
             <Route path="/superadmin" element={
               <ProtectedRoute>
-                <SuperAdmin />
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/companies" element={
+              <ProtectedRoute>
+                <SuperAdminCompanies />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/users" element={
+              <ProtectedRoute>
+                <SuperAdminUsers />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/settings" element={
+              <ProtectedRoute>
+                <SuperAdminSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/logs" element={
+              <ProtectedRoute>
+                <SuperAdminLogs />
               </ProtectedRoute>
             } />
             
