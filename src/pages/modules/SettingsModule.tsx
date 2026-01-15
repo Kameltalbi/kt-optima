@@ -12,6 +12,7 @@ import SettingsPermissions from "../SettingsPermissions";
 import SettingsInvoicing from "../SettingsInvoicing";
 import SettingsTemplates from "../SettingsTemplates";
 import SettingsDocuments from "../SettingsDocuments";
+import SettingsPayroll from "../SettingsPayroll";
 
 const tabs: ModuleTab[] = [
   { id: "company", label: "Société", path: "/parametres/societe" },
@@ -26,6 +27,7 @@ const tabs: ModuleTab[] = [
   { id: "templates", label: "Modèles", path: "/parametres/modeles" },
   { id: "regional", label: "Régional", path: "/parametres/regional" },
   { id: "documents", label: "Documents", path: "/parametres/documents" },
+  { id: "payroll", label: "Paie", path: "/parametres/paie" },
 ];
 
 export default function SettingsModule() {
@@ -209,6 +211,21 @@ export default function SettingsModule() {
             showBackButton={true}
           >
             <ProductsServicesModule />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="paie"
+        element={
+          <MainLayout
+            title="Paramètres"
+            subtitle="Configuration de l'application"
+            moduleTabs={tabs}
+            moduleName="Paramètres"
+            hideSidebar={true}
+            showBackButton={true}
+          >
+            <SettingsPayroll />
           </MainLayout>
         }
       />
