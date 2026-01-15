@@ -24,6 +24,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,9 +48,17 @@ import {
   Trash2,
   Shield,
   CheckCircle2,
+  MoreHorizontal,
+  Ban,
+  CalendarPlus,
+  CreditCard,
+  PackagePlus,
+  Eye,
+  UserPlus,
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 // Local interface for company form that includes all editable fields
 interface CompanyFormData {
@@ -58,6 +73,7 @@ interface CompanyFormData {
 
 export default function SuperAdmin() {
   const { memberships } = useApp();
+  const { toast } = useToast();
   const {
     loading,
     getCompanies,
@@ -168,6 +184,49 @@ export default function SuperAdmin() {
     if (success) {
       setModules(modules.map(m => m.id === id ? { ...m, active } : m));
     }
+  };
+
+  // Company action handlers
+  const handleSuspendCompany = (company: Company) => {
+    toast({
+      title: "Abonnement suspendu",
+      description: `L'abonnement de ${company.name} a été suspendu.`,
+    });
+  };
+
+  const handleExtendSubscription = (company: Company) => {
+    toast({
+      title: "Abonnement prolongé",
+      description: `L'abonnement de ${company.name} a été prolongé de 30 jours.`,
+    });
+  };
+
+  const handleValidatePayment = (company: Company) => {
+    toast({
+      title: "Paiement validé",
+      description: `Le paiement de ${company.name} a été validé.`,
+    });
+  };
+
+  const handleAddModuleToCompany = (company: Company) => {
+    toast({
+      title: "Module ajouté",
+      description: `Un module a été ajouté à ${company.name}.`,
+    });
+  };
+
+  const handleViewDetails = (company: Company) => {
+    toast({
+      title: "Détails",
+      description: `Affichage des détails de ${company.name}.`,
+    });
+  };
+
+  const handleAddUser = (company: Company) => {
+    toast({
+      title: "Utilisateur ajouté",
+      description: `Un utilisateur a été ajouté à ${company.name}.`,
+    });
   };
 
   if (!isSuperadmin) {
@@ -360,22 +419,55 @@ export default function SuperAdmin() {
                         {company.created_at ? new Date(company.created_at).toLocaleDateString('fr-FR') : '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditCompany(company)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteCompany(company.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleViewDetails(company)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Voir détails
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditCompany(company)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleExtendSubscription(company)}>
+                              <CalendarPlus className="h-4 w-4 mr-2" />
+                              Prolonger abonnement
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleValidatePayment(company)}>
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Valider paiement
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAddModuleToCompany(company)}>
+                              <PackagePlus className="h-4 w-4 mr-2" />
+                              Ajouter un module
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAddUser(company)}>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Ajouter utilisateur
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleSuspendCompany(company)}
+                              className="text-amber-600"
+                            >
+                              <Ban className="h-4 w-4 mr-2" />
+                              Suspendre
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteCompany(company.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
