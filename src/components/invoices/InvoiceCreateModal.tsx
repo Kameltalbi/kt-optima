@@ -505,16 +505,16 @@ export function InvoiceCreateModal({
                           <TableCell>
                             {availableLineTaxes.length > 0 ? (
                               <Select
-                                value={line.taxRateId || ""}
+                                value={line.taxRateId || "none"}
                                 onValueChange={(value) =>
-                                  handleUpdateLine(line.id, { taxRateId: value })
+                                  handleUpdateLine(line.id, { taxRateId: value === "none" ? "" : value })
                                 }
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Taxe" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Aucune</SelectItem>
+                                  <SelectItem value="none">Aucune</SelectItem>
                                   {availableLineTaxes.map((tax) => (
                                     <SelectItem key={tax.id} value={tax.id}>
                                       {tax.name} ({tax.value}%)

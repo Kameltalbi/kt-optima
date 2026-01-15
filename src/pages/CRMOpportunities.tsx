@@ -504,15 +504,15 @@ export default function CRMOpportunities() {
             <div className="space-y-2">
               <Label htmlFor="contactId">Contact principal</Label>
               <Select
-                value={formData.contactId}
-                onValueChange={(value) => setFormData({ ...formData, contactId: value })}
+                value={formData.contactId || "none"}
+                onValueChange={(value) => setFormData({ ...formData, contactId: value === "none" ? "" : value })}
                 disabled={!formData.companyId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un contact" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
+                  <SelectItem value="none">Aucun</SelectItem>
                   {companyContacts.map((contact) => (
                     <SelectItem key={contact.id} value={contact.id}>
                       {contact.firstName} {contact.lastName}

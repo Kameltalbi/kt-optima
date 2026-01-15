@@ -385,14 +385,14 @@ export default function HRDocuments() {
               <div className="space-y-2">
                 <Label htmlFor="employee_id">Employé (optionnel)</Label>
                 <Select
-                  value={formData.employee_id}
-                  onValueChange={(value) => setFormData({ ...formData, employee_id: value })}
+                  value={formData.employee_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, employee_id: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Document général" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Document général</SelectItem>
+                    <SelectItem value="none">Document général</SelectItem>
                     {employees.map(emp => (
                       <SelectItem key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName} ({emp.matricule})

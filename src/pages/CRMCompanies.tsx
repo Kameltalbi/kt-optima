@@ -461,14 +461,14 @@ export default function CRMCompanies() {
               <div className="space-y-2">
                 <Label htmlFor="salesRepId">Responsable commercial</Label>
                 <Select
-                  value={formData.salesRepId}
-                  onValueChange={(value) => setFormData({ ...formData, salesRepId: value })}
+                  value={formData.salesRepId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, salesRepId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun</SelectItem>
+                    <SelectItem value="none">Aucun</SelectItem>
                     {/* En production, charger depuis users */}
                     <SelectItem value="user_1">Commercial 1</SelectItem>
                   </SelectContent>

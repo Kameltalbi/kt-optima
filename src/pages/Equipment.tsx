@@ -423,14 +423,14 @@ export default function Equipment() {
               <div className="space-y-2">
                 <Label htmlFor="employeeId">Affecté à (employé)</Label>
                 <Select
-                  value={formData.employeeId}
-                  onValueChange={(value) => setFormData({ ...formData, employeeId: value })}
+                  value={formData.employeeId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, employeeId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un employé" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun</SelectItem>
+                    <SelectItem value="none">Aucun</SelectItem>
                     {employees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName}
