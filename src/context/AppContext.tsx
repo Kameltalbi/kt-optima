@@ -133,7 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileError);
@@ -168,7 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .from('companies')
               .select('*')
               .eq('id', companyId)
-              .single();
+              .maybeSingle();
 
             if (companyError) {
               console.error('Error fetching company:', companyError);
