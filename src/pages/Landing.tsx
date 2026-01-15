@@ -36,7 +36,7 @@ export default function Landing() {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img 
-                src="/kt optima.png" 
+                src="/ktoptima.png" 
                 alt="KTOptima" 
                 className="h-20 w-auto object-contain"
               />
@@ -155,7 +155,7 @@ export default function Landing() {
                   className="w-full h-[400px] object-cover"
                   aria-label="Présentation KTOptima"
                 >
-                  <source src="/video ktoptima.mp4" type="video/mp4" />
+                  <source src="/video-ktoptima.mp4" type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
               </div>
