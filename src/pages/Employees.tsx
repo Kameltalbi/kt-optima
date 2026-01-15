@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -24,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,125 +37,143 @@ import {
   XCircle,
   Info,
   Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  User,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useHR } from "@/hooks/use-hr";
-import { useAuth } from "@/contexts/AuthContext";
-import type { HREmployee } from "@/types/database";
+import { useEmployes, Employe, CreateEmployeInput } from "@/hooks/use-employes";
 
 export default function Employees() {
-  const { employees, createEmployee, updateEmployee } = useHR();
-  const { companyId } = useAuth();
+  const { 
+    employes, 
+    loading, 
+    createEmploye, 
+    updateEmploye, 
+    activeCount, 
+    inactiveCount, 
+    departments 
+  } = useEmployes();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [selectedEmployee, setSelectedEmployee] = useState<HREmployee | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employe | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<HREmployee>>({
-    matricule: "",
-    firstName: "",
-    lastName: "",
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState<CreateEmployeInput>({
+    code: "",
+    nom: "",
+    prenom: "",
     email: "",
-    phone: "",
-    address: "",
-    dateOfBirth: "",
-    cin: "",
-    position: "",
-    department: "",
-    hireDate: "",
-    status: "active",
-    company_id: companyId || "",
+    telephone: "",
+    adresse: "",
+    date_naissance: "",
+    numero_cin: "",
+    numero_cnss: "",
+    poste: "",
+    departement: "",
+    date_embauche: new Date().toISOString().split("T")[0],
+    salaire_base: 0,
+    actif: true,
+    notes: "",
   });
 
-  const departments = Array.from(new Set(employees.map(e => e.department)));
-
-  const filteredEmployees = employees.filter((emp) => {
+  const filteredEmployees = employes.filter((emp) => {
     const matchesSearch =
-      emp.matricule.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || emp.status === statusFilter;
-    const matchesDepartment = departmentFilter === "all" || emp.department === departmentFilter;
+      (emp.code?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      emp.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && emp.actif) || 
+      (statusFilter === "inactive" && !emp.actif);
+    const matchesDepartment = departmentFilter === "all" || emp.departement === departmentFilter;
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
-  const activeCount = employees.filter(e => e.status === 'active').length;
-  const inactiveCount = employees.filter(e => e.status === 'inactive').length;
-
   const handleCreate = () => {
     setFormData({
-      matricule: "",
-      firstName: "",
-      lastName: "",
+      code: "",
+      nom: "",
+      prenom: "",
       email: "",
-      phone: "",
-      address: "",
-      dateOfBirth: "",
-      cin: "",
-      position: "",
-      department: "",
-      hireDate: "",
-      status: "active",
-      company_id: companyId || "",
+      telephone: "",
+      adresse: "",
+      date_naissance: "",
+      numero_cin: "",
+      numero_cnss: "",
+      poste: "",
+      departement: "",
+      date_embauche: new Date().toISOString().split("T")[0],
+      salaire_base: 0,
+      actif: true,
+      notes: "",
     });
     setIsCreateModalOpen(true);
   };
 
-  const handleEdit = (employee: HREmployee) => {
+  const handleEdit = (employee: Employe) => {
     setSelectedEmployee(employee);
-    setFormData(employee);
+    setFormData({
+      code: employee.code || "",
+      nom: employee.nom,
+      prenom: employee.prenom,
+      email: employee.email || "",
+      telephone: employee.telephone || "",
+      adresse: employee.adresse || "",
+      date_naissance: employee.date_naissance || "",
+      numero_cin: employee.numero_cin || "",
+      numero_cnss: employee.numero_cnss || "",
+      poste: employee.poste || "",
+      departement: employee.departement || "",
+      date_embauche: employee.date_embauche,
+      date_depart: employee.date_depart || undefined,
+      salaire_base: employee.salaire_base,
+      actif: employee.actif,
+      notes: employee.notes || "",
+    });
     setIsEditModalOpen(true);
   };
 
-  const handleView = (employee: HREmployee) => {
+  const handleView = (employee: Employe) => {
     setSelectedEmployee(employee);
     setIsViewModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (isCreateModalOpen) {
-      createEmployee(formData as any);
-      setIsCreateModalOpen(false);
-    } else if (isEditModalOpen && selectedEmployee) {
-      updateEmployee(selectedEmployee.id, formData);
-      setIsEditModalOpen(false);
-      setSelectedEmployee(null);
+  const handleSave = async () => {
+    if (!formData.nom || !formData.prenom || !formData.date_embauche) {
+      return;
     }
-    setFormData({
-      matricule: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      address: "",
-      dateOfBirth: "",
-      cin: "",
-      position: "",
-      department: "",
-      hireDate: "",
-      status: "active",
-      company_id: companyId || "",
-    });
+
+    setIsSaving(true);
+    try {
+      if (isCreateModalOpen) {
+        await createEmploye(formData);
+        setIsCreateModalOpen(false);
+      } else if (isEditModalOpen && selectedEmployee) {
+        await updateEmploye(selectedEmployee.id, formData);
+        setIsEditModalOpen(false);
+        setSelectedEmployee(null);
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const statusStyles = {
     active: "bg-success/10 text-success border-0",
     inactive: "bg-muted/10 text-muted-foreground border-0",
-    suspended: "bg-warning/10 text-warning border-0",
   };
 
-  const statusLabels = {
-    active: "Actif",
-    inactive: "Inactif",
-    suspended: "Suspendu",
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -174,7 +191,7 @@ export default function Employees() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total employés</p>
-                <p className="text-2xl font-bold mt-1">{employees.length}</p>
+                <p className="text-2xl font-bold mt-1">{employes.length}</p>
               </div>
               <div className="p-3 rounded-lg bg-primary/10">
                 <Users className="w-5 h-5 text-primary" />
@@ -246,7 +263,6 @@ export default function Employees() {
               <SelectItem value="all">Tous les statuts</SelectItem>
               <SelectItem value="active">Actif</SelectItem>
               <SelectItem value="inactive">Inactif</SelectItem>
-              <SelectItem value="suspended">Suspendu</SelectItem>
             </SelectContent>
           </Select>
           <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
@@ -256,7 +272,7 @@ export default function Employees() {
             <SelectContent>
               <SelectItem value="all">Tous les départements</SelectItem>
               {departments.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                <SelectItem key={dept} value={dept!}>{dept}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -280,6 +296,7 @@ export default function Employees() {
                   <TableHead className="font-semibold">Poste</TableHead>
                   <TableHead className="font-semibold">Département</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Salaire base</TableHead>
                   <TableHead className="font-semibold">Date embauche</TableHead>
                   <TableHead className="font-semibold">Statut</TableHead>
                   <TableHead className="w-32 font-semibold">Actions</TableHead>
@@ -288,33 +305,38 @@ export default function Employees() {
               <TableBody>
                 {filteredEmployees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Aucun employé trouvé
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredEmployees.map((employee) => (
                     <TableRow key={employee.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium">{employee.matricule}</TableCell>
+                      <TableCell className="font-medium">{employee.code || "-"}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{employee.firstName} {employee.lastName}</div>
+                        <div className="font-medium">{employee.prenom} {employee.nom}</div>
                       </TableCell>
-                      <TableCell>{employee.position}</TableCell>
+                      <TableCell>{employee.poste || "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{employee.department}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-sm">{employee.email}</span>
-                        </div>
+                        {employee.departement ? (
+                          <Badge variant="outline">{employee.departement}</Badge>
+                        ) : "-"}
                       </TableCell>
                       <TableCell>
-                        {new Date(employee.hireDate).toLocaleDateString('fr-FR')}
+                        {employee.email ? (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-sm">{employee.email}</span>
+                          </div>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell>{employee.salaire_base.toLocaleString()} TND</TableCell>
+                      <TableCell>
+                        {new Date(employee.date_embauche).toLocaleDateString('fr-FR')}
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn("text-xs", statusStyles[employee.status])}>
-                          {statusLabels[employee.status]}
+                        <Badge className={cn("text-xs", employee.actif ? statusStyles.active : statusStyles.inactive)}>
+                          {employee.actif ? "Actif" : "Inactif"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -369,59 +391,59 @@ export default function Employees() {
               <TabsContent value="personal" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="matricule">Matricule *</Label>
+                    <Label htmlFor="code">Matricule</Label>
                     <Input
-                      id="matricule"
-                      value={formData.matricule}
-                      onChange={(e) => setFormData({ ...formData, matricule: e.target.value })}
+                      id="code"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                       placeholder="EMP001"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cin">CIN *</Label>
+                    <Label htmlFor="numero_cin">CIN</Label>
                     <Input
-                      id="cin"
-                      value={formData.cin}
-                      onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
+                      id="numero_cin"
+                      value={formData.numero_cin}
+                      onChange={(e) => setFormData({ ...formData, numero_cin: e.target.value })}
                       placeholder="12345678"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Prénom *</Label>
+                    <Label htmlFor="prenom">Prénom *</Label>
                     <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      id="prenom"
+                      value={formData.prenom}
+                      onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Nom *</Label>
+                    <Label htmlFor="nom">Nom *</Label>
                     <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      id="nom"
+                      value={formData.nom}
+                      onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date de naissance *</Label>
+                    <Label htmlFor="date_naissance">Date de naissance</Label>
                     <Input
-                      id="dateOfBirth"
+                      id="date_naissance"
                       type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      value={formData.date_naissance}
+                      onChange={(e) => setFormData({ ...formData, date_naissance: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
+                    <Label htmlFor="telephone">Téléphone</Label>
                     <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      id="telephone"
+                      value={formData.telephone}
+                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
                       placeholder="+216 12 345 678"
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -430,11 +452,11 @@ export default function Employees() {
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="address">Adresse</Label>
+                    <Label htmlFor="adresse">Adresse</Label>
                     <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      id="adresse"
+                      value={formData.adresse}
+                      onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
                     />
                   </div>
                 </div>
@@ -442,35 +464,54 @@ export default function Employees() {
               <TabsContent value="professional" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="position">Poste *</Label>
+                    <Label htmlFor="poste">Poste</Label>
                     <Input
-                      id="position"
-                      value={formData.position}
-                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      id="poste"
+                      value={formData.poste}
+                      onChange={(e) => setFormData({ ...formData, poste: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="department">Département *</Label>
+                    <Label htmlFor="departement">Département</Label>
                     <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      id="departement"
+                      value={formData.departement}
+                      onChange={(e) => setFormData({ ...formData, departement: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="hireDate">Date d'embauche *</Label>
+                    <Label htmlFor="date_embauche">Date d'embauche *</Label>
                     <Input
-                      id="hireDate"
+                      id="date_embauche"
                       type="date"
-                      value={formData.hireDate}
-                      onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+                      value={formData.date_embauche}
+                      onChange={(e) => setFormData({ ...formData, date_embauche: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Statut *</Label>
+                    <Label htmlFor="salaire_base">Salaire de base (TND) *</Label>
+                    <Input
+                      id="salaire_base"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.salaire_base}
+                      onChange={(e) => setFormData({ ...formData, salaire_base: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_cnss">N° CNSS</Label>
+                    <Input
+                      id="numero_cnss"
+                      value={formData.numero_cnss}
+                      onChange={(e) => setFormData({ ...formData, numero_cnss: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="actif">Statut</Label>
                     <Select
-                      value={formData.status}
-                      onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                      value={formData.actif ? "active" : "inactive"}
+                      onValueChange={(value) => setFormData({ ...formData, actif: value === "active" })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -478,26 +519,33 @@ export default function Employees() {
                       <SelectContent>
                         <SelectItem value="active">Actif</SelectItem>
                         <SelectItem value="inactive">Inactif</SelectItem>
-                        <SelectItem value="suspended">Suspendu</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="notes">Notes</Label>
+                    <Input
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    />
                   </div>
                 </div>
               </TabsContent>
             </Tabs>
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => {
-                setIsCreateModalOpen(false);
-                setIsEditModalOpen(false);
-                setSelectedEmployee(null);
-              }}>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setIsEditModalOpen(false);
+                }}
+              >
                 Annuler
               </Button>
-              <Button
-                onClick={handleSave}
-                disabled={!formData.matricule || !formData.firstName || !formData.lastName || !formData.email}
-              >
-                Enregistrer
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isCreateModalOpen ? "Créer" : "Enregistrer"}
               </Button>
             </div>
           </div>
@@ -506,87 +554,59 @@ export default function Employees() {
 
       {/* View Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dossier RH - {selectedEmployee?.firstName} {selectedEmployee?.lastName}</DialogTitle>
+            <DialogTitle>Fiche employé</DialogTitle>
           </DialogHeader>
           {selectedEmployee && (
-            <div className="space-y-6 mt-4">
-              <div className="grid grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <User className="w-5 h-5" />
-                      Informations personnelles
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Matricule</p>
-                      <p className="font-medium">{selectedEmployee.matricule}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">CIN</p>
-                      <p className="font-medium">{selectedEmployee.cin}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date de naissance</p>
-                      <p className="font-medium">{new Date(selectedEmployee.dateOfBirth).toLocaleDateString('fr-FR')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        Email
-                      </p>
-                      <p className="font-medium">{selectedEmployee.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        Téléphone
-                      </p>
-                      <p className="font-medium">{selectedEmployee.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        Adresse
-                      </p>
-                      <p className="font-medium">{selectedEmployee.address}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Informations professionnelles
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Poste</p>
-                      <p className="font-medium">{selectedEmployee.position}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Département</p>
-                      <Badge variant="outline">{selectedEmployee.department}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Date d'embauche
-                      </p>
-                      <p className="font-medium">{new Date(selectedEmployee.hireDate).toLocaleDateString('fr-FR')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Statut</p>
-                      <Badge className={cn("text-xs", statusStyles[selectedEmployee.status])}>
-                        {statusLabels[selectedEmployee.status]}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Matricule</p>
+                  <p className="font-medium">{selectedEmployee.code || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Nom complet</p>
+                  <p className="font-medium">{selectedEmployee.prenom} {selectedEmployee.nom}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedEmployee.email || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Téléphone</p>
+                  <p className="font-medium">{selectedEmployee.telephone || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Poste</p>
+                  <p className="font-medium">{selectedEmployee.poste || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Département</p>
+                  <p className="font-medium">{selectedEmployee.departement || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Salaire de base</p>
+                  <p className="font-medium">{selectedEmployee.salaire_base.toLocaleString()} TND</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date d'embauche</p>
+                  <p className="font-medium">{new Date(selectedEmployee.date_embauche).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">N° CIN</p>
+                  <p className="font-medium">{selectedEmployee.numero_cin || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">N° CNSS</p>
+                  <p className="font-medium">{selectedEmployee.numero_cnss || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Statut</p>
+                  <Badge className={cn("text-xs", selectedEmployee.actif ? statusStyles.active : statusStyles.inactive)}>
+                    {selectedEmployee.actif ? "Actif" : "Inactif"}
+                  </Badge>
+                </div>
               </div>
             </div>
           )}
