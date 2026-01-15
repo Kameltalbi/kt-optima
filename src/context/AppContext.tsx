@@ -30,7 +30,7 @@ export interface UserCompany {
   id: string;
   user_id: string;
   company_id: string;
-  role: 'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales';
+  role: 'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales' | 'superadmin';
   created_at: string;
 }
 
@@ -41,6 +41,7 @@ export interface AppContextType {
   memberships: UserCompany[];
   permissions: UserPermission[];
   isAdmin: boolean;
+  isSuperadmin: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -119,8 +120,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<UserPermission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculer isAdmin et permissions à partir des memberships
+  // Calculer isAdmin, isSuperadmin et permissions à partir des memberships
   const isAdmin = memberships.some(m => m.role === 'admin');
+  const isSuperadmin = memberships.some(m => m.role === 'superadmin');
   const currentRole = memberships[0]?.role || 'user';
 
   // Charger les données utilisateur dans l'ordre spécifié
@@ -341,6 +343,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     memberships,
     permissions,
     isAdmin,
+    isSuperadmin,
     loading,
     refresh,
     login,

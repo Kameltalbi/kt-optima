@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
@@ -70,7 +71,7 @@ interface SidebarProps {
 export function Sidebar({ onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { company, user, isAdmin, permissions } = useApp();
+  const { company, user, isAdmin, isSuperadmin, permissions } = useApp();
 
   // Filtrer les modules selon les permissions
   const visibleModules = modules.filter(module => 
@@ -166,6 +167,24 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border/50 backdrop-blur-sm space-y-3">
+        {/* Super Admin - visible uniquement pour superadmin */}
+        {isSuperadmin && (
+          <NavLink
+            to="/superadmin"
+            onClick={handleItemClick}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
+              location.pathname.startsWith("/superadmin")
+                ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+                : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
+            )}
+          >
+            <Shield className={cn("w-5 h-5 flex-shrink-0", location.pathname.startsWith("/superadmin") && "text-white")} />
+            {!collapsed && (
+              <span className="truncate animate-fade-in">Super Admin</span>
+            )}
+          </NavLink>
+        )}
         {/* Paramètres - visible si permission */}
         {can(isAdmin, permissions, 'parametres', 'read') && (
           <NavLink

@@ -26,6 +26,7 @@ import DocumentPreview from "./pages/DocumentPreview";
 import InvoicePreviewPage from "./pages/documents/InvoicePreviewPage";
 import QuotePreviewPage from "./pages/documents/QuotePreviewPage";
 import CreditNotePreviewPage from "./pages/documents/CreditNotePreviewPage";
+import SuperAdmin from "./pages/SuperAdmin";
 import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,13 @@ const App = () => (
             <Route path="/users" element={
               <ProtectedRoute>
                 <Users />
+              </ProtectedRoute>
+            } />
+            
+            {/* Super Admin - Superadmin only */}
+            <Route path="/superadmin" element={
+              <ProtectedRoute>
+                <SuperAdmin />
               </ProtectedRoute>
             } />
             
