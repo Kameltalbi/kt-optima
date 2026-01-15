@@ -72,7 +72,7 @@ export function InvoiceCreateModal({
     clientId: "",
     date: new Date().toISOString().split("T")[0],
     reference: "",
-    currency: defaultCurrency,
+    currency: String(defaultCurrency),
     appliedTaxes: [], // Toutes les taxes cochées
     applyDiscount: false,
     discountType: 'percentage',

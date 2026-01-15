@@ -118,7 +118,7 @@ export function useQuotes() {
       // Générer le numéro si non fourni
       let number = quoteData.number;
       if (!number) {
-        number = await getNextDocumentNumber('devis', quoteData.date);
+        number = await getNextDocumentNumber('facture', quoteData.date);
       }
 
       // Créer le devis
