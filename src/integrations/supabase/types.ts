@@ -2259,7 +2259,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "user" | "accountant" | "hr" | "sales"
+      app_role:
+        | "admin"
+        | "manager"
+        | "user"
+        | "accountant"
+        | "hr"
+        | "sales"
+        | "superadmin"
       ecriture_ligne_type: "debit" | "credit"
       facture_statut: "brouillon" | "validee" | "annulee" | "payee"
       mouvement_stock_type: "entree" | "sortie"
@@ -2394,7 +2401,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "user", "accountant", "hr", "sales"],
+      app_role: [
+        "admin",
+        "manager",
+        "user",
+        "accountant",
+        "hr",
+        "sales",
+        "superadmin",
+      ],
       ecriture_ligne_type: ["debit", "credit"],
       facture_statut: ["brouillon", "validee", "annulee", "payee"],
       mouvement_stock_type: ["entree", "sortie"],
