@@ -88,7 +88,7 @@ const statusLabels: Record<ClientCredit['status'], string> = {
 };
 
 export default function ClientCredits() {
-  const { company } = useAuth();
+  const { company, refreshCompany } = useAuth();
   const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
@@ -145,12 +145,14 @@ export default function ClientCredits() {
     .filter(c => c.status === 'draft' || c.status === 'sent')
     .reduce((sum, c) => sum + c.total, 0);
 
-  const handleViewCredit = (credit: ClientCredit) => {
+  const handleViewCredit = async (credit: ClientCredit) => {
+    await refreshCompany();
     setSelectedCredit(credit);
     setIsViewModalOpen(true);
   };
 
-  const handleCreateCredit = () => {
+  const handleCreateCredit = async () => {
+    await refreshCompany();
     setIsLinkedToInvoice(false);
     setSelectedClientId("");
     setSelectedInvoiceId("");

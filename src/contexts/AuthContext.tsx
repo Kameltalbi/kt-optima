@@ -30,6 +30,7 @@ interface AuthContextType {
   profile: Profile | null;
   company: Company | null;
   companyId: string | null;
+  refreshCompany: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string, companyName: string) => Promise<{ success: boolean; error?: string }>;
@@ -218,11 +219,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCompany(null);
   };
 
+  const refreshCompany = async () => {
+    if (!user) return;
+    await fetchUserData(user.id);
+  };
+
   const value: AuthContextType = {
     user,
     profile,
     company,
     companyId: profile?.company_id ?? null,
+    refreshCompany,
     login,
     logout,
     register,

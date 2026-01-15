@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function SettingsCompany() {
-  const { company, user } = useAuth();
+  const { company, refreshCompany } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);
@@ -65,6 +65,7 @@ export default function SettingsCompany() {
           .eq("id", company.id);
 
         if (error) throw error;
+        await refreshCompany();
       } else {
         // Create new company and link to profile via a SECURITY DEFINER RPC (avoids RLS multi-step issues)
         const { data: companyId, error: rpcError } = await supabase.rpc(
@@ -126,6 +127,7 @@ export default function SettingsCompany() {
         .eq("id", company.id);
 
       if (updateError) throw updateError;
+      await refreshCompany();
       toast.success("Logo téléchargé avec succès");
     } catch (error: any) {
       toast.error(error.message || "Erreur lors du téléchargement");
@@ -276,6 +278,7 @@ export default function SettingsCompany() {
                     .update({ footer } as any)
                     .eq("id", company.id);
                   if (error) throw error;
+                  await refreshCompany();
                   toast.success("Pied de page enregistré avec succès");
                 } catch (error: any) {
                   toast.error(error.message || "Erreur lors de l'enregistrement");
