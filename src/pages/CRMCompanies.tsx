@@ -46,6 +46,7 @@ import { useCRM } from "@/hooks/use-crm";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import type { CRMCompany } from "@/types/database";
 
 export default function CRMCompanies() {
@@ -119,36 +120,45 @@ export default function CRMCompanies() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedCompany) {
-      updateCompany(selectedCompany.id, {
-        ...formData,
-        taxNumber: formData.taxNumber || undefined,
-        address: formData.address || undefined,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-        sector: formData.sector || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        website: formData.website || undefined,
-        notes: formData.notes || undefined,
-      });
-    } else {
-      createCompany({
-        ...formData,
-        taxNumber: formData.taxNumber || undefined,
-        address: formData.address || undefined,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-        sector: formData.sector || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        website: formData.website || undefined,
-        notes: formData.notes || undefined,
-      });
+    if (!formData.name.trim()) {
+      toast.error("La raison sociale est obligatoire");
+      return;
     }
-    setIsCreateModalOpen(false);
-    setSelectedCompany(null);
-    navigate(location.pathname, { replace: true });
+
+    try {
+      if (selectedCompany) {
+        await updateCompany(selectedCompany.id, {
+          name: formData.name,
+          taxNumber: formData.taxNumber || undefined,
+          address: formData.address || undefined,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          sector: formData.sector || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          website: formData.website || undefined,
+          notes: formData.notes || undefined,
+        });
+      } else {
+        await createCompany({
+          name: formData.name,
+          taxNumber: formData.taxNumber || undefined,
+          address: formData.address || undefined,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          sector: formData.sector || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          website: formData.website || undefined,
+          notes: formData.notes || undefined,
+        });
+      }
+      setIsCreateModalOpen(false);
+      setSelectedCompany(null);
+      navigate(location.pathname, { replace: true });
+    } catch (error) {
+      console.error("Error saving company:", error);
+    }
   };
 
   const handleEdit = (company: CRMCompany) => {

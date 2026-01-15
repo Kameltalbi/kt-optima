@@ -42,10 +42,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useCRM } from "@/hooks/use-crm";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import type { CRMContact } from "@/types/database";
 
 export default function CRMContacts() {
-  const { contacts, companies, createContact, updateContact, deleteContact, getActivitiesByContact } = useCRM();
+  const { contacts, companies, createContact, updateContact, deleteContact, getActivitiesByContact, loading } = useCRM();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -90,31 +91,42 @@ export default function CRMContacts() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedContact) {
-      updateContact(selectedContact.id, {
-        ...formData,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-        function: formData.function || undefined,
-        companyId: formData.companyId || undefined,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        notes: formData.notes || undefined,
-      });
-    } else {
-      createContact({
-        ...formData,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-        function: formData.function || undefined,
-        companyId: formData.companyId || undefined,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        notes: formData.notes || undefined,
-      });
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error("Le prénom et le nom sont obligatoires");
+      return;
     }
-    setIsCreateModalOpen(false);
-    setSelectedContact(null);
+
+    try {
+      if (selectedContact) {
+        await updateContact(selectedContact.id, {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          function: formData.function || undefined,
+          companyId: formData.companyId || undefined,
+          tags: formData.tags.length > 0 ? formData.tags : undefined,
+          notes: formData.notes || undefined,
+        });
+      } else {
+        await createContact({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone || undefined,
+          email: formData.email || undefined,
+          function: formData.function || undefined,
+          companyId: formData.companyId || undefined,
+          tags: formData.tags.length > 0 ? formData.tags : undefined,
+          notes: formData.notes || undefined,
+        });
+      }
+      setIsCreateModalOpen(false);
+      setSelectedContact(null);
+    } catch (error) {
+      console.error("Error saving contact:", error);
+    }
   };
 
   const handleEdit = (contact: CRMContact) => {
@@ -208,7 +220,15 @@ export default function CRMContacts() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <CardTitle>Contacts</CardTitle>
-            <Button onClick={handleCreate}>
+            <Button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCreate();
+              }}
+              disabled={loading}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Nouveau contact
             </Button>
@@ -371,7 +391,22 @@ export default function CRMContacts() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+      <Dialog open={isCreateModalOpen} onOpenChange={(open) => {
+        setIsCreateModalOpen(open);
+        if (!open) {
+          setSelectedContact(null);
+          setFormData({
+            firstName: "",
+            lastName: "",
+            phone: "",
+            email: "",
+            function: "",
+            companyId: "",
+            tags: [],
+            notes: "",
+          });
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>

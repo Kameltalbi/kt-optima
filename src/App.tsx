@@ -145,6 +145,7 @@ const App = () => (
             } />
           
           {/* Redirections pour compatibilité avec anciennes routes */}
+          <Route path="/clients" element={<Navigate to="/crm/clients" replace />} />
           <Route path="/purchase-orders" element={<Navigate to="/achats/bons-de-commande" replace />} />
           <Route path="/receptions" element={<Navigate to="/achats/receptions" replace />} />
           <Route path="/supplier-invoices" element={<Navigate to="/achats/factures-fournisseurs" replace />} />

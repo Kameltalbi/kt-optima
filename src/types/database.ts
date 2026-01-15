@@ -209,69 +209,97 @@ export interface ClientCreditItem {
 // MODULE: CRM (CUSTOMER RELATIONSHIP MANAGEMENT)
 export interface CRMContact {
   id: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   phone?: string;
   email?: string;
-  function?: string; // Fonction/poste
-  companyId?: string; // Société liée
+  position?: string; // Fonction/poste (colonne: position)
+  crm_company_id?: string; // Société liée (colonne: crm_company_id)
   tags?: string[]; // Tags pour catégorisation
   notes?: string;
   company_id: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  // Aliases pour compatibilité avec le code existant
+  firstName?: string;
+  lastName?: string;
+  function?: string;
+  companyId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CRMCompany {
   id: string;
   name: string; // Raison sociale
-  taxNumber?: string; // Matricule fiscal
+  tax_number?: string; // Matricule fiscal (colonne: tax_number)
   address?: string;
   phone?: string;
   email?: string;
   sector?: string; // Secteur d'activité
-  salesRepId?: string; // Responsable commercial (user_id)
+  sales_rep_id?: string; // Responsable commercial (colonne: sales_rep_id)
   website?: string;
   notes?: string;
   company_id: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  // Aliases pour compatibilité avec le code existant
+  taxNumber?: string;
+  salesRepId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CRMOpportunity {
   id: string;
   name: string; // Nom de l'opportunité
-  companyId: string; // Société
-  contactId?: string; // Contact principal
-  estimatedAmount: number; // Montant estimé
+  crm_company_id: string; // Société (colonne: crm_company_id)
+  crm_contact_id?: string; // Contact principal (colonne: crm_contact_id)
+  estimated_amount: number; // Montant estimé (colonne: estimated_amount)
   probability: number; // Probabilité (0-100)
-  expectedCloseDate?: string; // Date de conclusion prévue
-  salesRepId?: string; // Responsable
+  expected_close_date?: string; // Date de conclusion prévue (colonne: expected_close_date)
+  sales_rep_id?: string; // Responsable (colonne: sales_rep_id)
   stage: 'new' | 'qualification' | 'proposal' | 'negotiation' | 'won' | 'lost'; // Étape
   status: 'active' | 'won' | 'lost'; // Statut global
-  quoteId?: string; // Devis généré (lien vers Ventes)
+  quote_id?: string; // Devis généré (colonne: quote_id)
   description?: string;
   company_id: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  // Aliases pour compatibilité avec le code existant
+  companyId?: string;
+  contactId?: string;
+  estimatedAmount?: number;
+  expectedCloseDate?: string;
+  salesRepId?: string;
+  quoteId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CRMActivity {
   id: string;
   type: 'call' | 'meeting' | 'email' | 'task'; // Type d'activité
   subject: string; // Sujet
-  contactId?: string; // Contact lié
-  companyId?: string; // Société liée
-  opportunityId?: string; // Opportunité liée
+  crm_contact_id?: string; // Contact lié (colonne: crm_contact_id)
+  crm_company_id?: string; // Société liée (colonne: crm_company_id)
+  crm_opportunity_id?: string; // Opportunité liée (colonne: crm_opportunity_id)
   date: string; // Date
   time?: string; // Heure
   duration?: number; // Durée en minutes
-  salesRepId?: string; // Responsable
+  sales_rep_id?: string; // Responsable (colonne: sales_rep_id)
   description?: string; // Commentaire
   completed: boolean; // Tâche complétée
   company_id: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  // Aliases pour compatibilité avec le code existant
+  contactId?: string;
+  companyId?: string;
+  opportunityId?: string;
+  salesRepId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // MODULE 4: CASH FLOW / TREASURY

@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useCRM } from "@/hooks/use-crm";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import type { CRMActivity } from "@/types/database";
 
 const typeLabels: Record<CRMActivity['type'], string> = {
@@ -134,34 +135,49 @@ export default function CRMActivities() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedActivity) {
-      updateActivity(selectedActivity.id, {
-        ...formData,
-        contactId: formData.contactId || undefined,
-        companyId: formData.companyId || undefined,
-        opportunityId: formData.opportunityId || undefined,
-        time: formData.time || undefined,
-        duration: formData.duration || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        description: formData.description || undefined,
-      });
-    } else {
-      createActivity({
-        ...formData,
-        contactId: formData.contactId || undefined,
-        companyId: formData.companyId || undefined,
-        opportunityId: formData.opportunityId || undefined,
-        time: formData.time || undefined,
-        duration: formData.duration || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        description: formData.description || undefined,
-      });
+    if (!formData.subject.trim()) {
+      toast.error("Le sujet est obligatoire");
+      return;
     }
-    setIsCreateModalOpen(false);
-    setSelectedActivity(null);
-    navigate(location.pathname, { replace: true });
+
+    try {
+      if (selectedActivity) {
+        await updateActivity(selectedActivity.id, {
+          type: formData.type,
+          subject: formData.subject,
+          contactId: formData.contactId || undefined,
+          companyId: formData.companyId || undefined,
+          opportunityId: formData.opportunityId || undefined,
+          date: formData.date,
+          time: formData.time || undefined,
+          duration: formData.duration || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          description: formData.description || undefined,
+          completed: formData.completed,
+        });
+      } else {
+        await createActivity({
+          type: formData.type,
+          subject: formData.subject,
+          date: formData.date,
+          contactId: formData.contactId || undefined,
+          companyId: formData.companyId || undefined,
+          opportunityId: formData.opportunityId || undefined,
+          time: formData.time || undefined,
+          duration: formData.duration || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          description: formData.description || undefined,
+          completed: formData.completed,
+        });
+      }
+      setIsCreateModalOpen(false);
+      setSelectedActivity(null);
+      navigate(location.pathname, { replace: true });
+    } catch (error) {
+      console.error("Error saving activity:", error);
+    }
   };
 
   const handleEdit = (activity: CRMActivity) => {

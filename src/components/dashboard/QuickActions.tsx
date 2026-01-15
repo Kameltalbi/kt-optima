@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const actions = [
   { icon: FileText, label: "Nouvelle facture", path: "/invoices", color: "bg-secondary" },
-  { icon: UserPlus, label: "Ajouter client", path: "/clients", color: "bg-accent" },
+  { icon: UserPlus, label: "Ajouter client", path: "/crm/clients", color: "bg-accent" },
   { icon: Plus, label: "Nouveau produit", path: "/products", color: "bg-primary" },
   { icon: Wallet, label: "Transaction", path: "/treasury", color: "bg-sand" },
 ];

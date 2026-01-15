@@ -44,6 +44,7 @@ import { useCRM } from "@/hooks/use-crm";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import type { CRMOpportunity } from "@/types/database";
 
 const stageLabels: Record<CRMOpportunity['stage'], string> = {
@@ -120,34 +121,50 @@ export default function CRMOpportunities() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error("Le nom de l'opportunité est obligatoire");
+      return;
+    }
     if (!formData.companyId) {
-      alert("Vous devez sélectionner une société");
+      toast.error("Vous devez sélectionner une société");
       return;
     }
 
-    if (selectedOpportunity) {
-      updateOpportunity(selectedOpportunity.id, {
-        ...formData,
-        contactId: formData.contactId || undefined,
-        expectedCloseDate: formData.expectedCloseDate || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        description: formData.description || undefined,
-        status: 'active',
-      });
-    } else {
-      createOpportunity({
-        ...formData,
-        contactId: formData.contactId || undefined,
-        expectedCloseDate: formData.expectedCloseDate || undefined,
-        salesRepId: formData.salesRepId || undefined,
-        description: formData.description || undefined,
-        status: 'active',
-      });
+    try {
+      if (selectedOpportunity) {
+        await updateOpportunity(selectedOpportunity.id, {
+          name: formData.name,
+          companyId: formData.companyId,
+          contactId: formData.contactId || undefined,
+          estimatedAmount: formData.estimatedAmount,
+          probability: formData.probability,
+          expectedCloseDate: formData.expectedCloseDate || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          stage: formData.stage,
+          description: formData.description || undefined,
+          status: 'active',
+        });
+      } else {
+        await createOpportunity({
+          name: formData.name,
+          companyId: formData.companyId,
+          contactId: formData.contactId || undefined,
+          estimatedAmount: formData.estimatedAmount,
+          probability: formData.probability,
+          expectedCloseDate: formData.expectedCloseDate || undefined,
+          salesRepId: formData.salesRepId || undefined,
+          stage: formData.stage,
+          description: formData.description || undefined,
+          status: 'active',
+        });
+      }
+      setIsCreateModalOpen(false);
+      setSelectedOpportunity(null);
+    } catch (error) {
+      console.error("Error saving opportunity:", error);
     }
-    setIsCreateModalOpen(false);
-    setSelectedOpportunity(null);
   };
 
   const handleEdit = (opp: CRMOpportunity) => {

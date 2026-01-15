@@ -1,13 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import Clients from "../Clients";
+import ClientDetail from "../ClientDetail";
 import CRMContacts from "../CRMContacts";
 import CRMCompanies from "../CRMCompanies";
 import CRMOpportunities from "../CRMOpportunities";
 import CRMPipeline from "../CRMPipeline";
 import CRMActivities from "../CRMActivities";
-import Clients from "../Clients";
-import ClientDetail from "../ClientDetail";
 
 export default function CRMModule() {
   const moduleName = "CRM";

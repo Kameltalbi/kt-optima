@@ -3,7 +3,6 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { ModuleTab } from "@/components/layout/ModuleTabs";
 import Quotes from "../Quotes";
 import Invoices from "../Invoices";
-import Clients from "../Clients";
 import ClientCredits from "../ClientCredits";
 import DeliveryNotes from "../DeliveryNotes";
 import ComingSoon from "../ComingSoon";
@@ -11,7 +10,6 @@ import Encaissements from "../Encaissements";
 import FactureAcompte from "../FactureAcompte";
 
 const tabs: ModuleTab[] = [
-  { id: "clients", label: "Clients", path: "/ventes/clients" },
   { id: "quotes", label: "Devis", path: "/ventes/devis" },
   { id: "invoices", label: "Factures clients", path: "/ventes/factures" },
   { id: "acomptes", label: "Factures d'acompte", path: "/ventes/factures-acompte" },
@@ -23,20 +21,7 @@ const tabs: ModuleTab[] = [
 export default function VentesModule() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/ventes/clients" replace />} />
-      <Route
-        path="clients"
-        element={
-          <MainLayout
-            title="Ventes"
-            subtitle="Gestion des ventes et clients"
-            moduleTabs={tabs}
-            moduleName="Ventes"
-          >
-            <Clients />
-          </MainLayout>
-        }
-      />
+      <Route path="/" element={<Navigate to="/ventes/devis" replace />} />
       <Route
         path="devis"
         element={
