@@ -1,38 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-export interface Company {
-  id: string;
-  name: string;
-  logo: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  tax_number: string | null;
-  currency: string;
-  language: string;
-  plan: 'core' | 'business' | 'enterprise';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Subscription {
-  id: string;
-  company_id: string;
-  plan: 'core' | 'business' | 'enterprise';
-  status: 'active' | 'suspended' | 'cancelled' | 'expired';
-  start_date: string;
-  end_date: string | null;
-  trial_end_date: string | null;
-  price: number | null;
-  currency: string;
-  billing_cycle: 'monthly' | 'yearly' | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-}
+// Use the database type directly
+export type Company = Tables<'companies'>;
 
 export interface Module {
   id: string;
@@ -50,6 +22,7 @@ export interface Plan {
   description: string;
   price_monthly: number;
   price_yearly: number;
+  currency: string;
   features: string[];
 }
 
@@ -94,7 +67,6 @@ export function useSuperadmin() {
           tax_number: companyData.tax_number || null,
           currency: companyData.currency || 'TND',
           language: companyData.language || 'fr',
-          plan: companyData.plan || 'core',
         })
         .select()
         .single();
@@ -182,156 +154,6 @@ export function useSuperadmin() {
   };
 
   // ============================================
-  // SUBSCRIPTIONS MANAGEMENT
-  // ============================================
-  const getSubscriptions = async (): Promise<Subscription[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching subscriptions:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les abonnements',
-        variant: 'destructive',
-      });
-      return [];
-    }
-  };
-
-  const createSubscription = async (subscriptionData: Partial<Subscription>): Promise<Subscription | null> => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .insert({
-          company_id: subscriptionData.company_id!,
-          plan: subscriptionData.plan!,
-          status: subscriptionData.status || 'active',
-          start_date: subscriptionData.start_date || new Date().toISOString(),
-          end_date: subscriptionData.end_date || null,
-          trial_end_date: subscriptionData.trial_end_date || null,
-          price: subscriptionData.price || null,
-          currency: subscriptionData.currency || 'TND',
-          billing_cycle: subscriptionData.billing_cycle || null,
-          notes: subscriptionData.notes || null,
-          created_by: user?.id || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Mettre à jour le plan de l'entreprise
-      await supabase
-        .from('companies')
-        .update({ plan: subscriptionData.plan! })
-        .eq('id', subscriptionData.company_id!);
-
-      toast({
-        title: 'Succès',
-        description: 'Abonnement créé avec succès',
-      });
-
-      return data;
-    } catch (error: any) {
-      console.error('Error creating subscription:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de créer l\'abonnement',
-        variant: 'destructive',
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateSubscription = async (id: string, subscriptionData: Partial<Subscription>): Promise<boolean> => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          ...subscriptionData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Si le plan change, mettre à jour l'entreprise
-      if (subscriptionData.plan) {
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('company_id')
-          .eq('id', id)
-          .single();
-
-        if (subscription) {
-          await supabase
-            .from('companies')
-            .update({ plan: subscriptionData.plan })
-            .eq('id', subscription.company_id);
-        }
-      }
-
-      toast({
-        title: 'Succès',
-        description: 'Abonnement mis à jour avec succès',
-      });
-
-      return true;
-    } catch (error: any) {
-      console.error('Error updating subscription:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de mettre à jour l\'abonnement',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteSubscription = async (id: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Succès',
-        description: 'Abonnement supprimé avec succès',
-      });
-
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting subscription:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de supprimer l\'abonnement',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ============================================
   // MODULES MANAGEMENT
   // ============================================
   const getModules = async (): Promise<Module[]> => {
@@ -342,7 +164,7 @@ export function useSuperadmin() {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as Module[];
     } catch (error: any) {
       console.error('Error fetching modules:', error);
       toast({
@@ -401,6 +223,7 @@ export function useSuperadmin() {
         description: 'CRM + Ventes + Trésorerie',
         price_monthly: 99,
         price_yearly: 990,
+        currency: 'TND',
         features: [
           'Gestion des clients (CRM)',
           'Devis et factures',
@@ -414,6 +237,7 @@ export function useSuperadmin() {
         description: 'Core + Achats + Produits + Stocks',
         price_monthly: 199,
         price_yearly: 1990,
+        currency: 'TND',
         features: [
           'Tout du Plan Core',
           'Gestion des fournisseurs',
@@ -428,6 +252,7 @@ export function useSuperadmin() {
         description: 'Business + Comptabilité + RH + Parc',
         price_monthly: 399,
         price_yearly: 3990,
+        currency: 'TND',
         features: [
           'Tout du Plan Business',
           'Comptabilité complète',
@@ -446,11 +271,6 @@ export function useSuperadmin() {
     createCompany,
     updateCompany,
     deleteCompany,
-    // Subscriptions
-    getSubscriptions,
-    createSubscription,
-    updateSubscription,
-    deleteSubscription,
     // Modules
     getModules,
     updateModule,

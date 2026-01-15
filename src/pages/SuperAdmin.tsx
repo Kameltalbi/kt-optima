@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { useSuperadmin, Company, Subscription, Module, Plan } from '@/hooks/use-superadmin';
+import { useSuperadmin, Company, Module, Plan } from '@/hooks/use-superadmin';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
   Building2,
-  CreditCard,
   Package,
   Settings,
   Plus,
@@ -42,26 +41,30 @@ import {
   Trash2,
   Shield,
   CheckCircle2,
-  XCircle,
-  AlertCircle,
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
 
+// Local interface for company form that includes all editable fields
+interface CompanyFormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  tax_number: string;
+  currency: string;
+  language: string;
+}
+
 export default function SuperAdmin() {
-  const { user, memberships } = useApp();
+  const { memberships } = useApp();
   const {
     loading,
     getCompanies,
     createCompany,
     updateCompany,
     deleteCompany,
-    getSubscriptions,
-    createSubscription,
-    updateSubscription,
-    deleteSubscription,
     getModules,
-    updateModule,
     toggleModule,
     getPlans,
   } = useSuperadmin();
@@ -70,14 +73,13 @@ export default function SuperAdmin() {
   const isSuperadmin = memberships.some(m => m.role === 'superadmin');
 
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
   const [plans] = useState<Plan[]>(getPlans());
 
   // Company modal state
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [companyForm, setCompanyForm] = useState<Partial<Company>>({
+  const [companyForm, setCompanyForm] = useState<CompanyFormData>({
     name: '',
     email: '',
     phone: '',
@@ -85,19 +87,6 @@ export default function SuperAdmin() {
     tax_number: '',
     currency: 'TND',
     language: 'fr',
-    plan: 'core',
-  });
-
-  // Subscription modal state
-  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
-  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
-  const [subscriptionForm, setSubscriptionForm] = useState<Partial<Subscription>>({
-    company_id: '',
-    plan: 'core',
-    status: 'active',
-    billing_cycle: 'monthly',
-    price: null,
-    currency: 'TND',
   });
 
   // Load data
@@ -108,13 +97,11 @@ export default function SuperAdmin() {
   }, [isSuperadmin]);
 
   const loadData = async () => {
-    const [companiesData, subscriptionsData, modulesData] = await Promise.all([
+    const [companiesData, modulesData] = await Promise.all([
       getCompanies(),
-      getSubscriptions(),
       getModules(),
     ]);
     setCompanies(companiesData);
-    setSubscriptions(subscriptionsData);
     setModules(modulesData);
   };
 
@@ -158,7 +145,6 @@ export default function SuperAdmin() {
       tax_number: company.tax_number || '',
       currency: company.currency,
       language: company.language,
-      plan: company.plan,
     });
     setCompanyModalOpen(true);
   };
@@ -172,66 +158,8 @@ export default function SuperAdmin() {
       tax_number: '',
       currency: 'TND',
       language: 'fr',
-      plan: 'core',
     });
     setEditingCompany(null);
-  };
-
-  // Subscription handlers
-  const handleCreateSubscription = async () => {
-    const subscription = await createSubscription(subscriptionForm);
-    if (subscription) {
-      await loadData();
-      setSubscriptionModalOpen(false);
-      resetSubscriptionForm();
-    }
-  };
-
-  const handleUpdateSubscription = async () => {
-    if (!editingSubscription) return;
-    const success = await updateSubscription(editingSubscription.id, subscriptionForm);
-    if (success) {
-      await loadData();
-      setSubscriptionModalOpen(false);
-      setEditingSubscription(null);
-      resetSubscriptionForm();
-    }
-  };
-
-  const handleDeleteSubscription = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet abonnement ?')) {
-      const success = await deleteSubscription(id);
-      if (success) {
-        setSubscriptions(subscriptions.filter(s => s.id !== id));
-      }
-    }
-  };
-
-  const openEditSubscription = (subscription: Subscription) => {
-    setEditingSubscription(subscription);
-    setSubscriptionForm({
-      company_id: subscription.company_id,
-      plan: subscription.plan,
-      status: subscription.status,
-      billing_cycle: subscription.billing_cycle,
-      price: subscription.price,
-      currency: subscription.currency,
-      end_date: subscription.end_date || undefined,
-      notes: subscription.notes || '',
-    });
-    setSubscriptionModalOpen(true);
-  };
-
-  const resetSubscriptionForm = () => {
-    setSubscriptionForm({
-      company_id: '',
-      plan: 'core',
-      status: 'active',
-      billing_cycle: 'monthly',
-      price: null,
-      currency: 'TND',
-    });
-    setEditingSubscription(null);
   };
 
   // Module handlers
@@ -255,7 +183,7 @@ export default function SuperAdmin() {
             Super Admin
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gestion complète de l'application, des entreprises, abonnements et modules
+            Gestion complète de l'application, des entreprises et modules
           </p>
         </div>
       </div>
@@ -265,10 +193,6 @@ export default function SuperAdmin() {
           <TabsTrigger value="companies" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Entreprises
-          </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Abonnements
           </TabsTrigger>
           <TabsTrigger value="modules" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
@@ -360,7 +284,7 @@ export default function SuperAdmin() {
                           placeholder="Adresse complète"
                         />
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="currency">Devise</Label>
                           <Select
@@ -394,24 +318,6 @@ export default function SuperAdmin() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="plan">Plan</Label>
-                          <Select
-                            value={companyForm.plan}
-                            onValueChange={(value: 'core' | 'business' | 'enterprise') =>
-                              setCompanyForm({ ...companyForm, plan: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="core">Core</SelectItem>
-                              <SelectItem value="business">Business</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
                     </div>
                     <DialogFooter>
@@ -436,7 +342,7 @@ export default function SuperAdmin() {
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Téléphone</TableHead>
-                    <TableHead>Plan</TableHead>
+                    <TableHead>Devise</TableHead>
                     <TableHead>Créée le</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -448,10 +354,10 @@ export default function SuperAdmin() {
                       <TableCell>{company.email || '-'}</TableCell>
                       <TableCell>{company.phone || '-'}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{company.plan}</Badge>
+                        <Badge variant="outline">{company.currency}</Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(company.created_at).toLocaleDateString('fr-FR')}
+                        {company.created_at ? new Date(company.created_at).toLocaleDateString('fr-FR') : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -479,233 +385,6 @@ export default function SuperAdmin() {
           </Card>
         </TabsContent>
 
-        {/* SUBSCRIPTIONS TAB */}
-        <TabsContent value="subscriptions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Abonnements</CardTitle>
-                  <CardDescription>
-                    Gérer les abonnements des entreprises
-                  </CardDescription>
-                </div>
-                <Dialog open={subscriptionModalOpen} onOpenChange={setSubscriptionModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetSubscriptionForm}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nouvel abonnement
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingSubscription ? 'Modifier l\'abonnement' : 'Nouvel abonnement'}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingSubscription
-                          ? 'Modifiez les informations de l\'abonnement'
-                          : 'Créez un nouvel abonnement pour une entreprise'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="subscription_company">Entreprise *</Label>
-                        <Select
-                          value={subscriptionForm.company_id}
-                          onValueChange={(value) =>
-                            setSubscriptionForm({ ...subscriptionForm, company_id: value })
-                          }
-                          disabled={!!editingSubscription}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une entreprise" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {companies.map((company) => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="subscription_plan">Plan *</Label>
-                          <Select
-                            value={subscriptionForm.plan}
-                            onValueChange={(value: 'core' | 'business' | 'enterprise') =>
-                              setSubscriptionForm({ ...subscriptionForm, plan: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="core">Core</SelectItem>
-                              <SelectItem value="business">Business</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="subscription_status">Statut *</Label>
-                          <Select
-                            value={subscriptionForm.status}
-                            onValueChange={(value: 'active' | 'suspended' | 'cancelled' | 'expired') =>
-                              setSubscriptionForm({ ...subscriptionForm, status: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="active">Actif</SelectItem>
-                              <SelectItem value="suspended">Suspendu</SelectItem>
-                              <SelectItem value="cancelled">Annulé</SelectItem>
-                              <SelectItem value="expired">Expiré</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="subscription_billing">Cycle de facturation</Label>
-                          <Select
-                            value={subscriptionForm.billing_cycle || 'monthly'}
-                            onValueChange={(value: 'monthly' | 'yearly') =>
-                              setSubscriptionForm({ ...subscriptionForm, billing_cycle: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="monthly">Mensuel</SelectItem>
-                              <SelectItem value="yearly">Annuel</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="subscription_price">Prix</Label>
-                          <Input
-                            id="subscription_price"
-                            type="number"
-                            value={subscriptionForm.price || ''}
-                            onChange={(e) =>
-                              setSubscriptionForm({
-                                ...subscriptionForm,
-                                price: e.target.value ? parseFloat(e.target.value) : null,
-                              })
-                            }
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="subscription_notes">Notes</Label>
-                        <Textarea
-                          id="subscription_notes"
-                          value={subscriptionForm.notes || ''}
-                          onChange={(e) =>
-                            setSubscriptionForm({ ...subscriptionForm, notes: e.target.value })
-                          }
-                          placeholder="Notes internes..."
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setSubscriptionModalOpen(false)}>
-                        Annuler
-                      </Button>
-                      <Button
-                        onClick={
-                          editingSubscription ? handleUpdateSubscription : handleCreateSubscription
-                        }
-                        disabled={!subscriptionForm.company_id || !subscriptionForm.plan}
-                      >
-                        {editingSubscription ? 'Modifier' : 'Créer'}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Entreprise</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Prix</TableHead>
-                    <TableHead>Début</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {subscriptions.map((subscription) => {
-                    const company = companies.find((c) => c.id === subscription.company_id);
-                    return (
-                      <TableRow key={subscription.id}>
-                        <TableCell className="font-medium">
-                          {company?.name || subscription.company_id}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{subscription.plan}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              subscription.status === 'active'
-                                ? 'default'
-                                : subscription.status === 'suspended'
-                                ? 'secondary'
-                                : 'destructive'
-                            }
-                          >
-                            {subscription.status === 'active' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                            {subscription.status === 'suspended' && <AlertCircle className="h-3 w-3 mr-1" />}
-                            {subscription.status === 'cancelled' && <XCircle className="h-3 w-3 mr-1" />}
-                            {subscription.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {subscription.price
-                            ? `${subscription.price} ${subscription.currency}`
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(subscription.start_date).toLocaleDateString('fr-FR')}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditSubscription(subscription)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSubscription(subscription.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* MODULES TAB */}
         <TabsContent value="modules" className="space-y-4">
           <Card>
@@ -716,31 +395,33 @@ export default function SuperAdmin() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {modules.map((module) => (
-                  <div
-                    key={module.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{module.name}</h3>
-                        <Badge variant={module.active ? 'default' : 'secondary'}>
-                          {module.active ? 'Actif' : 'Inactif'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {module.description || 'Aucune description'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">Code: {module.code}</p>
-                    </div>
-                    <Switch
-                      checked={module.active}
-                      onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
-                    />
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-center">Actif</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {modules.map((module) => (
+                    <TableRow key={module.id}>
+                      <TableCell className="font-mono text-sm">{module.code}</TableCell>
+                      <TableCell className="font-medium">{module.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {module.description || '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={module.active}
+                          onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>

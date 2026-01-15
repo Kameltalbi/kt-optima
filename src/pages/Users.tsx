@@ -44,7 +44,7 @@ interface UserWithRole {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: 'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales';
+  role: 'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales' | 'superadmin';
   user_id: string;
 }
 
@@ -56,7 +56,7 @@ export default function Users() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales'>('user');
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'manager' | 'user' | 'accountant' | 'hr' | 'sales' | 'superadmin'>('user');
 
   // Vérifier les permissions
   const canViewUsers = can(isAdmin, permissions, 'parametres', 'read');
