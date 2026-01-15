@@ -7,7 +7,7 @@ interface StatCardProps {
   change?: string;
   changeType?: "positive" | "negative" | "neutral";
   icon: LucideIcon;
-  iconColor?: "primary" | "secondary" | "accent" | "sand";
+  iconColor?: "primary" | "secondary" | "accent" | "sand" | "success";
 }
 
 const iconColors = {
@@ -15,6 +15,7 @@ const iconColors = {
   secondary: "bg-secondary text-white shadow-lg shadow-secondary/30",
   accent: "bg-accent text-white shadow-lg shadow-accent/30",
   sand: "bg-sand text-white shadow-lg shadow-sand/30",
+  success: "bg-success text-white shadow-lg shadow-success/30",
 };
 
 export function StatCard({

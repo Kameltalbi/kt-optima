@@ -13,7 +13,7 @@ export async function getNextDocumentNumber(
   try {
     const documentDate = date || new Date().toISOString().split('T')[0];
     
-    const { data, error } = await supabase.rpc('get_next_formatted_document_number', {
+    const { data, error } = await supabase.rpc('get_next_formatted_document_number' as any, {
       p_type: type,
       p_date: documentDate,
     });

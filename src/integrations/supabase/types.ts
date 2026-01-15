@@ -762,6 +762,75 @@ export type Database = {
           },
         ]
       }
+      encaissements: {
+        Row: {
+          allocated_amount: number
+          client_id: string
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          date: string
+          id: string
+          mode_paiement: string
+          montant: number
+          notes: string | null
+          reference: string | null
+          remaining_amount: number
+          status: string
+          type_encaissement: string
+          updated_at: string | null
+        }
+        Insert: {
+          allocated_amount?: number
+          client_id: string
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          id?: string
+          mode_paiement: string
+          montant: number
+          notes?: string | null
+          reference?: string | null
+          remaining_amount?: number
+          status?: string
+          type_encaissement?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allocated_amount?: number
+          client_id?: string
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          id?: string
+          mode_paiement?: string
+          montant?: number
+          notes?: string | null
+          reference?: string | null
+          remaining_amount?: number
+          status?: string
+          type_encaissement?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encaissements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encaissements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facture_achat_lignes: {
         Row: {
           created_at: string | null
@@ -818,6 +887,45 @@ export type Database = {
             columns: ["produit_id"]
             isOneToOne: false
             referencedRelation: "produits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facture_encaissements: {
+        Row: {
+          created_at: string | null
+          encaissement_id: string
+          facture_id: string
+          id: string
+          montant_alloue: number
+        }
+        Insert: {
+          created_at?: string | null
+          encaissement_id: string
+          facture_id: string
+          id?: string
+          montant_alloue: number
+        }
+        Update: {
+          created_at?: string | null
+          encaissement_id?: string
+          facture_id?: string
+          id?: string
+          montant_alloue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_encaissements_encaissement_id_fkey"
+            columns: ["encaissement_id"]
+            isOneToOne: false
+            referencedRelation: "encaissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facture_encaissements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures_ventes"
             referencedColumns: ["id"]
           },
         ]
@@ -978,6 +1086,7 @@ export type Database = {
           notes: string | null
           numero: string
           statut: Database["public"]["Enums"]["facture_statut"] | null
+          type_facture: string | null
           updated_at: string | null
         }
         Insert: {
@@ -997,6 +1106,7 @@ export type Database = {
           notes?: string | null
           numero: string
           statut?: Database["public"]["Enums"]["facture_statut"] | null
+          type_facture?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1016,6 +1126,7 @@ export type Database = {
           notes?: string | null
           numero?: string
           statut?: Database["public"]["Enums"]["facture_statut"] | null
+          type_facture?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1815,6 +1926,15 @@ export type Database = {
         }
         Returns: string
       }
+      format_document_number: {
+        Args: { p_date?: string; p_number: number; p_type: string }
+        Returns: string
+      }
+      get_next_document_number: { Args: never; Returns: number }
+      get_next_formatted_document_number: {
+        Args: { p_date?: string; p_type: string }
+        Returns: string
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_company_id_from_roles: {
         Args: { _user_id: string }
@@ -1826,6 +1946,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reset_document_number_sequence: {
+        Args: { p_start_value?: number }
+        Returns: undefined
       }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
