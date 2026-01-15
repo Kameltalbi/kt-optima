@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Footer } from "@/components/layout/Footer";
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -554,54 +555,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-background py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <img 
-                  src="/ktoptima.png" 
-                  alt="KTOptima" 
-                  className="h-16 w-auto object-contain"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                ERP complet pour les entreprises du Maghreb
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Légal</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a href="#mentions-legales" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Mentions légales
-                  </a>
-                </li>
-                <li>
-                  <a href="#confidentialite" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Politique de confidentialité
-                  </a>
-                </li>
-                <li>
-                  <a href="#cgv" className="text-muted-foreground hover:text-foreground transition-colors">
-                    CGV
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="text-muted-foreground">contact@ktconsulting.info</li>
-                <li className="text-muted-foreground">+21698704385</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} BilvoxaERP. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <style>{`
         @keyframes fade-in {
