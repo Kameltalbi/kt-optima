@@ -319,7 +319,7 @@ export default function PurchaseOrders() {
 
       {/* Modal pour créer un nouveau bon de commande */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-4xl w-[210mm] max-h-[95vh] overflow-hidden p-0 bg-paper">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <div className="overflow-y-auto max-h-[95vh]">
             <DocumentTemplate
               docType="bon_commande"
@@ -333,10 +333,10 @@ export default function PurchaseOrders() {
 
       {/* Modal pour voir un bon de commande existant */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-4xl w-[210mm] max-h-[95vh] overflow-hidden p-0 bg-paper">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-paper-border bg-paper">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-bold text-paper-foreground">
+              <DialogTitle className="text-xl font-bold">
                 {selectedOrder?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export default function PurchaseOrders() {
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)] bg-paper">
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
             <DocumentTemplate
               docType="bon_commande"
               entreprise={entrepriseInfo}
