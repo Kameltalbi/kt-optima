@@ -49,10 +49,12 @@ import { useEmployes } from "@/hooks/use-employes";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import jsPDF from "jspdf";
+import { generatePayslipPDF } from "@/components/payroll/PayslipPDF";
+import { useApp } from "@/context/AppContext";
 
 export default function PayrollNewPage() {
   const { companyId } = useAuth();
+  const { company } = useApp();
   const { employes } = useEmployes();
   const {
     fichesPaie,
@@ -208,109 +210,8 @@ export default function PayrollNewPage() {
 
   // Générer le PDF
   const generatePDF = (fiche: FichePaie) => {
-    const doc = new jsPDF();
-    const employe = fiche.employe;
-
-    // En-tête
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("BULLETIN DE PAIE", 105, 20, { align: "center" });
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Période: ${fiche.periode}`, 105, 30, { align: "center" });
-
-    // Infos employé
-    doc.setFontSize(10);
-    doc.text("EMPLOYÉ", 20, 50);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${employe?.prenom || ""} ${employe?.nom || ""}`, 20, 57);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Matricule: ${employe?.code || "N/A"}`, 20, 64);
-    doc.text(`Poste: ${employe?.poste || "N/A"}`, 20, 71);
-    doc.text(`N° CNSS: ${employe?.numero_cnss || "N/A"}`, 20, 78);
-
-    // Ligne de séparation
-    doc.line(20, 85, 190, 85);
-
-    // Rémunération
-    let y = 95;
-    doc.setFont("helvetica", "bold");
-    doc.text("RÉMUNÉRATION", 20, y);
-    y += 10;
-    doc.setFont("helvetica", "normal");
-
-    const remuneration = [
-      { label: "Salaire de base", value: fiche.salaire_base },
-      { label: "Primes", value: fiche.primes },
-      { label: "Indemnités", value: fiche.indemnites },
-      { label: "Heures supplémentaires", value: fiche.heures_sup },
-    ];
-
-    remuneration.forEach((item) => {
-      doc.text(item.label, 25, y);
-      doc.text(`${item.value.toFixed(2)} TND`, 170, y, { align: "right" });
-      y += 7;
-    });
-
-    doc.setFont("helvetica", "bold");
-    doc.text("SALAIRE BRUT", 25, y);
-    doc.text(`${fiche.brut.toFixed(2)} TND`, 170, y, { align: "right" });
-    y += 15;
-
-    // Cotisations
-    doc.text("COTISATIONS SOCIALES", 20, y);
-    y += 10;
-    doc.setFont("helvetica", "normal");
-
-    doc.text(`CNSS Salarié (${fiche.taux_cnss_salarie.toFixed(2)}%)`, 25, y);
-    doc.text(`-${fiche.cnss_salarie.toFixed(2)} TND`, 170, y, { align: "right" });
-    y += 15;
-
-    // IRPP
-    doc.setFont("helvetica", "bold");
-    doc.text("RETENUES FISCALES", 20, y);
-    y += 10;
-    doc.setFont("helvetica", "normal");
-
-    doc.text("IRPP (Impôt sur le Revenu)", 25, y);
-    doc.text(`-${fiche.irpp_mensuel.toFixed(2)} TND`, 170, y, { align: "right" });
-    y += 7;
-
-    doc.setFontSize(8);
-    doc.text(`(Base annualisée: ${(fiche.base_imposable * 12).toFixed(2)} TND, IRPP annuel: ${fiche.irpp_annuel.toFixed(2)} TND)`, 25, y);
-    y += 15;
-
-    // Autres retenues
-    if (fiche.autres_retenues > 0) {
-      doc.setFontSize(10);
-      doc.text("Autres retenues", 25, y);
-      doc.text(`-${fiche.autres_retenues.toFixed(2)} TND`, 170, y, { align: "right" });
-      y += 10;
-    }
-
-    // Net à payer
-    doc.line(20, y, 190, y);
-    y += 10;
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("NET À PAYER", 25, y);
-    doc.text(`${fiche.net_a_payer.toFixed(2)} TND`, 170, y, { align: "right" });
-
-    // Footer
-    y += 20;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Date de paiement: ${new Date(fiche.date_paiement).toLocaleDateString("fr-FR")}`, 20, y);
-    doc.text(`Généré le: ${new Date().toLocaleDateString("fr-FR")}`, 170, y, { align: "right" });
-
-    // Charge employeur
-    y += 10;
-    doc.text(`Coût employeur (CNSS Employeur ${fiche.taux_cnss_employeur.toFixed(2)}%): ${fiche.cnss_employeur.toFixed(2)} TND`, 20, y);
-
-    // Télécharger
-    doc.save(`fiche-paie-${fiche.periode}-${employe?.nom || "employe"}.pdf`);
-    toast.success("Fiche de paie téléchargée");
+    generatePayslipPDF(fiche, company);
+    toast.success("Bulletin de paie téléchargé");
   };
 
   const statusStyles: Record<string, string> = {
