@@ -119,8 +119,8 @@ export function Header({ title, subtitle, onMenuClick, showBackButton = false }:
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
-                logout();
+              onClick={async () => {
+                await logout();
                 navigate("/login");
               }}
               className="text-destructive"
