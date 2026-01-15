@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePayroll, FichePaie, CalculPaieResult } from "@/hooks/use-payroll";
-import { useHR } from "@/hooks/use-hr";
+import { useEmployes } from "@/hooks/use-employes";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -53,7 +53,7 @@ import jsPDF from "jspdf";
 
 export default function PayrollNewPage() {
   const { companyId } = useAuth();
-  const { employees } = useHR();
+  const { employes } = useEmployes();
   const {
     fichesPaie,
     loading,
@@ -88,7 +88,7 @@ export default function PayrollNewPage() {
   });
 
   // Filtrer les employés actifs
-  const activeEmployees = employees.filter(e => e.status === 'active');
+  const activeEmployees = employes.filter(e => e.actif);
 
   // Initialiser les paramètres si vides
   useEffect(() => {
@@ -144,12 +144,13 @@ export default function PayrollNewPage() {
     setIsCreateModalOpen(true);
   };
 
-  // Quand on sélectionne un employé
+  // Quand on sélectionne un employé, charger son salaire de base
   const handleEmployeSelect = (employeId: string) => {
+    const employe = activeEmployees.find((e) => e.id === employeId);
     setFormData((prev) => ({
       ...prev,
       employe_id: employeId,
-      salaire_base: 0, // L'utilisateur saisit le salaire manuellement
+      salaire_base: employe?.salaire_base || 0,
     }));
     setCalculResult(null);
   };
@@ -607,7 +608,7 @@ export default function PayrollNewPage() {
                   <SelectContent>
                     {activeEmployees.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
-                        {emp.firstName} {emp.lastName} ({emp.matricule || "N/A"})
+                        {emp.prenom} {emp.nom} ({emp.code || "N/A"})
                       </SelectItem>
                     ))}
                   </SelectContent>
