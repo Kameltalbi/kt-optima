@@ -229,13 +229,12 @@ export function QuoteCreateModal({
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
   const { defaultCurrency, formatAmount } = useCurrency();
   const { products, services } = useProducts();
-  const { products, services } = useProducts();
 
   const [formData, setFormData] = useState<QuoteFormData>({
     clientId: "",
     date: new Date().toISOString().split("T")[0],
     reference: "",
-    currency: defaultCurrency,
+    currency: String(defaultCurrency),
     appliedTaxes: [],
     applyDiscount: false,
     discountType: 'percentage',

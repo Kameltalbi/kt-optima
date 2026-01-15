@@ -37,7 +37,7 @@ export default function InvoicePreviewPage() {
 
         // Récupérer les lignes
         const { data: lignes, error: lignesError } = await supabase
-          .from('factures_ventes_lignes')
+          .from('facture_vente_lignes')
           .select('*')
           .eq('facture_vente_id', id)
           .order('ordre', { ascending: true });
@@ -55,7 +55,7 @@ export default function InvoicePreviewPage() {
         }
 
         // Transformer les lignes
-        const documentLines = (lignes || []).map(ligne => ({
+        const documentLines = (lignes || []).map((ligne: any) => ({
           description: ligne.description || '',
           quantity: ligne.quantite,
           unit_price: ligne.prix_unitaire,
@@ -69,7 +69,7 @@ export default function InvoicePreviewPage() {
         // Si montant_tva > 0, on ajoute une taxe TVA
         if (facture.montant_tva > 0) {
           // On essaie de trouver le taux de TVA depuis les lignes
-          const tauxTVA = lignes?.[0]?.taux_tva || 19;
+          const tauxTVA = (lignes as any)?.[0]?.taux_tva || 19;
           appliedTaxes.push({
             tax_id: 'tva',
             name: 'TVA',

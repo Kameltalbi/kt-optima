@@ -46,8 +46,9 @@ export function useTaxes() {
       }
 
       // Convertir is_default en isDefault pour la compatibilité
-      const formattedData = (data || []).map(tax => ({
+      const formattedData: Tax[] = (data || []).map(tax => ({
         ...tax,
+        type: tax.type as 'percentage' | 'fixed',
         isDefault: tax.is_default || false,
       }));
 
@@ -96,7 +97,8 @@ export function useTaxes() {
       }
 
       if (data) {
-        setTaxes(prev => [...prev, { ...data, isDefault: data.is_default || false }]);
+        const newTax: Tax = { ...data, type: data.type as 'percentage' | 'fixed', isDefault: data.is_default || false };
+        setTaxes(prev => [...prev, newTax]);
       }
     } catch (err) {
       console.error('Error creating default tax:', err);
@@ -143,7 +145,7 @@ export function useTaxes() {
       }
 
       if (data) {
-        const newTax = { ...data, isDefault: data.is_default || false };
+        const newTax: Tax = { ...data, type: data.type as 'percentage' | 'fixed', isDefault: data.is_default || false };
         setTaxes(prev => [...prev, newTax]);
         toast.success('Taxe créée avec succès');
         return newTax;
@@ -189,7 +191,7 @@ export function useTaxes() {
       }
 
       if (data) {
-        const updatedTax = { ...data, isDefault: data.is_default || false };
+        const updatedTax: Tax = { ...data, type: data.type as 'percentage' | 'fixed', isDefault: data.is_default || false };
         setTaxes(prev => prev.map(t => t.id === id ? updatedTax : t));
         toast.success('Taxe mise à jour avec succès');
       }

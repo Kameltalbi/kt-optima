@@ -56,13 +56,13 @@ export function usePermissions() {
   const loadModules = async () => {
     try {
       const { data, error } = await supabase
-        .from('modules')
+        .from('modules' as any)
         .select('*')
         .eq('active', true)
         .order('name');
 
       if (error) throw error;
-      setModules(data || []);
+      setModules((data as unknown as Module[]) || []);
     } catch (error: any) {
       console.error('Error loading modules:', error);
       toast.error('Erreur lors du chargement des modules');
@@ -112,7 +112,7 @@ export function usePermissions() {
       
       // Vérifier si une permission existe déjà
       const { data: existing } = await supabase
-        .from('user_permissions')
+        .from('user_permissions' as any)
         .select('id')
         .eq('user_id', userId)
         .eq('company_id', company.id)
@@ -123,9 +123,9 @@ export function usePermissions() {
         // Mettre à jour
         const updateData: any = { [actionField]: value };
         const { error } = await supabase
-          .from('user_permissions')
+          .from('user_permissions' as any)
           .update(updateData)
-          .eq('id', existing.id);
+          .eq('id', (existing as any).id);
 
         if (error) throw error;
       } else {
@@ -142,7 +142,7 @@ export function usePermissions() {
         newPermission[actionField] = value;
 
         const { error } = await supabase
-          .from('user_permissions')
+          .from('user_permissions' as any)
           .insert(newPermission);
 
         if (error) throw error;
@@ -216,7 +216,7 @@ export function usePermissions() {
 
     try {
       const { error } = await supabase
-        .from('roles')
+        .from('roles' as any)
         .update({
           name,
           description: description || null,
@@ -242,7 +242,7 @@ export function usePermissions() {
 
     try {
       const { error } = await supabase
-        .from('roles')
+        .from('roles' as any)
         .delete()
         .eq('id', roleId)
         .eq('company_id', company.id);
@@ -297,7 +297,7 @@ export function usePermissions() {
       
       // Vérifier si une permission existe déjà
       const { data: existing } = await supabase
-        .from('role_permissions')
+        .from('role_permissions' as any)
         .select('id')
         .eq('role_id', roleId)
         .eq('module_code', moduleCode)
@@ -307,9 +307,9 @@ export function usePermissions() {
         // Mettre à jour
         const updateData: any = { [actionField]: value };
         const { error } = await supabase
-          .from('role_permissions')
+          .from('role_permissions' as any)
           .update(updateData)
-          .eq('id', existing.id);
+          .eq('id', (existing as any).id);
 
         if (error) throw error;
       } else {
@@ -325,7 +325,7 @@ export function usePermissions() {
         newPermission[actionField] = value;
 
         const { error } = await supabase
-          .from('role_permissions')
+          .from('role_permissions' as any)
           .insert(newPermission);
 
         if (error) throw error;

@@ -1220,6 +1220,36 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       mouvements_stock: {
         Row: {
           company_id: string
@@ -1727,6 +1757,148 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          client_id: string
+          company_id: string
+          created_at: string | null
+          date: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          number: string
+          status: string
+          subtotal: number | null
+          tax: number | null
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          company_id: string
+          created_at?: string | null
+          date: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          number: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total: number
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          company_id?: string
+          created_at?: string | null
+          date?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          number?: string
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_update: boolean | null
+          created_at: string | null
+          id: string
+          module_code: string
+          role_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          module_code: string
+          role_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          module_code?: string
+          role_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salaires: {
         Row: {
           company_id: string
@@ -1814,6 +1986,124 @@ export type Database = {
             columns: ["employe_id"]
             isOneToOne: false
             referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taxes: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          is_default: boolean
+          name: string
+          type: string
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          is_default?: boolean
+          name: string
+          type: string
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          is_default?: boolean
+          name?: string
+          type?: string
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_companies: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_update: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          module_code: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          module_code: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          module_code?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1925,6 +2215,10 @@ export type Database = {
           _tax_number?: string
         }
         Returns: string
+      }
+      create_default_taxes: {
+        Args: { _company_id: string }
+        Returns: undefined
       }
       format_document_number: {
         Args: { p_date?: string; p_number: number; p_type: string }
