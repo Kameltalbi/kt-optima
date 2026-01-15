@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Search,
@@ -42,36 +41,11 @@ import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
+import { CreditNoteCreateModal, CreditNoteFormData } from "@/components/credit-notes/CreditNoteCreateModal";
 import type { ClientCredit } from "@/types/database";
+import { useTaxes } from "@/hooks/use-taxes";
+import { toast } from "sonner";
 
-// Mock invoices for current month
-const mockClientInvoices = [
-  {
-    id: 'inv_1',
-    number: 'FAC-2025-001',
-    client_id: 'cli_1',
-    client_name: 'Client Alpha',
-    date: '2025-01-05',
-    total: 5950,
-  },
-  {
-    id: 'inv_2',
-    number: 'FAC-2025-002',
-    client_id: 'cli_1',
-    client_name: 'Client Alpha',
-    date: '2025-01-10',
-    total: 9520,
-  },
-  {
-    id: 'inv_3',
-    number: 'FAC-2025-003',
-    client_id: 'cli_2',
-    client_name: 'Entreprise Beta',
-    date: '2025-01-08',
-    total: 3200,
-  },
-];
 
 const statusStyles = {
   draft: "bg-warning/10 text-warning border-0",
@@ -88,65 +62,16 @@ const statusLabels: Record<ClientCredit['status'], string> = {
 };
 
 export default function ClientCredits() {
-  const { company, refreshCompany } = useAuth();
-  const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
+  const { company } = useAuth();
+  const { clientCredits, createClientCredit, applyClientCredit, refundClientCredit } = useCredits();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+  const { taxes, calculateTax } = useTaxes();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCredit, setSelectedCredit] = useState<ClientCredit | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
-  // Toggle pour avoir liée à une facture
-  const [isLinkedToInvoice, setIsLinkedToInvoice] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
-
-  // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo = company ? {
-    nom: company.name,
-    adresse: company.address || '',
-    ville: '',
-    tel: company.phone || '',
-    email: company.email || '',
-    mf: company.tax_number || '',
-    logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : {
-    nom: 'Mon Entreprise',
-    adresse: '',
-    ville: '',
-    tel: '',
-    email: '',
-    mf: '',
-    logo: undefined,
-    piedDePage: 'RC: | IF: | ICE: | Patente:\nIBAN:'
-  };
-
-  // Debug: vérifier le logo
-  useEffect(() => {
-    if (company?.logo) {
-      console.log('Logo URL:', company.logo);
-    } else {
-      console.log('Pas de logo dans company:', company);
-    }
-  }, [company]);
-
-  // Obtenir les clients uniques
-  const uniqueClients = Array.from(
-    new Map(mockClientInvoices.map(inv => [inv.client_id, { id: inv.client_id, name: inv.client_name }])).values()
-  );
-
-  // Filtrer les factures du client sélectionné pour le mois en cours
-  const currentMonthInvoices = mockClientInvoices.filter(inv => {
-    if (!selectedClientId) return false;
-    const invoiceDate = new Date(inv.date);
-    const now = new Date();
-    return inv.client_id === selectedClientId && 
-           invoiceDate.getMonth() === now.getMonth() && 
-           invoiceDate.getFullYear() === now.getFullYear();
-  });
 
   const filteredCredits = clientCredits.filter((credit) => {
     const matchesSearch = credit.number.toLowerCase().includes(searchTerm.toLowerCase());
@@ -163,55 +88,70 @@ export default function ClientCredits() {
     .filter(c => c.status === 'draft' || c.status === 'sent')
     .reduce((sum, c) => sum + c.total, 0);
 
-  const handleViewCredit = async (credit: ClientCredit) => {
-    await refreshCompany();
+  const handleViewCredit = (credit: ClientCredit) => {
     setSelectedCredit(credit);
     setIsViewModalOpen(true);
   };
 
-  const handleCreateCredit = async () => {
-    await refreshCompany();
-    setIsLinkedToInvoice(false);
-    setSelectedClientId("");
-    setSelectedInvoiceId("");
+  const handleCreateCredit = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveCredit = async (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+  const handleSaveCredit = async (data: CreditNoteFormData) => {
     try {
-      // Calculer les totaux depuis les lignes
-      const totaux = data.lignes.reduce((acc, ligne) => {
-        const sousTotal = ligne.quantite * ligne.prixHT;
-        const montantRemise = sousTotal * (ligne.remise / 100);
-        const htApresRemise = sousTotal - montantRemise;
-        const montantTVA = htApresRemise * (ligne.tva / 100);
-        const totalTTC = htApresRemise + montantTVA;
-        
-        return {
-          subtotal: acc.subtotal + htApresRemise,
-          tax: acc.tax + montantTVA,
-          total: acc.total + totalTTC,
-        };
-      }, { subtotal: 0, tax: 0, total: 0 });
+      // Calculer les totaux
+      let totalHT = 0;
+      data.lines.forEach((line) => {
+        totalHT += line.quantity * line.unitPrice;
+      });
+
+      // Appliquer la remise
+      let discountAmount = 0;
+      if (data.applyDiscount) {
+        if (data.discountType === 'percentage') {
+          discountAmount = (totalHT * data.discountValue) / 100;
+        } else {
+          discountAmount = data.discountValue;
+        }
+      }
+      const totalHTAfterDiscount = totalHT - discountAmount;
+
+      // Récupérer les taxes appliquées
+      const appliedTaxesList = taxes.filter(t => data.appliedTaxes.includes(t.id));
+      const percentageTaxes = appliedTaxesList.filter(t => t.type === 'percentage');
+      const fixedTaxes = appliedTaxesList.filter(t => t.type === 'fixed');
+
+      // Calculer les taxes
+      let totalTax = 0;
+      percentageTaxes.forEach(tax => {
+        totalTax += calculateTax(totalHTAfterDiscount, tax);
+      });
+      fixedTaxes.forEach(tax => {
+        totalTax += tax.value;
+      });
+
+      const totalTTC = totalHTAfterDiscount + totalTax;
 
       // Créer l'avoir avec le numéro généré automatiquement
       await createClientCredit({
-        invoice_id: isLinkedToInvoice && selectedInvoiceId ? selectedInvoiceId : '',
-        client_id: data.formData.clientId,
-        date: data.formData.date,
-        type: 'partial', // Par défaut, peut être modifié plus tard
+        invoice_id: data.linkedToInvoice && data.invoiceId ? data.invoiceId : '',
+        client_id: data.clientId,
+        date: data.date,
+        type: 'partial',
         reason: 'other',
-        subtotal: totaux.subtotal,
-        tax: totaux.tax,
-        total: totaux.total,
+        subtotal: totalHTAfterDiscount,
+        tax: totalTax,
+        total: totalTTC,
         status: 'draft',
         stock_impact: false,
-        comments: data.formData.notes || undefined,
-      }, data.formData.numero); // Passer le numéro généré par DocumentTemplate
+        comments: data.notes || undefined,
+      }, data.reference || undefined);
 
       setIsCreateModalOpen(false);
+      toast.success("Avoir créé avec succès");
     } catch (error) {
       console.error("Error saving credit note:", error);
+      toast.error("Erreur lors de la création de l'avoir");
     }
   };
 
@@ -434,105 +374,11 @@ export default function ClientCredits() {
       </div>
 
       {/* Modal pour créer un nouvel avoir */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto max-h-[95vh]">
-            {/* Section toggle avoir liée */}
-            <div className="px-8 pt-6 pb-4 border-b bg-muted/30">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Type d'avoir</h3>
-              </div>
-              
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="linked-invoice"
-                    checked={isLinkedToInvoice}
-                    onCheckedChange={setIsLinkedToInvoice}
-                  />
-                  <Label htmlFor="linked-invoice" className="font-medium">
-                    Avoir lié à une facture
-                  </Label>
-                </div>
-              </div>
-
-              {isLinkedToInvoice && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-background rounded-lg border">
-                  <div className="space-y-2">
-                    <Label htmlFor="client-select">Client</Label>
-                    <Select value={selectedClientId} onValueChange={(val) => {
-                      setSelectedClientId(val);
-                      setSelectedInvoiceId("");
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueClients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="invoice-select">Facture du mois en cours</Label>
-                    <Select 
-                      value={selectedInvoiceId} 
-                      onValueChange={setSelectedInvoiceId}
-                      disabled={!selectedClientId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={selectedClientId ? "Sélectionner une facture" : "Choisir d'abord un client"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currentMonthInvoices.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            Aucune facture ce mois
-                          </SelectItem>
-                        ) : (
-                          currentMonthInvoices.map((invoice) => (
-                            <SelectItem key={invoice.id} value={invoice.id}>
-                              {invoice.number} - {formatCurrency(invoice.total)} ({new Date(invoice.date).toLocaleDateString('fr-FR')})
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {selectedInvoiceId && (
-                    <div className="col-span-2 p-3 bg-info/10 rounded-lg border border-info/20">
-                      <p className="text-sm text-info">
-                        <strong>Facture sélectionnée :</strong> {mockClientInvoices.find(i => i.id === selectedInvoiceId)?.number} 
-                        {" - "}
-                        {formatCurrency(mockClientInvoices.find(i => i.id === selectedInvoiceId)?.total || 0)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!isLinkedToInvoice && (
-                <div className="p-3 bg-warning/10 rounded-lg border border-warning/20">
-                  <p className="text-sm text-warning">
-                    Cet avoir ne sera pas lié à une facture spécifique. Il pourra être imputé sur n'importe quelle facture future du client.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <DocumentTemplate
-              docType="avoir"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveCredit}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CreditNoteCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSave={handleSaveCredit}
+      />
 
       {/* Modal pour voir un avoir existant */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
@@ -543,47 +389,19 @@ export default function ClientCredits() {
                 {selectedCredit?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const pdfButton = document.querySelector('[data-pdf-button]') as HTMLElement;
-                      if (pdfButton) {
-                        pdfButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const printButton = document.querySelector('[data-print-button]') as HTMLElement;
-                      if (printButton) {
-                        printButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Printer className="w-4 h-4" />
                   Imprimer
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-            <DocumentTemplate
-              docType="avoir"
-              entreprise={entrepriseInfo}
-              readOnly={true}
-            />
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6">
+            <p className="text-muted-foreground">Prévisualisation du document à implémenter avec CompanyDocumentLayout</p>
           </div>
         </DialogContent>
       </Dialog>

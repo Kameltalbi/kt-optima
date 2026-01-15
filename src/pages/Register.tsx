@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -90,11 +90,12 @@ export default function Register() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-            <Building2 className="w-7 h-7 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-2xl text-foreground">BilvoxaERP</span>
+        <div className="flex items-center justify-center mb-8">
+          <img 
+            src="/ktoptima.png" 
+            alt="KTOptima" 
+            className="h-20 w-auto object-contain"
+          />
         </div>
 
         {/* Register Card */}

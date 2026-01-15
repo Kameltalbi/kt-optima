@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +26,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
   Search, 
-  FileText, 
   Download, 
   Eye, 
   MoreHorizontal,
@@ -34,77 +33,78 @@ import {
   DollarSign,
   TrendingUp,
   AlertCircle,
-  Truck
+  Truck,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/hooks/use-currency";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDeliveryNotes, type BonLivraison } from "@/hooks/use-delivery-notes";
+import { useClients } from "@/hooks/use-clients";
+import { useTaxes } from "@/hooks/use-taxes";
+import { DeliveryNoteCreateModal, DeliveryNoteFormData } from "@/components/delivery-notes/DeliveryNoteCreateModal";
+import { toast } from "sonner";
 
-// Local type for delivery notes with extended status
-type DeliveryNoteStatus = 'draft' | 'pending' | 'in_transit' | 'delivered';
-
-interface DeliveryNote {
-  id: string;
-  number: string;
-  client_id: string;
-  date: string;
-  total: number;
-  tax: number;
-  status: DeliveryNoteStatus;
-  company_id: string;
-}
-
-const mockDeliveryNotes: DeliveryNote[] = [
-  { id: "1", number: "BL-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "delivered", company_id: "1" },
-  { id: "2", number: "BL-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "in_transit", company_id: "1" },
-  { id: "3", number: "BL-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "pending", company_id: "1" },
-  { id: "4", number: "BL-2024-004", client_id: "4", date: "2024-01-03", total: 5200, tax: 1040, status: "delivered", company_id: "1" },
-  { id: "5", number: "BL-2024-005", client_id: "1", date: "2024-01-02", total: 12800, tax: 2560, status: "draft", company_id: "1" },
-];
-
-const clientNames: Record<string, string> = {
-  "1": "Société Alpha",
-  "2": "Entreprise Beta",
-  "3": "Commerce Gamma",
-  "4": "Services Delta",
+const statusStyles: Record<string, string> = {
+  livre: "bg-success/10 text-success border-0",
+  valide: "bg-info/10 text-info border-0",
+  brouillon: "bg-muted/10 text-muted-foreground border-0",
+  annule: "bg-destructive/10 text-destructive border-0",
 };
 
-const statusStyles = {
-  delivered: "bg-success/10 text-success border-0",
-  in_transit: "bg-info/10 text-info border-0",
-  pending: "bg-warning/10 text-warning border-0",
-  draft: "bg-muted/10 text-muted-foreground border-0",
-};
-
-const statusLabels = {
-  delivered: "Livré",
-  in_transit: "En transit",
-  pending: "En attente",
-  draft: "Brouillon",
+const statusLabels: Record<string, string> = {
+  livre: "Livré",
+  valide: "Validé",
+  brouillon: "Brouillon",
+  annule: "Annulé",
 };
 
 export default function DeliveryNotes() {
+  const { company } = useAuth();
+  const { formatAmount } = useCurrency({ 
+    companyId: company?.id, 
+    companyCurrency: company?.currency 
+  });
+  const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, getLignes } = useDeliveryNotes();
+  const { clients } = useClients();
+  const { taxes, calculateTax } = useTaxes();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
+  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<BonLivraison | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const filteredDeliveryNotes = mockDeliveryNotes.filter((note) => {
-    const matchesSearch = note.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clientNames[note.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || note.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Créer un map des clients pour accès rapide
+  const clientsMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    clients.forEach(client => {
+      map[client.id] = client.nom;
+    });
+    return map;
+  }, [clients]);
 
-  const totalDeliveryNotes = mockDeliveryNotes.length;
-  const totalAmount = mockDeliveryNotes.reduce((sum, n) => sum + n.total, 0);
-  const deliveredAmount = mockDeliveryNotes
-    .filter(n => n.status === "delivered")
-    .reduce((sum, n) => sum + n.total, 0);
-  const pendingAmount = mockDeliveryNotes
-    .filter(n => n.status === "in_transit" || n.status === "pending")
-    .reduce((sum, n) => sum + n.total, 0);
+  // Filtrer les bons de livraison
+  const filteredDeliveryNotes = useMemo(() => {
+    return bonsLivraison.filter((note) => {
+      const matchesSearch = note.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        clientsMap[note.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || note.statut === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [bonsLivraison, searchTerm, statusFilter, clientsMap]);
 
-  const handleViewDeliveryNote = (note: DeliveryNote) => {
+  // Calculer les statistiques (pour l'instant, on ne peut pas calculer les totaux sans les lignes)
+  // On utilisera 0 pour les montants car ils ne sont pas stockés dans la table principale
+  const stats = useMemo(() => {
+    const totalDeliveryNotes = bonsLivraison.length;
+    const totalAmount = 0; // À calculer depuis les lignes si nécessaire
+    const deliveredAmount = 0; // À calculer depuis les lignes si nécessaire
+    const pendingAmount = 0; // À calculer depuis les lignes si nécessaire
+    
+    return { totalDeliveryNotes, totalAmount, deliveredAmount, pendingAmount };
+  }, [bonsLivraison]);
+
+  const handleViewDeliveryNote = (note: BonLivraison) => {
     setSelectedDeliveryNote(note);
     setIsViewModalOpen(true);
   };
@@ -113,10 +113,35 @@ export default function DeliveryNotes() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveDeliveryNote = () => {
-    console.log("Saving delivery note");
-    setIsCreateModalOpen(false);
-    // TODO: Implémenter la sauvegarde du bon de livraison
+  const handleSaveDeliveryNote = async (data: DeliveryNoteFormData) => {
+    try {
+      // Convertir les lignes pour le backend
+      const lignes = data.lines.map((line, index) => ({
+        description: line.description,
+        quantite: line.quantity,
+        unite: line.unite || 'unité',
+        ordre: index,
+      }));
+
+      // Créer le bon de livraison via le hook
+      const bonLivraisonData = {
+        numero: data.reference || '', // Le numéro sera généré automatiquement avec préfixe "BL"
+        date_livraison: data.date,
+        client_id: data.clientId,
+        adresse_livraison: data.deliveryAddress || null,
+        notes: data.notes || null,
+      };
+
+      await createBonLivraison(bonLivraisonData, lignes);
+      
+      setIsCreateModalOpen(false);
+      toast.success("Bon de livraison créé avec succès");
+      // Rafraîchir la liste
+      await refreshBonsLivraison();
+    } catch (error) {
+      console.error("Error saving delivery note:", error);
+      toast.error("Erreur lors de la création du bon de livraison");
+    }
   };
 
   return (
@@ -129,7 +154,7 @@ export default function DeliveryNotes() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total bons</p>
-                  <p className="text-2xl font-bold mt-1">{totalDeliveryNotes}</p>
+                  <p className="text-2xl font-bold mt-1">{stats.totalDeliveryNotes}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-primary/10">
                   <Truck className="w-5 h-5 text-primary" />
@@ -144,7 +169,7 @@ export default function DeliveryNotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Montant total</p>
                   <p className="text-2xl font-bold mt-1 text-foreground">
-                    {totalAmount.toLocaleString()} MAD
+                    {formatAmount(stats.totalAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-secondary/10">
@@ -160,7 +185,7 @@ export default function DeliveryNotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Livrés</p>
                   <p className="text-2xl font-bold mt-1 text-success">
-                    {deliveredAmount.toLocaleString()} MAD
+                    {formatAmount(stats.deliveredAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-success/10">
@@ -176,7 +201,7 @@ export default function DeliveryNotes() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">En attente</p>
                   <p className="text-2xl font-bold mt-1 text-accent">
-                    {pendingAmount.toLocaleString()} MAD
+                    {formatAmount(stats.pendingAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-accent/10">
@@ -205,10 +230,10 @@ export default function DeliveryNotes() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="draft">Brouillon</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-                <SelectItem value="in_transit">En transit</SelectItem>
-                <SelectItem value="delivered">Livré</SelectItem>
+                <SelectItem value="brouillon">Brouillon</SelectItem>
+                <SelectItem value="valide">Validé</SelectItem>
+                <SelectItem value="livre">Livré</SelectItem>
+                <SelectItem value="annule">Annulé</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,91 +251,83 @@ export default function DeliveryNotes() {
         <Card className="border-border/50">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">N° Bon de livraison</TableHead>
-                    <TableHead className="font-semibold">Client</TableHead>
-                    <TableHead className="font-semibold">Date</TableHead>
-                    <TableHead className="text-right font-semibold">HT</TableHead>
-                    <TableHead className="text-right font-semibold">TVA</TableHead>
-                    <TableHead className="text-right font-semibold">TTC</TableHead>
-                    <TableHead className="font-semibold">Statut</TableHead>
-                    <TableHead className="w-32 font-semibold">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDeliveryNotes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Aucun bon de livraison trouvé
-                      </TableCell>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">N° Bon de livraison</TableHead>
+                      <TableHead className="font-semibold">Client</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="font-semibold">Adresse</TableHead>
+                      <TableHead className="font-semibold">Statut</TableHead>
+                      <TableHead className="w-32 font-semibold">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredDeliveryNotes.map((note) => (
-                      <TableRow key={note.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Truck className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-semibold">{note.number}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{clientNames[note.client_id]}</TableCell>
-                        <TableCell>{new Date(note.date).toLocaleDateString('fr-FR')}</TableCell>
-                        <TableCell className="text-right">
-                          {(note.total - note.tax).toLocaleString()} MAD
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {note.tax.toLocaleString()} MAD
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {note.total.toLocaleString()} MAD
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn("erp-badge text-xs", statusStyles[note.status as keyof typeof statusStyles])}>
-                            {statusLabels[note.status as keyof typeof statusLabels]}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={() => handleViewDeliveryNote(note)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDeliveryNotes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          Aucun bon de livraison trouvé
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredDeliveryNotes.map((note) => (
+                        <TableRow key={note.id} className="hover:bg-muted/30 transition-colors">
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Truck className="w-4 h-4 text-muted-foreground" />
+                              <span className="font-semibold">{note.numero}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{clientsMap[note.client_id] || "Client inconnu"}</TableCell>
+                          <TableCell>{new Date(note.date_livraison).toLocaleDateString('fr-FR')}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {note.adresse_livraison || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn("erp-badge text-xs", statusStyles[note.statut] || statusStyles.brouillon)}>
+                              {statusLabels[note.statut] || note.statut}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => handleViewDeliveryNote(note)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Modal pour créer un nouveau bon de livraison */}
-      {/* TODO: Créer DeliveryNoteCreateModal avec options fiscales */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouveau bon de livraison</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-muted-foreground">Modal de création à implémenter</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeliveryNoteCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSave={handleSaveDeliveryNote}
+      />
 
       {/* Modal pour voir un bon de livraison existant */}
       {/* TODO: Créer une page Preview Document avec CompanyDocumentLayout */}
@@ -319,7 +336,7 @@ export default function DeliveryNotes() {
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-bold">
-                {selectedDeliveryNote?.number}
+                {selectedDeliveryNote?.numero}
               </DialogTitle>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="gap-2">
