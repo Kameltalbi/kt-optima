@@ -39,6 +39,7 @@ import {
 import { useProducts } from "@/hooks/use-products";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Product } from "@/types/database";
 
 export default function Products() {
@@ -97,28 +98,60 @@ export default function Products() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const productData = {
-      code: formData.code,
-      name: formData.name,
-      category_id: formData.category_id || undefined,
-      purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
-      sale_price: parseFloat(formData.sale_price),
-      tax_rate: formData.tax_rate,
-      unit: formData.unit || undefined,
-      stockable: formData.stockable,
-      active: formData.active,
-      description: formData.description || undefined,
-    };
-
-    if (selectedProduct) {
-      updateProduct(selectedProduct.id, productData);
-    } else {
-      createProduct(productData);
+    
+    // Validation
+    if (!formData.code.trim() || !formData.name.trim()) {
+      toast.error("Le code et le libellé sont obligatoires");
+      return;
     }
-    setIsCreateModalOpen(false);
-    setSelectedProduct(null);
+
+    if (!formData.sale_price || parseFloat(formData.sale_price) <= 0) {
+      toast.error("Le prix de vente doit être supérieur à 0");
+      return;
+    }
+
+    try {
+      const productData = {
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        category_id: formData.category_id || undefined,
+        purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
+        sale_price: parseFloat(formData.sale_price),
+        tax_rate: formData.tax_rate,
+        unit: formData.unit || undefined,
+        stockable: formData.stockable,
+        active: formData.active,
+        description: formData.description || undefined,
+      };
+
+      if (selectedProduct) {
+        updateProduct(selectedProduct.id, productData);
+        toast.success("Produit modifié avec succès");
+      } else {
+        createProduct(productData);
+        toast.success("Produit créé avec succès");
+      }
+      
+      setIsCreateModalOpen(false);
+      setSelectedProduct(null);
+      setFormData({
+        code: "",
+        name: "",
+        category_id: "",
+        purchase_price: "",
+        sale_price: "",
+        tax_rate: 19,
+        unit: "pièce",
+        stockable: true,
+        active: true,
+        description: "",
+      });
+    } catch (error) {
+      console.error("Error saving product:", error);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la sauvegarde du produit");
+    }
   };
 
   const handleEdit = (product: Product) => {

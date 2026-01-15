@@ -37,10 +37,11 @@ import {
   AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Invoice } from "@/types/database";
-import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
-import { useAuth } from "@/contexts/AuthContext";
+import { InvoiceCreateModal, InvoiceFormData } from "@/components/invoices/InvoiceCreateModal";
 import { useFacturesVentes } from "@/hooks/use-factures-ventes";
+import { useTaxes } from "@/hooks/use-taxes";
 
 const mockInvoices: Invoice[] = [
   { id: "1", number: "FAC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "paid", company_id: "1" },
@@ -72,25 +73,13 @@ const statusLabels = {
 };
 
 export default function Invoices() {
-  const { company } = useAuth();
   const { createFacture } = useFacturesVentes();
+  const { taxes, calculateTax } = useTaxes();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
-    nom: company.name,
-    adresse: company.address || '',
-    ville: '',
-    tel: company.phone || '',
-    email: company.email || '',
-    mf: company.tax_number || '',
-    logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : undefined;
 
   const filteredInvoices = mockInvoices.filter((invoice) => {
     const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,47 +106,74 @@ export default function Invoices() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveInvoice = async (data: { formData: DocumentFormData; lignes: DocumentLine[]; acomptesAlloues?: Array<{ encaissement_id: string; montant_alloue: number }> }) => {
+  // Handler pour le nouveau modal InvoiceCreateModal
+  const handleSaveInvoice = async (data: InvoiceFormData) => {
     try {
-      // Convertir les données du formulaire
-      const factureData = {
-        numero: data.formData.numero,
-        date_facture: data.formData.date,
-        client_id: data.formData.clientId,
-        notes: data.formData.notes || null,
-      };
+      // Calculer les totaux
+      let totalHT = 0;
+      data.lines.forEach((line) => {
+        totalHT += line.quantity * line.unitPrice;
+      });
 
-      // Convertir les lignes
-      const lignes = data.lignes.map((ligne, index) => {
-        const sousTotal = ligne.quantite * ligne.prixHT;
-        const montantRemise = sousTotal * (ligne.remise / 100);
-        const htApresRemise = sousTotal - montantRemise;
-        const montantTVA = htApresRemise * (ligne.tva / 100);
-        const montantTTC = htApresRemise + montantTVA;
+      // Appliquer la remise
+      let discountAmount = 0;
+      if (data.applyDiscount) {
+        if (data.discountType === 'percentage') {
+          discountAmount = (totalHT * data.discountValue) / 100;
+        } else {
+          discountAmount = data.discountValue;
+        }
+      }
+      const totalHTAfterDiscount = totalHT - discountAmount;
+
+      // Récupérer les taxes appliquées
+      const appliedTaxesList = taxes.filter(t => data.appliedTaxes.includes(t.id));
+      const percentageTaxes = appliedTaxesList.filter(t => t.type === 'percentage');
+      const fixedTaxes = appliedTaxesList.filter(t => t.type === 'fixed');
+
+      // Convertir les lignes pour le backend
+      const lignes = data.lines.map((line, index) => {
+        const lineTotal = line.quantity * line.unitPrice;
+        let tauxTVA = 0;
+        
+        // Utiliser la taxe sélectionnée pour la ligne (si c'est une taxe en pourcentage)
+        if (line.taxRateId) {
+          const tax = taxes.find(t => t.id === line.taxRateId);
+          if (tax && tax.type === 'percentage') {
+            tauxTVA = tax.value;
+          }
+        }
 
         return {
-          description: ligne.designation,
-          quantite: ligne.quantite,
-          prix_unitaire: ligne.prixHT,
-          taux_tva: ligne.tva,
-          montant_ht: htApresRemise,
-          montant_tva: montantTVA,
-          montant_ttc: montantTTC,
+          description: line.description,
+          quantite: line.quantity,
+          prix_unitaire: line.unitPrice,
+          taux_tva: tauxTVA,
+          montant_ht: lineTotal,
+          montant_tva: 0, // Sera calculé côté backend
+          montant_ttc: lineTotal,
           ordre: index,
         };
       });
 
-      // Convertir les acomptes alloués
-      const acomptesAlloues = data.acomptesAlloues || [];
-
       // Créer la facture via le hook
-      await createFacture(factureData, lignes, acomptesAlloues);
+      const factureData = {
+        numero: data.reference || '', // Le numéro sera généré automatiquement
+        date_facture: data.date,
+        client_id: data.clientId,
+        notes: data.notes || null,
+      };
+
+      await createFacture(factureData, lignes, []);
       
       setIsCreateModalOpen(false);
+      toast.success("Facture créée avec succès");
     } catch (error) {
       console.error("Error saving invoice:", error);
+      toast.error("Erreur lors de la création de la facture");
     }
   };
+
 
   return (
     <>
@@ -340,20 +356,14 @@ export default function Invoices() {
       </div>
 
       {/* Modal pour créer une nouvelle facture */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto max-h-[95vh]">
-            <DocumentTemplate
-              docType="facture"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveInvoice}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <InvoiceCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSave={handleSaveInvoice}
+      />
 
       {/* Modal pour voir une facture existante */}
+      {/* TODO: Créer une page Preview Document avec CompanyDocumentLayout */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
@@ -362,47 +372,19 @@ export default function Invoices() {
                 {selectedInvoice?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const pdfButton = document.querySelector('[data-pdf-button]') as HTMLElement;
-                      if (pdfButton) {
-                        pdfButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const printButton = document.querySelector('[data-print-button]') as HTMLElement;
-                      if (printButton) {
-                        printButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Printer className="w-4 h-4" />
                   Imprimer
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-            <DocumentTemplate
-              docType="facture"
-              entreprise={entrepriseInfo}
-              readOnly={true}
-            />
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6">
+            <p className="text-muted-foreground">Prévisualisation du document à implémenter avec CompanyDocumentLayout</p>
           </div>
         </DialogContent>
       </Dialog>

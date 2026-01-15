@@ -3,13 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AppProvider } from "@/context/AppContext";
+import { ProtectedRoute } from "@/guards/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
 import AchatsModule from "./pages/modules/AchatsModule";
 import VentesModule from "./pages/modules/VentesModule";
 import StockModule from "./pages/modules/StockModule";
@@ -22,6 +23,9 @@ import CRMModule from "./pages/modules/CRMModule";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 import DocumentPreview from "./pages/DocumentPreview";
+import InvoicePreviewPage from "./pages/documents/InvoicePreviewPage";
+import QuotePreviewPage from "./pages/documents/QuotePreviewPage";
+import CreditNotePreviewPage from "./pages/documents/CreditNotePreviewPage";
 import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -29,7 +33,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
+      <AppProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -46,6 +50,13 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Users Management - Admin only */}
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <Users />
               </ProtectedRoute>
             } />
             
@@ -119,13 +130,28 @@ const App = () => (
           <Route path="/trial-balance" element={<Navigate to="/comptabilite/balance" replace />} />
           <Route path="/settings" element={<Navigate to="/parametres/societe" replace />} />
           
-          {/* Documents */}
+          {/* Documents Preview */}
+          <Route path="/documents/invoices/:id" element={
+            <ProtectedRoute>
+              <InvoicePreviewPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/quotes/:id" element={
+            <ProtectedRoute>
+              <QuotePreviewPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents/credit-notes/:id" element={
+            <ProtectedRoute>
+              <CreditNotePreviewPage />
+            </ProtectedRoute>
+          } />
           <Route path="/documents/preview" element={<DocumentPreview />} />
           
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+      </AppProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

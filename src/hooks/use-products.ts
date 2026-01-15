@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import type { Product, Service, ProductCategory } from '@/types/database';
 
 const STORAGE_PREFIX = 'bilvoxa_erp_products_';
@@ -242,8 +243,17 @@ export function useProducts() {
   // Product methods
   const createProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
     if (!companyId) {
+      toast.error('Aucune entreprise sélectionnée');
       throw new Error('Company ID is required');
     }
+
+    // Vérifier si le code existe déjà
+    const codeExists = products.some(p => p.code.toLowerCase() === productData.code.toLowerCase());
+    if (codeExists) {
+      toast.error('Un produit avec ce code existe déjà');
+      throw new Error('Product code already exists');
+    }
+
     const newProduct: Product = {
       ...productData,
       company_id: companyId,
@@ -256,6 +266,21 @@ export function useProducts() {
   }, [products, saveProducts, companyId]);
 
   const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
+    const product = products.find(p => p.id === id);
+    if (!product) {
+      toast.error('Produit introuvable');
+      throw new Error('Product not found');
+    }
+
+    // Vérifier si le code existe déjà (sauf pour le produit en cours de modification)
+    if (updates.code && updates.code.toLowerCase() !== product.code.toLowerCase()) {
+      const codeExists = products.some(p => p.id !== id && p.code.toLowerCase() === updates.code!.toLowerCase());
+      if (codeExists) {
+        toast.error('Un produit avec ce code existe déjà');
+        throw new Error('Product code already exists');
+      }
+    }
+
     const updated = products.map(p =>
       p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
     );

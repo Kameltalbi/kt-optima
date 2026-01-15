@@ -37,8 +37,6 @@ import {
   Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
-import { useAuth } from "@/contexts/AuthContext";
 
 // Local type for delivery notes with extended status
 type DeliveryNoteStatus = 'draft' | 'pending' | 'in_transit' | 'delivered';
@@ -84,24 +82,11 @@ const statusLabels = {
 };
 
 export default function DeliveryNotes() {
-  const { company } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
-    nom: company.name,
-    adresse: company.address || '',
-    ville: '',
-    tel: company.phone || '',
-    email: company.email || '',
-    mf: company.tax_number || '',
-    logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : undefined;
 
   const filteredDeliveryNotes = mockDeliveryNotes.filter((note) => {
     const matchesSearch = note.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,10 +113,10 @@ export default function DeliveryNotes() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveDeliveryNote = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    console.log("Saving delivery note:", data);
+  const handleSaveDeliveryNote = () => {
+    console.log("Saving delivery note");
     setIsCreateModalOpen(false);
-    // Ici vous pouvez ajouter la logique pour sauvegarder le bon de livraison
+    // TODO: Implémenter la sauvegarde du bon de livraison
   };
 
   return (
@@ -315,20 +300,20 @@ export default function DeliveryNotes() {
       </div>
 
       {/* Modal pour créer un nouveau bon de livraison */}
+      {/* TODO: Créer DeliveryNoteCreateModal avec options fiscales */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto max-h-[95vh]">
-            <DocumentTemplate
-              docType="bon_livraison"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveDeliveryNote}
-            />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouveau bon de livraison</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">Modal de création à implémenter</p>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Modal pour voir un bon de livraison existant */}
+      {/* TODO: Créer une page Preview Document avec CompanyDocumentLayout */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
@@ -337,47 +322,19 @@ export default function DeliveryNotes() {
                 {selectedDeliveryNote?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const pdfButton = document.querySelector('[data-pdf-button]') as HTMLElement;
-                      if (pdfButton) {
-                        pdfButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const printButton = document.querySelector('[data-print-button]') as HTMLElement;
-                      if (printButton) {
-                        printButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Printer className="w-4 h-4" />
                   Imprimer
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-            <DocumentTemplate
-              docType="bon_livraison"
-              entreprise={entrepriseInfo}
-              readOnly={true}
-            />
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6">
+            <p className="text-muted-foreground">Prévisualisation du document à implémenter avec CompanyDocumentLayout</p>
           </div>
         </DialogContent>
       </Dialog>

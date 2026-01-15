@@ -3,6 +3,42 @@
 @tailwind utilities;
 
 /* ============================================
+   COMPANY DOCUMENT LAYOUT - PRINT STYLES
+   ============================================ */
+@media print {
+  .company-document-layout {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 15mm 10mm !important;
+    box-shadow: none !important;
+    page-break-after: always;
+  }
+
+  .company-document-layout:last-child {
+    page-break-after: auto;
+  }
+
+  /* Assurer que header et footer sont visibles */
+  .company-document-layout header,
+  .company-document-layout footer {
+    display: block !important;
+  }
+
+  /* Masquer les éléments non nécessaires à l'impression */
+  .company-document-layout button,
+  .company-document-layout .no-print {
+    display: none !important;
+  }
+
+  /* Optimiser les couleurs pour l'impression */
+  .company-document-layout {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ============================================
    BILVOXA ERP - DESIGN SYSTEM
    Palette de Couleurs Recommandée
    Primary: #2563eb (Bleu Principal), Secondary: #1e293b (Gris Foncé)
@@ -197,5 +233,40 @@
   .text-balance {
     text-wrap: balance;
   }
+}
 
+/* ============================================
+   COMPANY DOCUMENT LAYOUT - PRINT STYLES
+   ============================================ */
+@media print {
+  .company-document-layout {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 15mm 10mm !important;
+    box-shadow: none !important;
+    page-break-after: always;
+  }
+
+  .company-document-layout:last-child {
+    page-break-after: auto;
+  }
+
+  /* Assurer que header et footer sont visibles */
+  .company-document-layout header,
+  .company-document-layout footer {
+    display: block !important;
+  }
+
+  /* Masquer les éléments non nécessaires à l'impression */
+  .company-document-layout button,
+  .company-document-layout .no-print {
+    display: none !important;
+  }
+
+  /* Optimiser les couleurs pour l'impression */
+  .company-document-layout {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

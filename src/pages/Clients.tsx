@@ -39,10 +39,14 @@ import {
   MapPin,
   TrendingUp,
   DollarSign,
-  Loader2
+  Loader2,
+  Upload,
+  Download,
+  FileSpreadsheet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClients } from "@/hooks/use-clients";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -55,8 +59,11 @@ export default function Clients() {
   const { clients, loading, createClient, updateClient, deleteClient, searchClients } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -182,6 +189,171 @@ export default function Clients() {
     }
   };
 
+  // Export CSV
+  const handleExport = () => {
+    try {
+      const headers = [
+        'Code',
+        'Nom',
+        'Type',
+        'Email',
+        'Téléphone',
+        'Adresse',
+        'Ville',
+        'Code postal',
+        'Pays',
+        'Numéro fiscal',
+        'N° Registre Commerce',
+        'Site web',
+        'Notes'
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...clients.map(client => [
+          client.code || '',
+          `"${client.nom.replace(/"/g, '""')}"`,
+          client.type || '',
+          client.email || '',
+          client.telephone || '',
+          `"${(client.adresse || '').replace(/"/g, '""')}"`,
+          client.ville || '',
+          client.code_postal || '',
+          client.pays || '',
+          client.numero_fiscal || '',
+          client.numero_registre_commerce || '',
+          client.site_web || '',
+          `"${(client.notes || '').replace(/"/g, '""')}"`
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clients_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`${clients.length} client(s) exporté(s) avec succès`);
+    } catch (error) {
+      console.error('Error exporting clients:', error);
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
+  // Import CSV
+  const handleImport = async () => {
+    if (!importFile) {
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      const text = await importFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        toast.error('Le fichier CSV doit contenir au moins une ligne d\'en-tête et une ligne de données');
+        return;
+      }
+
+      // Parser CSV (gestion basique des guillemets)
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = parseCSVLine(lines[0]);
+      const expectedHeaders = [
+        'Code', 'Nom', 'Type', 'Email', 'Téléphone', 'Adresse',
+        'Ville', 'Code postal', 'Pays', 'Numéro fiscal',
+        'N° Registre Commerce', 'Site web', 'Notes'
+      ];
+
+      // Vérifier les en-têtes
+      if (headers.length !== expectedHeaders.length) {
+        toast.error(`Le fichier doit contenir ${expectedHeaders.length} colonnes. Trouvé: ${headers.length}`);
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Importer chaque ligne
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        if (values.length !== headers.length) continue;
+
+        const clientData = {
+          code: values[0] || '',
+          nom: values[1] || '',
+          type: values[2] || 'prospect',
+          email: values[3] || '',
+          telephone: values[4] || '',
+          adresse: values[5] || '',
+          ville: values[6] || '',
+          code_postal: values[7] || '',
+          pays: values[8] || 'Tunisie',
+          numero_fiscal: values[9] || '',
+          numero_registre_commerce: values[10] || '',
+          site_web: values[11] || '',
+          notes: values[12] || '',
+          solde_initial: 0,
+          solde_actuel: 0,
+          actif: true,
+        };
+
+        if (!clientData.nom.trim()) {
+          errorCount++;
+          continue;
+        }
+
+        try {
+          await createClient(clientData);
+          successCount++;
+        } catch (error) {
+          console.error(`Erreur lors de l'import du client ${clientData.nom}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} client(s) importé(s) avec succès${errorCount > 0 ? `. ${errorCount} erreur(s).` : ''}`);
+      } else {
+        toast.error(`Aucun client importé. ${errorCount} erreur(s).`);
+      }
+      setIsImportDialogOpen(false);
+      setImportFile(null);
+    } catch (error) {
+      console.error('Error importing clients:', error);
+      toast.error('Erreur lors de l\'import du fichier');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
         {/* Stats Cards */}
@@ -243,16 +415,33 @@ export default function Clients() {
             />
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) handleCloseDialog();
-          }}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouveau client
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Exporter
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsImportDialogOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Importer
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) handleCloseDialog();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouveau client
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingClient ? "Modifier le client" : "Nouveau client"}</DialogTitle>
@@ -414,7 +603,159 @@ export default function Clients() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
+
+        {/* Modal Import */}
+        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5" />
+                Importer des clients
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* Structure du fichier */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  Structure du fichier CSV à importer
+                </Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold">Colonne</TableHead>
+                        <TableHead className="font-semibold">Description</TableHead>
+                        <TableHead className="font-semibold">Obligatoire</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Code</TableCell>
+                        <TableCell>Code unique du client</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Nom</TableCell>
+                        <TableCell>Nom ou raison sociale</TableCell>
+                        <TableCell className="text-success font-semibold">Oui</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Type</TableCell>
+                        <TableCell>prospect ou client</TableCell>
+                        <TableCell>Non (défaut: prospect)</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Email</TableCell>
+                        <TableCell>Adresse email</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Téléphone</TableCell>
+                        <TableCell>Numéro de téléphone</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Adresse</TableCell>
+                        <TableCell>Adresse postale</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Ville</TableCell>
+                        <TableCell>Ville</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Code postal</TableCell>
+                        <TableCell>Code postal</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Pays</TableCell>
+                        <TableCell>Pays (défaut: Tunisie)</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Numéro fiscal</TableCell>
+                        <TableCell>Numéro d'identification fiscale</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">N° Registre Commerce</TableCell>
+                        <TableCell>Numéro de registre de commerce</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Site web</TableCell>
+                        <TableCell>URL du site web</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Notes</TableCell>
+                        <TableCell>Notes internes</TableCell>
+                        <TableCell>Non</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Exemple */}
+              <div>
+                <Label className="text-base font-semibold mb-2 block">
+                  Exemple de fichier CSV
+                </Label>
+                <div className="bg-muted/30 p-4 rounded-lg border font-mono text-xs overflow-x-auto">
+                  <pre>{`Code,Nom,Type,Email,Téléphone,Adresse,Ville,Code postal,Pays,Numéro fiscal,N° Registre Commerce,Site web,Notes
+CLI-001,Société Alpha,client,contact@alpha.tn,+216 12 345 678,123 Rue Principale,Tunis,1000,Tunisie,12345678,RC123456,https://alpha.tn,Client important
+CLI-002,Entreprise Beta,prospect,info@beta.tn,+216 98 765 432,456 Avenue Habib Bourguiba,Sfax,3000,Tunisie,87654321,RC654321,https://beta.tn,`}</pre>
+                </div>
+              </div>
+
+              {/* Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="import-file">Sélectionner le fichier CSV</Label>
+                <Input
+                  id="import-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                />
+                {importFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Fichier sélectionné: {importFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setIsImportDialogOpen(false);
+                  setImportFile(null);
+                }}
+                disabled={importLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                onClick={handleImport}
+                disabled={!importFile || importLoading}
+              >
+                {importLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {importLoading ? "Import en cours..." : "Importer"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Clients Table */}
         <Card className="border-border/50">

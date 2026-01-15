@@ -48,8 +48,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
-import { useAuth } from "@/contexts/AuthContext";
+import { QuoteCreateModal, QuoteFormData } from "@/components/quotes/QuoteCreateModal";
 
 // Local type for quotes with extended status
 type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired';
@@ -95,7 +94,6 @@ const statusLabels = {
 };
 
 export default function Quotes() {
-  const { company } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -103,18 +101,6 @@ export default function Quotes() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
-
-  // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
-    nom: company.name,
-    adresse: company.address || '',
-    ville: '',
-    tel: company.phone || '',
-    email: company.email || '',
-    mf: company.tax_number || '',
-    logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : undefined;
 
   const filteredQuotes = mockQuotes.filter((quote) => {
     const matchesSearch = quote.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,19 +127,21 @@ export default function Quotes() {
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveQuote = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
+  // Handler pour le nouveau modal QuoteCreateModal
+  const handleSaveQuote = (data: QuoteFormData) => {
     console.log("Saving quote:", data);
     setIsCreateModalOpen(false);
     toast.success("Devis enregistré avec succès");
   };
+
 
   const handleConvertToInvoice = (quote: Quote) => {
     setQuoteToConvert(quote);
     setIsConvertModalOpen(true);
   };
 
-  const handleSaveInvoice = (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    console.log("Converting quote to invoice:", quoteToConvert, data);
+  const handleSaveInvoice = () => {
+    console.log("Converting quote to invoice:", quoteToConvert);
     setIsConvertModalOpen(false);
     setQuoteToConvert(null);
     toast.success("Facture créée avec succès à partir du devis");
@@ -378,20 +366,14 @@ export default function Quotes() {
       </div>
 
       {/* Modal pour créer un nouveau devis */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto max-h-[95vh]">
-            <DocumentTemplate
-              docType="devis"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveQuote}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <QuoteCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSave={handleSaveQuote}
+      />
 
       {/* Modal pour voir un devis existant */}
+      {/* TODO: Créer une page Preview Document avec CompanyDocumentLayout */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
@@ -400,66 +382,32 @@ export default function Quotes() {
                 {selectedQuote?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const pdfButton = document.querySelector('[data-pdf-button]') as HTMLElement;
-                      if (pdfButton) {
-                        pdfButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2"
-                  onClick={() => {
-                    setTimeout(() => {
-                      const printButton = document.querySelector('[data-print-button]') as HTMLElement;
-                      if (printButton) {
-                        printButton.click();
-                      }
-                    }, 100);
-                  }}
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <Printer className="w-4 h-4" />
                   Imprimer
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-            <DocumentTemplate
-              docType="devis"
-              entreprise={entrepriseInfo}
-              readOnly={true}
-            />
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6">
+            <p className="text-muted-foreground">Prévisualisation du document à implémenter avec CompanyDocumentLayout</p>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Modal pour convertir en facture */}
+      {/* TODO: Utiliser InvoiceCreateModal avec données pré-remplies depuis le devis */}
       <Dialog open={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="text-xl font-bold">
-              Convertir {quoteToConvert?.number} en facture
-            </DialogTitle>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convertir {quoteToConvert?.number} en facture</DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-            <DocumentTemplate
-              docType="facture"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveInvoice}
-            />
+          <div className="py-4">
+            <p className="text-muted-foreground">Modal de conversion à implémenter</p>
           </div>
         </DialogContent>
       </Dialog>

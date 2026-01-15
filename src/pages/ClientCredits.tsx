@@ -104,7 +104,7 @@ export default function ClientCredits() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("");
 
   // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
+  const entrepriseInfo: EntrepriseInfo = company ? {
     nom: company.name,
     adresse: company.address || '',
     ville: '',
@@ -113,7 +113,25 @@ export default function ClientCredits() {
     mf: company.tax_number || '',
     logo: company.logo || undefined,
     piedDePage: company.footer || ''
-  } : undefined;
+  } : {
+    nom: 'Mon Entreprise',
+    adresse: '',
+    ville: '',
+    tel: '',
+    email: '',
+    mf: '',
+    logo: undefined,
+    piedDePage: 'RC: | IF: | ICE: | Patente:\nIBAN:'
+  };
+
+  // Debug: vérifier le logo
+  useEffect(() => {
+    if (company?.logo) {
+      console.log('Logo URL:', company.logo);
+    } else {
+      console.log('Pas de logo dans company:', company);
+    }
+  }, [company]);
 
   // Obtenir les clients uniques
   const uniqueClients = Array.from(

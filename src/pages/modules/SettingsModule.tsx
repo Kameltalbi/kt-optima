@@ -8,6 +8,7 @@ import { TaxesSettings, RegionalSettings, AccountingSettings } from "../Settings
 import SettingsUsers from "../SettingsUsers";
 import SettingsRoles from "../SettingsRoles";
 import SettingsModules from "../SettingsModules";
+import SettingsPermissions from "../SettingsPermissions";
 import SettingsInvoicing from "../SettingsInvoicing";
 import SettingsTemplates from "../SettingsTemplates";
 import SettingsDocuments from "../SettingsDocuments";
@@ -17,6 +18,7 @@ const tabs: ModuleTab[] = [
   { id: "products-services", label: "Produits & Services", path: "/parametres/produits-services" },
   { id: "users", label: "Utilisateurs", path: "/parametres/utilisateurs" },
   { id: "roles", label: "Rôles", path: "/parametres/roles" },
+  { id: "permissions", label: "Permissions", path: "/parametres/permissions" },
   { id: "modules", label: "Modules", path: "/parametres/modules" },
   { id: "taxes", label: "Taxes et TVA", path: "/parametres/taxes" },
   { id: "invoicing", label: "Facturation", path: "/parametres/facturation" },
@@ -72,6 +74,21 @@ export default function SettingsModule() {
             showBackButton={true}
           >
             <SettingsRoles />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="permissions"
+        element={
+          <MainLayout
+            title="Paramètres"
+            subtitle="Configuration de l'application"
+            moduleTabs={tabs}
+            moduleName="Paramètres"
+            hideSidebar={true}
+            showBackButton={true}
+          >
+            <SettingsPermissions />
           </MainLayout>
         }
       />

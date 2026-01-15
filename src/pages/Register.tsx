@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, EyeOff, CheckCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useApp } from "@/context/AppContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Register() {
@@ -21,7 +21,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { register } = useAuth();
+  const { register } = useApp();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {

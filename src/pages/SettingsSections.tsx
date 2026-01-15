@@ -66,11 +66,11 @@ function TaxesSettings() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingTax) {
-      updateTax(editingTax.id, formData);
+      await updateTax(editingTax.id, formData);
     } else {
-      addTax({
+      await addTax({
         ...formData,
         enabled: true,
       });
@@ -174,7 +174,7 @@ function TaxesSettings() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => deleteTax(tax.id)}
+                        onClick={async () => await deleteTax(tax.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

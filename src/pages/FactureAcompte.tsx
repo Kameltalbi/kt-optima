@@ -11,97 +11,18 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useFacturesVentes } from "@/hooks/use-factures-ventes";
-import { useAuth } from "@/contexts/AuthContext";
-import DocumentTemplate, { DocumentFormData, DocumentLine, EntrepriseInfo } from "@/components/documents/DocumentTemplate";
 
 export default function FactureAcompte() {
-  const { company } = useAuth();
-  const { createFacture } = useFacturesVentes();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // Construire les infos entreprise depuis le contexte Auth
-  const entrepriseInfo: EntrepriseInfo | undefined = company ? {
-    nom: company.name,
-    adresse: company.address || '',
-    ville: '',
-    tel: company.phone || '',
-    email: company.email || '',
-    mf: company.tax_number || '',
-    logo: company.logo || undefined,
-    piedDePage: company.footer || ''
-  } : undefined;
 
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSaveFactureAcompte = async (data: { formData: DocumentFormData; lignes: DocumentLine[] }) => {
-    try {
-      // Pour une facture d'acompte, on peut utiliser le montant TTC directement
-      // Les lignes sont optionnelles
-      let montant_ttc = 0;
-      
-      if (data.lignes.length > 0) {
-        // Calculer depuis les lignes si présentes
-        const totaux = data.lignes.reduce((acc, ligne) => {
-          const sousTotal = ligne.quantite * ligne.prixHT;
-          const montantRemise = sousTotal * (ligne.remise / 100);
-          const htApresRemise = sousTotal - montantRemise;
-          const montantTVA = htApresRemise * (ligne.tva / 100);
-          const totalTTC = htApresRemise + montantTVA;
-          
-          return {
-            montant_ht: acc.montant_ht + htApresRemise,
-            montant_tva: acc.montant_tva + montantTVA,
-            montant_ttc: acc.montant_ttc + totalTTC,
-          };
-        }, { montant_ht: 0, montant_tva: 0, montant_ttc: 0 });
-        
-        montant_ttc = totaux.montant_ttc;
-      } else {
-        // Si pas de lignes, on peut utiliser un montant simple
-        // Pour l'instant, on va demander à l'utilisateur de saisir au moins une ligne avec le montant
-        // Ou on peut créer une ligne automatique avec le montant total
-        throw new Error('Veuillez saisir au moins une ligne avec le montant de l\'acompte');
-      }
-
-      // Convertir les lignes
-      const lignes = data.lignes.map((ligne, index) => {
-        const sousTotal = ligne.quantite * ligne.prixHT;
-        const montantRemise = sousTotal * (ligne.remise / 100);
-        const htApresRemise = sousTotal - montantRemise;
-        const montantTVA = htApresRemise * (ligne.tva / 100);
-        const montantTTC = htApresRemise + montantTVA;
-
-        return {
-          description: ligne.designation || 'Acompte',
-          quantite: ligne.quantite,
-          prix_unitaire: ligne.prixHT,
-          taux_tva: ligne.tva,
-          montant_ht: htApresRemise,
-          montant_tva: montantTVA,
-          montant_ttc: montantTTC,
-          ordre: index,
-        };
-      });
-
-      // Créer la facture d'acompte
-      await createFacture({
-        numero: data.formData.numero,
-        date_facture: data.formData.date,
-        client_id: data.formData.clientId,
-        type_facture: 'acompte',
-        montant_paye: 0,
-        montant_restant: montant_ttc,
-        statut: 'brouillon',
-        notes: data.formData.notes || null,
-      }, lignes, []); // Pas d'acomptes alloués pour une facture d'acompte
-
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving facture acompte:", error);
-      // Error already handled in hook
-    }
+  const handleSaveFactureAcompte = () => {
+    console.log("Saving facture acompte");
+    setIsDialogOpen(false);
+    // TODO: Implémenter la sauvegarde de la facture d'acompte
   };
 
   return (
@@ -148,15 +69,14 @@ export default function FactureAcompte() {
       </Card>
 
       {/* Modal pour créer une nouvelle facture d'acompte */}
+      {/* TODO: Créer InvoiceAcompteCreateModal avec options fiscales */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto max-h-[95vh]">
-            <DocumentTemplate
-              docType="facture_acompte"
-              entreprise={entrepriseInfo}
-              readOnly={false}
-              onSave={handleSaveFactureAcompte}
-            />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle facture d'acompte</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">Modal de création à implémenter</p>
           </div>
         </DialogContent>
       </Dialog>
