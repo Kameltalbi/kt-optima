@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useCRM } from "@/hooks/use-crm";
 import { useCurrency } from "@/hooks/use-currency";
+import { useCompanyUsers } from "@/hooks/use-company-users";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -63,6 +64,8 @@ export default function CRMCompanies() {
     getActivitiesByCompany,
   } = useCRM();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+  const { users: companyUsers, getSalesReps } = useCompanyUsers();
+  const salesReps = getSalesReps();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -469,8 +472,11 @@ export default function CRMCompanies() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Aucun</SelectItem>
-                    {/* En production, charger depuis users */}
-                    <SelectItem value="user_1">Commercial 1</SelectItem>
+                    {salesReps.map((user) => (
+                      <SelectItem key={user.userId} value={user.userId}>
+                        {user.fullName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
