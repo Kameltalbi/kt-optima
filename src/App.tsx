@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/guards/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Modules from "./pages/Modules";
 import Demo from "./pages/Demo";
+import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
@@ -55,6 +56,9 @@ const App = () => (
             
             {/* Demo Page (Public) */}
             <Route path="/demo" element={<Demo />} />
+            
+            {/* Contact Page (Public) */}
+            <Route path="/contact" element={<Contact />} />
             
             {/* Auth Pages (Public) */}
             <Route path="/login" element={<Login />} />

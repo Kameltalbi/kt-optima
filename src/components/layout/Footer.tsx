@@ -126,12 +126,12 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a
-                  href="#contact"
+                <Link
+                  to="/contact"
                   className="text-sm hover:text-white transition-colors duration-200"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
               <li>
                 <a

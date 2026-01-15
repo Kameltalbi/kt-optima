@@ -812,16 +812,6 @@ export default function PayrollNewPage() {
             </div>
             );
           })()}
-
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => generatePDF(selectedFiche)}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger PDF
-                </Button>
-                <Button onClick={() => setIsViewModalOpen(false)}>Fermer</Button>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
