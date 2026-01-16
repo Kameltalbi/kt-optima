@@ -661,51 +661,48 @@ export function CreditNoteCreateModal({
                         <TableCell>
                           <Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => handleUpdateLine(line.id, { unitPrice: parseFloat(e.target.value) || 0 })} />
                         </TableCell>
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {availableLineTaxes.length > 0 ? (
-                              <Select
-                                value={line.taxRateId || "none"}
-                                onValueChange={(value) =>
-                                  handleUpdateLine(line.id, { taxRateId: value === "none" ? null : value })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Taxe" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Aucune</SelectItem>
-                                  {availableLineTaxes.map((tax) => (
-                                    <SelectItem key={tax.id} value={tax.id}>
-                                      {tax.name} ({tax.value}%)
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {formatAmount(lineTotal)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveLine(line.id)}
+                        <TableCell>
+                          {availableLineTaxes.length > 0 ? (
+                            <Select
+                              value={line.taxRateId || "none"}
+                              onValueChange={(value) =>
+                                handleUpdateLine(line.id, { taxRateId: value === "none" ? null : value })
+                              }
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
+                              <SelectTrigger>
+                                <SelectValue placeholder="Taxe" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Aucune</SelectItem>
+                                {availableLineTaxes.map((tax) => (
+                                  <SelectItem key={tax.id} value={tax.id}>
+                                    {tax.name} ({tax.value}%)
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatAmount(lineTotal)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveLine(line.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 
