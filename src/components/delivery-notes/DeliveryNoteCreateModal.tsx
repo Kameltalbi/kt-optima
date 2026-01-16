@@ -653,8 +653,7 @@ export function DeliveryNoteCreateModal({
                       );
                     })}
                   </TableBody>
-                </Table>
-              )}
+              </Table>
             </CardContent>
           </Card>
 
