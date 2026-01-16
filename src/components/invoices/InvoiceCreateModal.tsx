@@ -511,19 +511,19 @@ export function InvoiceCreateModal({
 
               {/* Remise */}
               <div className="pt-3 border-t">
-                <div 
-                  className="flex items-center gap-2 cursor-pointer select-none"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex items-center gap-2 p-0 h-auto font-normal hover:bg-transparent"
                   onClick={() => {
-                    console.log("Discount checkbox clicked, current value:", formData.applyDiscount);
                     setFormData(prev => ({ ...prev, applyDiscount: !prev.applyDiscount, discountValue: 0 }));
                   }}
                 >
-                  <Checkbox
-                    checked={formData.applyDiscount}
-                    className="pointer-events-none"
-                  />
+                  <div className={`h-4 w-4 shrink-0 rounded-sm border ${formData.applyDiscount ? 'bg-primary border-primary' : 'border-primary'} flex items-center justify-center`}>
+                    {formData.applyDiscount && <span className="text-primary-foreground text-xs">✓</span>}
+                  </div>
                   <span className="text-sm font-medium">Appliquer une remise</span>
-                </div>
+                </Button>
                 
                 {formData.applyDiscount && (
                   <div className="mt-3 flex items-center gap-3">
