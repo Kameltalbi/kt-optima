@@ -77,7 +77,7 @@ const statusLabels: Record<ClientCredit['status'], string> = {
 
 export default function ClientCredits() {
   const { company } = useAuth();
-  const { clientCredits, createClientCredit, applyClientCredit, refundClientCredit } = useCredits();
+  const { clientCredits, createClientCredit, updateClientCredit, applyClientCredit, refundClientCredit } = useCredits();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const { taxes, calculateTax } = useTaxes();
   const { clients } = useClients();
@@ -87,6 +87,16 @@ export default function ClientCredits() {
   const [selectedCredit, setSelectedCredit] = useState<ClientCredit | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editCreditData, setEditCreditData] = useState<{
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    invoiceId: string | null;
+    linkedToInvoice: boolean;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; }[];
+  } | null>(null);
 
   const filteredCredits = clientCredits.filter((credit) => {
     const matchesSearch = credit.number.toLowerCase().includes(searchTerm.toLowerCase());
@@ -173,6 +183,30 @@ export default function ClientCredits() {
   };
 
   const handleCreateCredit = () => {
+    setEditCreditData(null);
+    setIsCreateModalOpen(true);
+  };
+
+  // Handler pour modifier un avoir
+  const handleEditCredit = (credit: ClientCredit) => {
+    // Pour les avoirs, on utilise les données de base
+    // Les lignes ne sont pas stockées dans la table ClientCredit actuellement
+    setEditCreditData({
+      id: credit.id,
+      clientId: credit.client_id,
+      date: credit.date,
+      reference: credit.number,
+      invoiceId: credit.invoice_id || null,
+      linkedToInvoice: !!credit.invoice_id,
+      notes: credit.comments || '',
+      lines: [{
+        id: 'line_1',
+        description: 'Avoir client',
+        quantity: 1,
+        unitPrice: credit.subtotal,
+        taxRateId: null,
+      }],
+    });
     setIsCreateModalOpen(true);
   };
 
@@ -211,26 +245,43 @@ export default function ClientCredits() {
 
       const totalTTC = totalHTAfterDiscount + totalTax;
 
-      // Créer l'avoir avec le numéro généré automatiquement
-      await createClientCredit({
-        invoice_id: data.linkedToInvoice && data.invoiceId ? data.invoiceId : '',
-        client_id: data.clientId,
-        date: data.date,
-        type: 'partial',
-        reason: 'other',
-        subtotal: totalHTAfterDiscount,
-        tax: totalTax,
-        total: totalTTC,
-        status: 'draft',
-        stock_impact: false,
-        comments: data.notes || undefined,
-      }, data.reference || undefined);
+      if (editCreditData) {
+        // Mode édition
+        updateClientCredit(editCreditData.id, {
+          invoice_id: data.linkedToInvoice && data.invoiceId ? data.invoiceId : '',
+          client_id: data.clientId,
+          date: data.date,
+          subtotal: totalHTAfterDiscount,
+          tax: totalTax,
+          total: totalTTC,
+          comments: data.notes || undefined,
+        });
+        
+        setIsCreateModalOpen(false);
+        setEditCreditData(null);
+        toast.success("Avoir modifié avec succès");
+      } else {
+        // Mode création
+        await createClientCredit({
+          invoice_id: data.linkedToInvoice && data.invoiceId ? data.invoiceId : '',
+          client_id: data.clientId,
+          date: data.date,
+          type: 'partial',
+          reason: 'other',
+          subtotal: totalHTAfterDiscount,
+          tax: totalTax,
+          total: totalTTC,
+          status: 'draft',
+          stock_impact: false,
+          comments: data.notes || undefined,
+        }, data.reference || undefined);
 
-      setIsCreateModalOpen(false);
-      toast.success("Avoir créé avec succès");
+        setIsCreateModalOpen(false);
+        toast.success("Avoir créé avec succès");
+      }
     } catch (error) {
       console.error("Error saving credit note:", error);
-      toast.error("Erreur lors de la création de l'avoir");
+      toast.error(editCreditData ? "Erreur lors de la modification de l'avoir" : "Erreur lors de la création de l'avoir");
     }
   };
 
@@ -498,7 +549,7 @@ export default function ClientCredits() {
                                   Voir l'avoir
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
-                                  onClick={() => toast.info('Fonctionnalité à venir : Modifier')}
+                                  onClick={() => handleEditCredit(credit)}
                                   className="gap-2"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -562,11 +613,15 @@ export default function ClientCredits() {
         </Card>
       </div>
 
-      {/* Modal pour créer un nouvel avoir */}
+      {/* Modal pour créer/modifier un avoir */}
       <CreditNoteCreateModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open);
+          if (!open) setEditCreditData(null);
+        }}
         onSave={handleSaveCredit}
+        editData={editCreditData}
       />
 
       {/* Modal pour voir un avoir existant */}

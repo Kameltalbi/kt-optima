@@ -179,6 +179,70 @@ export function useDeliveryNotes() {
     }
   }, []);
 
+  // Mettre à jour un bon de livraison
+  const updateBonLivraison = useCallback(async (
+    id: string,
+    bonLivraisonData: Partial<CreateBonLivraisonData>,
+    lignes?: CreateBonLivraisonLigneData[]
+  ) => {
+    try {
+      const { data: bonLivraison, error: updateError } = await supabase
+        .from('bons_livraison')
+        .update({
+          ...bonLivraisonData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('company_id', companyId)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Si des lignes sont fournies, supprimer les anciennes et créer les nouvelles
+      if (lignes !== undefined) {
+        // Supprimer les anciennes lignes
+        const { error: deleteError } = await supabase
+          .from('bon_livraison_lignes')
+          .delete()
+          .eq('bon_livraison_id', id);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+
+        // Créer les nouvelles lignes
+        if (lignes.length > 0) {
+          const lignesToInsert = lignes.map((ligne, index) => ({
+            ...ligne,
+            bon_livraison_id: id,
+            ordre: ligne.ordre || index,
+            unite: ligne.unite || 'unité',
+          }));
+
+          const { error: lignesError } = await supabase
+            .from('bon_livraison_lignes')
+            .insert(lignesToInsert);
+
+          if (lignesError) {
+            throw lignesError;
+          }
+        }
+      }
+
+      await fetchBonsLivraison();
+      toast.success('Bon de livraison mis à jour avec succès');
+      return bonLivraison;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erreur lors de la mise à jour du bon de livraison');
+      toast.error(error.message);
+      console.error('Error updating bon livraison:', err);
+      throw error;
+    }
+  }, [companyId, fetchBonsLivraison]);
+
   // Supprimer un bon de livraison
   const deleteBonLivraison = useCallback(async (id: string): Promise<void> => {
     try {
@@ -216,6 +280,7 @@ export function useDeliveryNotes() {
     error,
     fetchBonsLivraison,
     createBonLivraison,
+    updateBonLivraison,
     deleteBonLivraison,
     getLignes,
     refreshBonsLivraison: fetchBonsLivraison,
