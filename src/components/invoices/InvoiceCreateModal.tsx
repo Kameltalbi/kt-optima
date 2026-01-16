@@ -511,45 +511,53 @@ export function InvoiceCreateModal({
 
               {/* Remise */}
               <div className="pt-3 border-t">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex items-center gap-2 p-0 h-auto font-normal hover:bg-transparent"
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, applyDiscount: !prev.applyDiscount, discountValue: 0 }));
-                  }}
-                >
-                  <div className={`h-4 w-4 shrink-0 rounded-sm border ${formData.applyDiscount ? 'bg-primary border-primary' : 'border-primary'} flex items-center justify-center`}>
-                    {formData.applyDiscount && <span className="text-primary-foreground text-xs">✓</span>}
-                  </div>
-                  <span className="text-sm font-medium">Appliquer une remise</span>
-                </Button>
-                
-                {formData.applyDiscount && (
-                  <div className="mt-3 flex items-center gap-3">
-                    <Select
-                      value={formData.discountType}
-                      onValueChange={(value: 'percentage' | 'amount') => setFormData(prev => ({ ...prev, discountType: value, discountValue: 0 }))}
-                    >
-                      <SelectTrigger className="w-32 bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">%</SelectItem>
-                        <SelectItem value="amount">Montant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.discountValue}
-                      onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
-                      className="w-28 bg-background"
-                      placeholder="Valeur"
-                    />
-                  </div>
-                )}
+                <Label className="text-sm font-medium mb-2 block">Remise</Label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={formData.applyDiscount ? formData.discountType : 'none'}
+                    onValueChange={(value) => {
+                      if (value === 'none') {
+                        setFormData(prev => ({
+                          ...prev,
+                          applyDiscount: false,
+                          discountValue: 0,
+                        }));
+                      } else {
+                        setFormData(prev => ({
+                          ...prev,
+                          applyDiscount: true,
+                          discountType: value as 'percentage' | 'amount',
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[160px] bg-background">
+                      <SelectValue placeholder="Type de remise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune remise</SelectItem>
+                      <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                      <SelectItem value="amount">Montant fixe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.applyDiscount && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.discountValue || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
+                        className="w-24 bg-background"
+                        placeholder="Valeur"
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        {formData.discountType === 'percentage' ? '%' : formData.currency}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
