@@ -325,11 +325,7 @@ export function generateDocumentPDF(
     doc.setTextColor(107, 114, 128); // text-gray-500
     doc.text('Document généré automatiquement', startX + contentWidth / 2, y, { align: 'center' });
   }
-  
   // Générer le blob
   const pdfBlob = doc.output('blob');
   return pdfBlob;
 }
-
-// Réexporter la fonction pour les factures (compatibilité)
-export { generateDocumentPDF as generateInvoicePDF };
