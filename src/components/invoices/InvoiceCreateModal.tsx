@@ -27,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Calculator, Search, Package, Briefcase } from "lucide-react";
+import { Plus, Trash2, Calculator, Search, Package, Briefcase, Settings } from "lucide-react";
 import { useClients } from "@/hooks/use-clients";
 import { useTaxes, Tax } from "@/hooks/use-taxes";
 import { useCurrency } from "@/hooks/use-currency";
@@ -214,6 +214,8 @@ export function InvoiceCreateModal({
     lines: [],
     notes: "",
   });
+
+  const [showSettings, setShowSettings] = useState(false);
 
   // Initialiser avec les taxes activées par défaut
   useEffect(() => {
@@ -413,6 +415,114 @@ export function InvoiceCreateModal({
         </div>
 
         <div className="p-6">
+          {/* Bouton Réglages */}
+          <div className="mb-6">
+            <Button
+              type="button"
+              variant={showSettings ? "default" : "outline"}
+              onClick={() => setShowSettings(!showSettings)}
+              className={`gap-2 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
+            >
+              <Settings className="w-4 h-4" />
+              {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
+            </Button>
+          </div>
+
+          {/* Options fiscales et Remise - Affichées seulement si showSettings */}
+          {showSettings && (
+            <div className="mb-6 p-4 bg-green-50/50 rounded-lg border border-green-200">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-4 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-green-600" />
+                Options fiscales & Remise
+              </h3>
+              
+              {/* Taxes */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {percentageTaxes.map((tax) => (
+                  <label
+                    key={tax.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                      formData.appliedTaxes.includes(tax.id)
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={formData.appliedTaxes.includes(tax.id)}
+                      onCheckedChange={() => handleToggleTax(tax.id)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">{tax.name} ({tax.value}%)</span>
+                  </label>
+                ))}
+                {fixedTaxes.map((tax) => (
+                  <label
+                    key={tax.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                      formData.appliedTaxes.includes(tax.id)
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={formData.appliedTaxes.includes(tax.id)}
+                      onCheckedChange={() => handleToggleTax(tax.id)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">{tax.name} ({formatAmount(tax.value)})</span>
+                  </label>
+                ))}
+              </div>
+
+              {/* Remise */}
+              <div className="pt-3 border-t">
+                <Label className="text-sm font-medium mb-2 block">Remise</Label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={formData.discountType}
+                    onValueChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        discountType: value as 'percentage' | 'amount',
+                        applyDiscount: true,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="w-[160px] bg-background">
+                      <SelectValue placeholder="Type de remise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                      <SelectItem value="amount">Montant fixe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.discountValue || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          discountValue: value,
+                          applyDiscount: value > 0,
+                        }));
+                      }}
+                      className="w-24 bg-background"
+                      placeholder="Valeur"
+                    />
+                    <span className="text-muted-foreground text-sm">
+                      {formData.discountType === 'percentage' ? '%' : formData.currency}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Section supérieure: Client & Infos en 2 colonnes */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Colonne gauche: Client */}
@@ -610,98 +720,9 @@ export function InvoiceCreateModal({
             </div>
           </div>
 
-          {/* Section inférieure: Options fiscales & Totaux en 2 colonnes */}
+          {/* Section inférieure: Totaux */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Colonne gauche: Options fiscales */}
-            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Options fiscales</h3>
-              
-              {/* Taxes - TVA et Timbre fiscal sur la même ligne */}
-              <div className="flex flex-wrap gap-2">
-                {percentageTaxes.map((tax) => (
-                  <label
-                    key={tax.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
-                      formData.appliedTaxes.includes(tax.id)
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-background hover:bg-muted'
-                    }`}
-                  >
-                    <Checkbox
-                      checked={formData.appliedTaxes.includes(tax.id)}
-                      onCheckedChange={() => handleToggleTax(tax.id)}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-medium">{tax.name} ({tax.value}%)</span>
-                  </label>
-                ))}
-                {fixedTaxes.map((tax) => (
-                  <label
-                    key={tax.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
-                      formData.appliedTaxes.includes(tax.id)
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-background hover:bg-muted'
-                    }`}
-                  >
-                    <Checkbox
-                      checked={formData.appliedTaxes.includes(tax.id)}
-                      onCheckedChange={() => handleToggleTax(tax.id)}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-medium">{tax.name} ({formatAmount(tax.value)})</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Remise */}
-              <div className="pt-3 border-t">
-                <Label className="text-sm font-medium mb-2 block">Remise</Label>
-                <div className="flex items-center gap-3">
-                  <Select
-                    value={formData.discountType}
-                    onValueChange={(value) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        discountType: value as 'percentage' | 'amount',
-                        applyDiscount: true,
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="w-[160px] bg-background">
-                      <SelectValue placeholder="Type de remise" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                      <SelectItem value="amount">Montant fixe</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.discountValue || ''}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          discountValue: value,
-                          applyDiscount: value > 0,
-                        }));
-                      }}
-                      className="w-24 bg-background"
-                      placeholder="Valeur"
-                    />
-                    <span className="text-muted-foreground text-sm">
-                      {formData.discountType === 'percentage' ? '%' : formData.currency}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            <div></div>
             {/* Colonne droite: Totaux (style facture) */}
             <div className="p-4 bg-muted/30 rounded-lg border">
               <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-4">Récapitulatif</h3>
