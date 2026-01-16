@@ -45,7 +45,8 @@ import {
   Send,
   Copy,
   Trash2,
-  FileText
+  FileText,
+  Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/use-currency";
@@ -433,6 +434,13 @@ export default function DeliveryNotes() {
                                   >
                                     <Eye className="w-4 h-4" />
                                     Voir le bon
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => toast.info('Fonctionnalité à venir : Modifier')}
+                                    className="gap-2"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    Modifier
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     onClick={() => toast.info('Fonctionnalité à venir : Convertir en facture')}

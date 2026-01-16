@@ -44,7 +44,8 @@ import {
   FileCheck,
   Send,
   Trash2,
-  Copy
+  Copy,
+  Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -561,25 +562,33 @@ export default function Quotes() {
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleConvertToInvoice(quote)}>
-                                  <FileCheck className="w-4 h-4 mr-2" />
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleViewQuote(quote)} className="gap-2">
+                                  <Eye className="w-4 h-4" />
+                                  Voir le devis
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toast.info('Fonctionnalité à venir : Modifier')} className="gap-2">
+                                  <Edit className="w-4 h-4" />
+                                  Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleConvertToInvoice(quote)} className="gap-2">
+                                  <FileCheck className="w-4 h-4" />
                                   Convertir en facture
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicateQuote(quote)}>
-                                  <Copy className="w-4 h-4 mr-2" />
+                                <DropdownMenuItem onClick={() => handleDuplicateQuote(quote)} className="gap-2">
+                                  <Copy className="w-4 h-4" />
                                   Dupliquer
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSendQuote(quote)}>
-                                  <Send className="w-4 h-4 mr-2" />
+                                <DropdownMenuItem onClick={() => handleSendQuote(quote)} className="gap-2">
+                                  <Send className="w-4 h-4" />
                                   Envoyer au client
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
                                   onClick={() => handleDeleteQuote(quote)}
-                                  className="text-destructive focus:text-destructive"
+                                  className="gap-2 text-destructive focus:text-destructive"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  <Trash2 className="w-4 h-4" />
                                   Supprimer
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
