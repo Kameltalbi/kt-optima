@@ -176,6 +176,10 @@ export default function Quotes() {
         });
       }
 
+      const totalHTBeforeDiscount = documentLines.reduce((sum, l) => sum + l.total_ht, 0);
+      const subtotalAfterDiscount = selectedQuote.subtotal ?? 0;
+      const discountAmount = Math.max(0, totalHTBeforeDiscount - subtotalAfterDiscount);
+
       const quoteData: InvoiceDocumentData = {
         type: 'quote',
         number: selectedQuote.number,
@@ -186,7 +190,8 @@ export default function Quotes() {
           tax_number: client.numero_fiscal || null,
         },
         lines: documentLines,
-        total_ht: selectedQuote.subtotal,
+        total_ht: totalHTBeforeDiscount,
+        discount: discountAmount > 0 ? discountAmount : 0,
         applied_taxes: appliedTaxes,
         fiscal_stamp: selectedQuote.total > 0 ? 1 : 0,
         total_ttc: selectedQuote.total,
@@ -525,6 +530,10 @@ export default function Quotes() {
                                     });
                                   }
 
+                                  const totalHTBeforeDiscount = documentLines.reduce((sum, l) => sum + l.total_ht, 0);
+                                  const subtotalAfterDiscount = quote.subtotal ?? 0;
+                                  const discountAmount = Math.max(0, totalHTBeforeDiscount - subtotalAfterDiscount);
+
                                   const quoteData: InvoiceDocumentData = {
                                     type: 'quote',
                                     number: quote.number,
@@ -535,7 +544,8 @@ export default function Quotes() {
                                       tax_number: client.numero_fiscal || null,
                                     },
                                     lines: documentLines,
-                                    total_ht: quote.subtotal,
+                                    total_ht: totalHTBeforeDiscount,
+                                    discount: discountAmount > 0 ? discountAmount : 0,
                                     applied_taxes: appliedTaxes,
                                     fiscal_stamp: quote.total > 0 ? 1 : 0,
                                     total_ttc: quote.total,
