@@ -582,80 +582,59 @@ export function QuoteCreateModal({
 
               {/* Remise */}
               <div className="space-y-3 p-4 border rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="apply-discount"
-                    checked={formData.applyDiscount}
-                    onCheckedChange={(checked) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        applyDiscount: checked as boolean,
-                        discountValue: 0,
-                      }))
-                    }
-                  />
-                  <Label htmlFor="apply-discount" className="font-semibold cursor-pointer">
-                    Appliquer une remise
-                  </Label>
-                </div>
-
-                {formData.applyDiscount && (
-                  <div className="ml-6 space-y-3">
-                    <div className="flex gap-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="discount-percentage"
-                          checked={formData.discountType === 'percentage'}
-                          onChange={() =>
-                            setFormData(prev => ({
-                              ...prev,
-                              discountType: 'percentage',
-                              discountValue: 0,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="discount-percentage">Pourcentage</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="discount-amount"
-                          checked={formData.discountType === 'amount'}
-                          onChange={() =>
-                            setFormData(prev => ({
-                              ...prev,
-                              discountType: 'amount',
-                              discountValue: 0,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="discount-amount">Montant</Label>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="discount-value">
-                        {formData.discountType === 'percentage' ? 'Pourcentage (%)' : 'Montant'}
-                      </Label>
+                <Label className="font-semibold">Remise</Label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={formData.applyDiscount ? formData.discountType : 'none'}
+                    onValueChange={(value) => {
+                      if (value === 'none') {
+                        setFormData(prev => ({
+                          ...prev,
+                          applyDiscount: false,
+                          discountValue: 0,
+                        }));
+                      } else {
+                        setFormData(prev => ({
+                          ...prev,
+                          applyDiscount: true,
+                          discountType: value as 'percentage' | 'amount',
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Type de remise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune remise</SelectItem>
+                      <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                      <SelectItem value="amount">Montant fixe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.applyDiscount && (
+                    <div className="flex items-center gap-2 flex-1">
                       <Input
                         id="discount-value"
                         type="number"
                         min="0"
-                        step={formData.discountType === 'percentage' ? '0.01' : '0.01'}
-                        value={formData.discountValue}
+                        step="0.01"
+                        placeholder={formData.discountType === 'percentage' ? 'Ex: 10' : 'Ex: 50'}
+                        value={formData.discountValue || ''}
                         onChange={(e) =>
                           setFormData(prev => ({
                             ...prev,
                             discountValue: parseFloat(e.target.value) || 0,
                           }))
                         }
+                        className="w-32"
                       />
+                      <span className="text-muted-foreground">
+                        {formData.discountType === 'percentage' ? '%' : formData.currency}
+                      </span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
