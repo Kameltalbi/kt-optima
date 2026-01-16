@@ -174,6 +174,7 @@ export function InvoiceAcompteCreateModal({
   // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
     if (open && !wasOpenRef.current) {
+      setShowSettings(false); // Reset settings visibility
       if (editData) {
         // Mode édition
         setFormData({
