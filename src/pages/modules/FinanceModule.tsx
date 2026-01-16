@@ -1,71 +1,71 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ModuleTab } from "@/components/layout/ModuleTabs";
-import Treasury from "../Treasury";
-import Banks from "../Banks";
-import PaymentSchedules from "../PaymentSchedules";
-import Reconciliations from "../Reconciliations";
+import Comptes from "../Comptes";
+import Mouvements from "../Mouvements";
+import Previsions from "../Previsions";
+import FluxTresorerie from "../FluxTresorerie";
 
 const tabs: ModuleTab[] = [
-  { id: "treasury", label: "Trésorerie", path: "/finance/tresorerie" },
-  { id: "banks", label: "Banques", path: "/finance/banques" },
-  { id: "schedules", label: "Échéanciers", path: "/finance/echeanciers" },
-  { id: "reconciliations", label: "Rapprochements", path: "/finance/rapprochements" },
+  { id: "comptes", label: "Comptes", path: "/finance/comptes" },
+  { id: "mouvements", label: "Mouvements", path: "/finance/mouvements" },
+  { id: "previsions", label: "Prévisions", path: "/finance/previsions" },
+  { id: "flux", label: "Flux de trésorerie", path: "/finance/flux" },
 ];
 
 export default function FinanceModule() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/finance/tresorerie" replace />} />
+      <Route path="/" element={<Navigate to="/finance/comptes" replace />} />
       <Route
-        path="tresorerie"
+        path="comptes"
         element={
           <MainLayout
             title="Finance"
-            subtitle="Gestion financière et trésorerie"
+            subtitle="Gestion financière simple et fiable"
             moduleTabs={tabs}
             moduleName="Finance"
           >
-            <Treasury />
+            <Comptes />
           </MainLayout>
         }
       />
       <Route
-        path="banques"
+        path="mouvements"
         element={
           <MainLayout
             title="Finance"
-            subtitle="Gestion financière et trésorerie"
+            subtitle="Gestion financière simple et fiable"
             moduleTabs={tabs}
             moduleName="Finance"
           >
-            <Banks />
+            <Mouvements />
           </MainLayout>
         }
       />
       <Route
-        path="echeanciers"
+        path="previsions"
         element={
           <MainLayout
             title="Finance"
-            subtitle="Gestion financière et trésorerie"
+            subtitle="Gestion financière simple et fiable"
             moduleTabs={tabs}
             moduleName="Finance"
           >
-            <PaymentSchedules />
+            <Previsions />
           </MainLayout>
         }
       />
       <Route
-        path="rapprochements"
+        path="flux"
         element={
           <MainLayout
             title="Finance"
-            subtitle="Gestion financière et trésorerie"
+            subtitle="Gestion financière simple et fiable"
             moduleTabs={tabs}
             moduleName="Finance"
           >
-            <Reconciliations />
+            <FluxTresorerie />
           </MainLayout>
         }
       />
