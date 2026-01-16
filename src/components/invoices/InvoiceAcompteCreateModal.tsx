@@ -342,24 +342,26 @@ export function InvoiceAcompteCreateModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editData ? "Modifier la facture d'acompte" : "Nouvelle facture d'acompte"}</DialogTitle>
-          <DialogDescription>
-            {editData ? "Modifiez les informations de la facture d'acompte" : "Créez une facture d'acompte (avance client) qui sera déductible sur les factures finales"}
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-start justify-between gap-4">
+          <div className="flex-1">
+            <DialogTitle>{editData ? "Modifier la facture d'acompte" : "Nouvelle facture d'acompte"}</DialogTitle>
+            <DialogDescription>
+              {editData ? "Modifiez les informations de la facture d'acompte" : "Créez une facture d'acompte (avance client) qui sera déductible sur les factures finales"}
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={showSettings ? "default" : "outline"}
+            onClick={() => setShowSettings(!showSettings)}
+            className={`gap-2 shrink-0 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
+          >
+            <Settings className="w-4 h-4" />
+            {showSettings ? 'Masquer' : 'Réglages'}
+          </Button>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Bouton Réglages */}
-          <Button
-            type="button"
-            variant={showSettings ? "default" : "outline"}
-            onClick={() => setShowSettings(!showSettings)}
-            className={`gap-2 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
-          >
-            <Settings className="w-4 h-4" />
-            {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
-          </Button>
 
           {/* Options fiscales et Remise - Affichées seulement si showSettings */}
           {showSettings && (

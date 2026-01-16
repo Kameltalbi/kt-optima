@@ -451,24 +451,26 @@ export function QuoteCreateModal({
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle>{editData ? 'Modifier le devis' : 'Nouveau devis'}</DialogTitle>
-          <DialogDescription>
-            {editData ? 'Modifiez les informations du devis' : 'Créez un nouveau devis client avec options fiscales configurables'}
-          </DialogDescription>
+        <DialogHeader className="flex flex-row items-start justify-between gap-4">
+          <div className="flex-1">
+            <DialogTitle>{editData ? 'Modifier le devis' : 'Nouveau devis'}</DialogTitle>
+            <DialogDescription>
+              {editData ? 'Modifiez les informations du devis' : 'Créez un nouveau devis client avec options fiscales configurables'}
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={showSettings ? "default" : "outline"}
+            onClick={() => setShowSettings(!showSettings)}
+            className={`gap-2 shrink-0 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
+          >
+            <Settings className="w-4 h-4" />
+            {showSettings ? 'Masquer' : 'Réglages'}
+          </Button>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Bouton Réglages */}
-          <Button
-            type="button"
-            variant={showSettings ? "default" : "outline"}
-            onClick={() => setShowSettings(!showSettings)}
-            className={`gap-2 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
-          >
-            <Settings className="w-4 h-4" />
-            {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
-          </Button>
 
           {/* Options fiscales et Remise - Affichées seulement si showSettings */}
           {showSettings && (
