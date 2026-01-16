@@ -27,10 +27,86 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Calculator, Truck } from "lucide-react";
+import { Plus, Trash2, Calculator, Truck, Search, Package, Briefcase } from "lucide-react";
 import { useClients } from "@/hooks/use-clients";
 import { useTaxes, Tax } from "@/hooks/use-taxes";
 import { useCurrency } from "@/hooks/use-currency";
+import { useProducts } from "@/hooks/use-products";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
+interface ProductServiceItem {
+  id: string;
+  name: string;
+  code: string;
+  type: 'product' | 'service';
+  sale_price?: number;
+  price?: number;
+  tax_rate?: number;
+}
+
+function ProductServiceSearch({ value, onSelect, onChange, products, services }: { value: string; onSelect: (item: ProductServiceItem) => void; onChange?: (value: string) => void; products: any[]; services: any[]; }) {
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [inputValue, setInputValue] = useState(value);
+
+  const allItems: ProductServiceItem[] = [
+    ...products.map(p => ({ id: p.id, name: p.name, code: p.code, type: 'product' as const, sale_price: p.sale_price, tax_rate: p.tax_rate })),
+    ...services.map(s => ({ id: s.id, name: s.name, code: s.code, type: 'service' as const, price: s.price, tax_rate: s.tax_rate })),
+  ];
+
+  const filteredItems = allItems.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.code.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  useEffect(() => { setInputValue(value); }, [value]);
+
+  return (
+    <div className="flex gap-2 w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="outline" className="shrink-0"><Search className="h-4 w-4" /></Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[350px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Rechercher..." value={searchTerm} onValueChange={setSearchTerm} />
+            <CommandList>
+              <CommandEmpty>Aucun résultat.</CommandEmpty>
+              {filteredItems.filter(i => i.type === 'product').length > 0 && (
+                <CommandGroup heading="Produits">
+                  {filteredItems.filter(i => i.type === 'product').map(item => (
+                    <CommandItem key={item.id} value={`${item.name} ${item.code}`} onSelect={() => { onSelect(item); setOpen(false); setSearchTerm(""); }}>
+                      <Package className="mr-2 h-4 w-4" /><div className="flex flex-col flex-1"><span className="font-medium">{item.name}</span><span className="text-xs text-muted-foreground">{item.code}</span></div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+              {filteredItems.filter(i => i.type === 'service').length > 0 && (
+                <CommandGroup heading="Services">
+                  {filteredItems.filter(i => i.type === 'service').map(item => (
+                    <CommandItem key={item.id} value={`${item.name} ${item.code}`} onSelect={() => { onSelect(item); setOpen(false); setSearchTerm(""); }}>
+                      <Briefcase className="mr-2 h-4 w-4" /><div className="flex flex-col flex-1"><span className="font-medium">{item.name}</span><span className="text-xs text-muted-foreground">{item.code}</span></div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <Input value={inputValue} onChange={(e) => { setInputValue(e.target.value); onChange?.(e.target.value); }} placeholder="Description..." className="flex-1" />
+    </div>
+  );
+}
 
 export interface DeliveryNoteLine {
   id: string;
@@ -78,6 +154,7 @@ export function DeliveryNoteCreateModal({
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
   const { defaultCurrency, formatAmount } = useCurrency();
+  const { products, services } = useProducts();
 
   const [formData, setFormData] = useState<DeliveryNoteFormData>({
     clientId: "",
@@ -117,7 +194,8 @@ export function DeliveryNoteCreateModal({
           notes: editData.notes,
         });
       } else {
-        // Mode création : réinitialiser
+        // Mode création avec ligne par défaut
+        const firstPercentageTax = enabledTaxes.find((t) => t.type === "percentage");
         setFormData({
           clientId: "",
           date: new Date().toISOString().split("T")[0],
@@ -127,7 +205,9 @@ export function DeliveryNoteCreateModal({
           applyDiscount: false,
           discountType: 'percentage',
           discountValue: 0,
-          lines: [],
+          lines: [
+            { id: `line_${Date.now()}`, description: "", quantity: 1, unitPrice: 0, taxRateId: firstPercentageTax?.id || null, unite: 'unité' },
+          ],
           notes: "",
         });
       }
@@ -483,51 +563,42 @@ export function DeliveryNoteCreateModal({
               </div>
             </CardHeader>
             <CardContent>
-              {formData.lines.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Aucune ligne. Cliquez sur "Ajouter une ligne" pour commencer.
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-24">Quantité</TableHead>
-                      <TableHead className="w-32">Prix unitaire</TableHead>
-                      <TableHead className="w-32">Taxe</TableHead>
-                      <TableHead className="w-32">Total</TableHead>
-                      <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {formData.lines.map((line) => {
-                      const lineTotal = line.quantity * line.unitPrice;
-                      const availableLineTaxes = percentageTaxes.filter(t => formData.appliedTaxes.includes(t.id));
-                      
-                      return (
-                        <TableRow key={line.id}>
-                          <TableCell>
-                            <Input
-                              value={line.description}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, { description: e.target.value })
-                              }
-                              placeholder="Description"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={line.quantity}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, {
-                                  quantity: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                            />
-                          </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-24">Quantité</TableHead>
+                    <TableHead className="w-32">Prix unitaire</TableHead>
+                    <TableHead className="w-32">Taxe</TableHead>
+                    <TableHead className="w-32">Total</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formData.lines.map((line) => {
+                    const lineTotal = line.quantity * line.unitPrice;
+                    const availableLineTaxes = percentageTaxes.filter(t => formData.appliedTaxes.includes(t.id));
+                    
+                    return (
+                      <TableRow key={line.id}>
+                        <TableCell>
+                          <ProductServiceSearch
+                            value={line.description}
+                            onChange={(value) => handleUpdateLine(line.id, { description: value })}
+                            onSelect={(item) => {
+                              handleUpdateLine(line.id, {
+                                description: item.name,
+                                unitPrice: item.type === 'product' ? (item.sale_price || 0) : (item.price || 0),
+                                quantity: 1,
+                              });
+                            }}
+                            products={products}
+                            services={services}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input type="number" min="0" step="0.01" value={line.quantity} onChange={(e) => handleUpdateLine(line.id, { quantity: parseFloat(e.target.value) || 0 })} />
+                        </TableCell>
                           <TableCell>
                             <Input
                               type="number"
