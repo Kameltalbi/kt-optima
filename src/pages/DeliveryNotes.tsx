@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
@@ -34,7 +41,11 @@ import {
   TrendingUp,
   AlertCircle,
   Truck,
-  Loader2
+  Loader2,
+  Send,
+  Copy,
+  Trash2,
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/use-currency";
@@ -68,7 +79,7 @@ export default function DeliveryNotes() {
     companyId: company?.id, 
     companyCurrency: company?.currency 
   });
-  const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, getLignes } = useDeliveryNotes();
+  const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, deleteBonLivraison, getLignes } = useDeliveryNotes();
   const { clients } = useClients();
   const { taxes, calculateTax } = useTaxes();
   const [searchTerm, setSearchTerm] = useState("");
@@ -409,9 +420,60 @@ export default function DeliveryNotes() {
                               >
                                 <Download className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem 
+                                    onClick={() => handleViewDeliveryNote(note)}
+                                    className="gap-2"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    Voir le bon
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => toast.info('Fonctionnalité à venir : Convertir en facture')}
+                                    className="gap-2"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Convertir en facture
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => toast.info('Fonctionnalité à venir : Dupliquer')}
+                                    className="gap-2"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                    Dupliquer
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => toast.info('Fonctionnalité à venir : Envoyer par email')}
+                                    className="gap-2"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                    Envoyer par email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      if (confirm('Êtes-vous sûr de vouloir supprimer ce bon de livraison ?')) {
+                                        try {
+                                          await deleteBonLivraison(note.id);
+                                          toast.success('Bon de livraison supprimé');
+                                        } catch (error) {
+                                          toast.error('Erreur lors de la suppression');
+                                        }
+                                      }
+                                    }}
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Supprimer
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>

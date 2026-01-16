@@ -23,6 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +43,10 @@ import {
   Printer,
   TrendingDown,
   AlertCircle,
+  MoreHorizontal,
+  Send,
+  Copy,
+  Trash2,
 } from "lucide-react";
 import { useCredits } from "@/hooks/use-credits";
 import { useCurrency } from "@/hooks/use-currency";
@@ -472,28 +483,66 @@ export default function ClientCredits() {
                             >
                               <Download className="w-4 h-4" />
                             </Button>
-                            {credit.status !== 'applied' && credit.status !== 'refunded' && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                  onClick={() => handleApply(credit.id)}
-                                >
-                                  Imputer
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
                                 </Button>
-                              </>
-                            )}
-                            {credit.status === 'applied' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-xs"
-                                onClick={() => handleRefund(credit.id)}
-                              >
-                                Rembourser
-                              </Button>
-                            )}
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  onClick={() => handleViewCredit(credit)}
+                                  className="gap-2"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Voir l'avoir
+                                </DropdownMenuItem>
+                                {credit.status !== 'applied' && credit.status !== 'refunded' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleApply(credit.id)}
+                                    className="gap-2"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Imputer
+                                  </DropdownMenuItem>
+                                )}
+                                {credit.status === 'applied' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleRefund(credit.id)}
+                                    className="gap-2"
+                                  >
+                                    <TrendingDown className="w-4 h-4" />
+                                    Rembourser
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => toast.info('Fonctionnalité à venir : Dupliquer')}
+                                  className="gap-2"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                  Dupliquer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => toast.info('Fonctionnalité à venir : Envoyer par email')}
+                                  className="gap-2"
+                                >
+                                  <Send className="w-4 h-4" />
+                                  Envoyer par email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    if (confirm('Êtes-vous sûr de vouloir supprimer cet avoir ?')) {
+                                      toast.info('Fonctionnalité à venir : Supprimer');
+                                    }
+                                  }}
+                                  className="gap-2 text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
