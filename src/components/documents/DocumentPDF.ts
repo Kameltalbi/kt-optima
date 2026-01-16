@@ -22,18 +22,44 @@ function formatAmount(num: number): string {
 }
 
 /**
- * Convertir une image URL en base64 pour jsPDF
+ * Charger une image (URL) pour jsPDF sans la déformer:
+ * - conversion en dataURL
+ * - détection du format (PNG/JPEG)
+ * - récupération des dimensions pour conserver le ratio
  */
-async function loadImageAsBase64(url: string): Promise<string | null> {
+async function loadImageForJsPDF(
+  url: string
+): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null> {
   try {
     const response = await fetch(url);
     const blob = await response.blob();
-    return new Promise((resolve) => {
+
+    const dataUrl = await new Promise<string | null>((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
     });
+
+    if (!dataUrl) return null;
+
+    const mimeMatch = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);/);
+    const mime = (mimeMatch?.[1] || '').toLowerCase();
+    const format: 'PNG' | 'JPEG' = mime.includes('jpeg') || mime.includes('jpg') ? 'JPEG' : 'PNG';
+
+    // Dimensions via Image() (permet de garder le ratio dans addImage)
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    const dims = await new Promise<{ w: number; h: number } | null>((resolve) => {
+      img.onload = () => resolve({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height });
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+
+    if (!dims?.w || !dims?.h) return null;
+
+    return { dataUrl, format, width: dims.w, height: dims.h };
   } catch (error) {
     console.error('Error loading image:', error);
     return null;
@@ -61,23 +87,39 @@ export async function generateDocumentPDF(
   
   // ============ HEADER - LOGO ET INFOS ENTREPRISE ============
   let logoLoaded = false;
-  
+  const logoMaxW = 30;
+  const logoMaxH = 20;
+  let logoReservedHeight = 0;
+
   if (company?.logo) {
     try {
-      const base64Logo = await loadImageAsBase64(company.logo);
-      if (base64Logo) {
-        // Logo à gauche, hauteur 20mm max
-        doc.addImage(base64Logo, 'PNG', marginLeft, y, 30, 20);
+      const logo = await loadImageForJsPDF(company.logo);
+      if (logo) {
+        const ratio = logo.width / logo.height;
+
+        // Fit dans (logoMaxW x logoMaxH) sans déformation
+        let drawW = logoMaxW;
+        let drawH = drawW / ratio;
+        if (drawH > logoMaxH) {
+          drawH = logoMaxH;
+          drawW = drawH * ratio;
+        }
+
+        const x = marginLeft + (logoMaxW - drawW) / 2;
+        const yLogo = y + (logoMaxH - drawH) / 2;
+
+        doc.addImage(logo.dataUrl, logo.format, x, yLogo, drawW, drawH);
         logoLoaded = true;
+        logoReservedHeight = logoMaxH;
       }
     } catch (error) {
       console.error('Error adding logo:', error);
     }
   }
-  
+
   // Infos entreprise à gauche (sous le logo ou à la place)
   const companyInfoX = marginLeft;
-  let companyY = logoLoaded ? y + 25 : y;
+  let companyY = logoLoaded ? y + logoReservedHeight + 5 : y;
   
   // Nom de l'entreprise
   doc.setFontSize(16);
