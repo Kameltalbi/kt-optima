@@ -35,10 +35,13 @@ import {
   Trash2,
   Briefcase,
   TrendingUp,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useProducts } from "@/hooks/use-products";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Service } from "@/types/database";
 
 export default function Services() {
@@ -172,10 +175,114 @@ export default function Services() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <CardTitle>Services</CardTitle>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau service
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                const exportData = services.map(s => ({
+                  code: s.code,
+                  name: s.name,
+                  category: s.category_id || "",
+                  price: s.price,
+                  tax_rate: s.tax_rate,
+                  billing_type: s.billing_type,
+                  active: s.active ? "Oui" : "Non",
+                  description: s.description || "",
+                }));
+                if (exportData.length === 0) {
+                  toast.error("Aucune donnée à exporter");
+                  return;
+                }
+                const headers = Object.keys(exportData[0]);
+                const csvContent = [
+                  headers.join(","),
+                  ...exportData.map(row => 
+                    headers.map(header => {
+                      const value = row[header];
+                      if (value === null || value === undefined) return "";
+                      if (typeof value === "string" && value.includes(",")) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                      }
+                      return value;
+                    }).join(",")
+                  )
+                ].join("\n");
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `services_${new Date().toISOString().split("T")[0]}.csv`);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast.success(`${exportData.length} service(s) exporté(s) avec succès`);
+              }}>
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+              <Button variant="outline" onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".csv";
+                input.onchange = async (e: any) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const text = await file.text();
+                    const lines = text.split("\n").filter((line: string) => line.trim());
+                    if (lines.length < 2) {
+                      toast.error("Le fichier est vide ou invalide");
+                      return;
+                    }
+                    const headers = lines[0].split(",").map((h: string) => h.trim().replace(/^"|"$/g, ""));
+                    const data: any[] = [];
+                    for (let i = 1; i < lines.length; i++) {
+                      const values = lines[i].split(",").map((v: string) => v.trim().replace(/^"|"$/g, ""));
+                      if (values.length !== headers.length) continue;
+                      const row: any = {};
+                      headers.forEach((header: string, index: number) => {
+                        row[header] = values[index] || "";
+                      });
+                      data.push(row);
+                    }
+                    let successCount = 0;
+                    let errorCount = 0;
+                    for (const row of data) {
+                      try {
+                        await createService({
+                          code: row.code || "",
+                          name: row.name || "",
+                          category_id: row.category || "",
+                          price: parseFloat(row.price) || 0,
+                          tax_rate: parseFloat(row.tax_rate) || 19,
+                          billing_type: row.billing_type || "fixed",
+                          active: row.active === "Oui" || row.active === "true",
+                          description: row.description || "",
+                        });
+                        successCount++;
+                      } catch (error: any) {
+                        errorCount++;
+                      }
+                    }
+                    if (successCount > 0) {
+                      toast.success(`${successCount} service(s) importé(s) avec succès`);
+                    }
+                    if (errorCount > 0) {
+                      toast.warning(`${errorCount} erreur(s) lors de l'import`);
+                    }
+                  } catch (error: any) {
+                    toast.error(`Erreur lors de l'import: ${error.message}`);
+                  }
+                };
+                input.click();
+              }}>
+                <Upload className="w-4 h-4 mr-2" />
+                Importer
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau service
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

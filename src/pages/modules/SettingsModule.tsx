@@ -1,41 +1,29 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ModuleTab } from "@/components/layout/ModuleTabs";
-import SettingsCompany from "../SettingsCompany";
-import ComingSoon from "../ComingSoon";
-import ProductsServicesModule from "./ProductsServicesModule";
-import { TaxesSettings, RegionalSettings, AccountingSettings } from "../SettingsSections";
-import SettingsUsers from "../SettingsUsers";
-import SettingsRoles from "../SettingsRoles";
+import SettingsGeneral from "../SettingsGeneral";
+import SettingsUsersSecurity from "../SettingsUsersSecurity";
+import SettingsModulesPage from "../SettingsModulesPage";
+import SettingsSystem from "../SettingsSystem";
 import SettingsModules from "../SettingsModules";
-import SettingsPermissions from "../SettingsPermissions";
-import SettingsInvoicing from "../SettingsInvoicing";
-import SettingsTemplates from "../SettingsTemplates";
+import ProductsServicesModule from "./ProductsServicesModule";
 import SettingsDocuments from "../SettingsDocuments";
-import SettingsPayroll from "../SettingsPayroll";
 
 const tabs: ModuleTab[] = [
-  { id: "company", label: "Société", path: "/parametres/societe" },
-  { id: "products-services", label: "Produits & Services", path: "/parametres/produits-services" },
-  { id: "users", label: "Utilisateurs", path: "/parametres/utilisateurs" },
-  { id: "roles", label: "Rôles", path: "/parametres/roles" },
-  { id: "permissions", label: "Permissions", path: "/parametres/permissions" },
+  { id: "general", label: "Général", path: "/parametres/general" },
+  { id: "users-security", label: "Utilisateurs & Sécurité", path: "/parametres/utilisateurs-securite" },
   { id: "modules", label: "Modules", path: "/parametres/modules" },
-  { id: "taxes", label: "Taxes et TVA", path: "/parametres/taxes" },
-  { id: "invoicing", label: "Facturation", path: "/parametres/facturation" },
-  { id: "accounting", label: "Comptabilité", path: "/parametres/comptabilite" },
-  { id: "templates", label: "Modèles", path: "/parametres/modeles" },
-  { id: "regional", label: "Régional", path: "/parametres/regional" },
-  { id: "documents", label: "Documents", path: "/parametres/documents" },
-  { id: "payroll", label: "Paie", path: "/parametres/paie" },
+  { id: "system", label: "Système", path: "/parametres/systeme" },
 ];
 
 export default function SettingsModule() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/parametres/societe" replace />} />
+      <Route path="/" element={<Navigate to="/parametres/general" replace />} />
+      
+      {/* Section Général */}
       <Route
-        path="societe"
+        path="general"
         element={
           <MainLayout
             title="Paramètres"
@@ -45,12 +33,14 @@ export default function SettingsModule() {
             hideSidebar={true}
             showBackButton={true}
           >
-            <SettingsCompany />
+            <SettingsGeneral />
           </MainLayout>
         }
       />
+
+      {/* Section Utilisateurs & Sécurité */}
       <Route
-        path="utilisateurs"
+        path="utilisateurs-securite"
         element={
           <MainLayout
             title="Paramètres"
@@ -60,40 +50,12 @@ export default function SettingsModule() {
             hideSidebar={true}
             showBackButton={true}
           >
-            <SettingsUsers />
+            <SettingsUsersSecurity />
           </MainLayout>
         }
       />
-      <Route
-        path="roles"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <SettingsRoles />
-          </MainLayout>
-        }
-      />
-      <Route
-        path="permissions"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <SettingsPermissions />
-          </MainLayout>
-        }
-      />
+
+      {/* Section Modules */}
       <Route
         path="modules"
         element={
@@ -105,84 +67,64 @@ export default function SettingsModule() {
             hideSidebar={true}
             showBackButton={true}
           >
-            <SettingsModules />
+            <SettingsModulesPage />
           </MainLayout>
         }
+      />
+
+      {/* Section Système */}
+      <Route
+        path="systeme"
+        element={
+          <MainLayout
+            title="Paramètres"
+            subtitle="Configuration de l'application"
+            moduleTabs={tabs}
+            moduleName="Paramètres"
+            hideSidebar={true}
+            showBackButton={true}
+          >
+            <SettingsSystem />
+          </MainLayout>
+        }
+      />
+
+      {/* Routes de compatibilité pour les anciens liens */}
+      <Route
+        path="societe"
+        element={<Navigate to="/parametres/general" replace />}
+      />
+      <Route
+        path="utilisateurs"
+        element={<Navigate to="/parametres/utilisateurs-securite" replace />}
+      />
+      <Route
+        path="roles"
+        element={<Navigate to="/parametres/utilisateurs-securite" replace />}
+      />
+      <Route
+        path="permissions"
+        element={<Navigate to="/parametres/utilisateurs-securite" replace />}
       />
       <Route
         path="taxes"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <TaxesSettings />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/general" replace />}
       />
       <Route
         path="facturation"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <SettingsInvoicing />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/modules" replace />}
       />
       <Route
         path="comptabilite"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <AccountingSettings />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/modules" replace />}
       />
       <Route
         path="modeles"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <SettingsTemplates />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/modules" replace />}
       />
       <Route
         path="regional"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <RegionalSettings />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/general" replace />}
       />
       <Route
         path="documents"
@@ -216,18 +158,7 @@ export default function SettingsModule() {
       />
       <Route
         path="paie"
-        element={
-          <MainLayout
-            title="Paramètres"
-            subtitle="Configuration de l'application"
-            moduleTabs={tabs}
-            moduleName="Paramètres"
-            hideSidebar={true}
-            showBackButton={true}
-          >
-            <SettingsPayroll />
-          </MainLayout>
-        }
+        element={<Navigate to="/parametres/modules" replace />}
       />
     </Routes>
   );

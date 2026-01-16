@@ -36,8 +36,11 @@ import {
   Folder,
   Package,
   Briefcase,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useProducts } from "@/hooks/use-products";
+import { toast } from "sonner";
 import type { ProductCategory } from "@/types/database";
 
 export default function Categories() {
@@ -183,10 +186,106 @@ export default function Categories() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <CardTitle>Catégories</CardTitle>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle catégorie
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                const exportData = categories.map(c => ({
+                  name: c.name,
+                  type: c.type,
+                  description: c.description || "",
+                  active: c.active ? "Oui" : "Non",
+                }));
+                if (exportData.length === 0) {
+                  toast.error("Aucune donnée à exporter");
+                  return;
+                }
+                const headers = Object.keys(exportData[0]);
+                const csvContent = [
+                  headers.join(","),
+                  ...exportData.map(row => 
+                    headers.map(header => {
+                      const value = row[header];
+                      if (value === null || value === undefined) return "";
+                      if (typeof value === "string" && value.includes(",")) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                      }
+                      return value;
+                    }).join(",")
+                  )
+                ].join("\n");
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `categories_${new Date().toISOString().split("T")[0]}.csv`);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast.success(`${exportData.length} catégorie(s) exportée(s) avec succès`);
+              }}>
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+              <Button variant="outline" onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".csv";
+                input.onchange = async (e: any) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const text = await file.text();
+                    const lines = text.split("\n").filter((line: string) => line.trim());
+                    if (lines.length < 2) {
+                      toast.error("Le fichier est vide ou invalide");
+                      return;
+                    }
+                    const headers = lines[0].split(",").map((h: string) => h.trim().replace(/^"|"$/g, ""));
+                    const data: any[] = [];
+                    for (let i = 1; i < lines.length; i++) {
+                      const values = lines[i].split(",").map((v: string) => v.trim().replace(/^"|"$/g, ""));
+                      if (values.length !== headers.length) continue;
+                      const row: any = {};
+                      headers.forEach((header: string, index: number) => {
+                        row[header] = values[index] || "";
+                      });
+                      data.push(row);
+                    }
+                    let successCount = 0;
+                    let errorCount = 0;
+                    for (const row of data) {
+                      try {
+                        await createCategory({
+                          name: row.name || "",
+                          type: row.type === "product" || row.type === "service" ? row.type : "product",
+                          description: row.description || "",
+                          active: row.active === "Oui" || row.active === "true",
+                        });
+                        successCount++;
+                      } catch (error: any) {
+                        errorCount++;
+                      }
+                    }
+                    if (successCount > 0) {
+                      toast.success(`${successCount} catégorie(s) importée(s) avec succès`);
+                    }
+                    if (errorCount > 0) {
+                      toast.warning(`${errorCount} erreur(s) lors de l'import`);
+                    }
+                  } catch (error: any) {
+                    toast.error(`Erreur lors de l'import: ${error.message}`);
+                  }
+                };
+                input.click();
+              }}>
+                <Upload className="w-4 h-4 mr-2" />
+                Importer
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle catégorie
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
