@@ -244,80 +244,95 @@ export function InvoiceCreateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editData ? 'Modifier la facture' : 'Nouvelle facture'}</DialogTitle>
-          <DialogDescription>
-            {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client avec options fiscales configurables'}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
+        {/* Header moderne */}
+        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-bold">
+                {editData ? 'Modifier la facture' : 'Nouvelle facture'}
+              </DialogTitle>
+              <DialogDescription className="text-sm">
+                {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client'}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Annuler
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={!formData.clientId || formData.lines.length === 0}
+                className="gap-2"
+              >
+                <Calculator className="w-4 h-4" />
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </div>
 
-        <div className="space-y-6 py-4">
-          {/* 1. Informations générales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Informations générales</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client">Client *</Label>
-                  <Select
-                    value={formData.clientId}
-                    onValueChange={(value) =>
-                      setFormData(prev => ({ ...prev, clientId: value }))
-                    }
-                  >
-                    <SelectTrigger id="client">
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientsLoading ? (
-                        <SelectItem value="loading" disabled>Chargement...</SelectItem>
-                      ) : (
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.nom}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+        <div className="p-6">
+          {/* Section supérieure: Client & Infos en 2 colonnes */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Colonne gauche: Client */}
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Client</h3>
+              <Select
+                value={formData.clientId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, clientId: value }))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Sélectionner un client *" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientsLoading ? (
+                    <SelectItem value="loading" disabled>Chargement...</SelectItem>
+                  ) : (
+                    clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.nom}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {formData.clientId && (
+                <div className="text-sm text-muted-foreground">
+                  {clients.find(c => c.id === formData.clientId)?.adresse || 'Adresse non renseignée'}
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date *</Label>
+            {/* Colonne droite: Infos facture */}
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Détails</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Date</Label>
                   <Input
-                    id="date"
                     type="date"
                     value={formData.date}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, date: e.target.value }))
-                    }
+                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    className="bg-background"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reference">Référence</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Référence</Label>
                   <Input
-                    id="reference"
                     value={formData.reference}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, reference: e.target.value }))
-                    }
-                    placeholder="Réf. facture"
+                    onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))}
+                    placeholder="Auto"
+                    className="bg-background"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Devise</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Devise</Label>
                   <Select
                     value={formData.currency}
-                    onValueChange={(value) =>
-                      setFormData(prev => ({ ...prev, currency: value }))
-                    }
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
                   >
-                    <SelectTrigger id="currency">
+                    <SelectTrigger className="bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -327,238 +342,99 @@ export function InvoiceCreateModal({
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 2. Options fiscales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Options fiscales</CardTitle>
-              <CardDescription>
-                Sélectionnez les taxes à appliquer depuis Paramètres → Taxes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Taxes en pourcentage */}
-              {percentageTaxes.length > 0 && (
-                <div className="space-y-3 p-4 border rounded-lg">
-                  <Label className="font-semibold">Taxes en pourcentage</Label>
-                  <div className="space-y-2">
-                    {percentageTaxes.map((tax) => (
-                      <div key={tax.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tax-${tax.id}`}
-                          checked={formData.appliedTaxes.includes(tax.id)}
-                          onCheckedChange={() => handleToggleTax(tax.id)}
-                        />
-                        <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
-                          {tax.name} ({tax.value}%)
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Taxes fixes (timbre fiscal, etc.) */}
-              {fixedTaxes.length > 0 && (
-                <div className="space-y-3 p-4 border rounded-lg">
-                  <Label className="font-semibold">Taxes fixes</Label>
-                  <div className="space-y-2">
-                    {fixedTaxes.map((tax) => (
-                      <div key={tax.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tax-${tax.id}`}
-                          checked={formData.appliedTaxes.includes(tax.id)}
-                          onCheckedChange={() => handleToggleTax(tax.id)}
-                        />
-                        <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
-                          {tax.name} ({formatAmount(tax.value)})
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {taxes.length === 0 && (
-                <div className="p-4 border rounded-lg text-center text-muted-foreground">
-                  <p className="text-sm">Aucune taxe configurée</p>
-                  <p className="text-xs mt-1">Configurez vos taxes dans Paramètres → Taxes</p>
-                </div>
-              )}
-
-              {/* Remise */}
-              <div className="space-y-3 p-4 border rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="apply-discount"
-                    checked={formData.applyDiscount}
-                    onCheckedChange={(checked) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        applyDiscount: checked as boolean,
-                        discountValue: 0,
-                      }))
-                    }
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Notes</Label>
+                  <Input
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Notes..."
+                    className="bg-background"
                   />
-                  <Label htmlFor="apply-discount" className="font-semibold cursor-pointer">
-                    Appliquer une remise
-                  </Label>
                 </div>
-
-                {formData.applyDiscount && (
-                  <div className="ml-6 space-y-3">
-                    <div className="flex gap-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="discount-percentage"
-                          checked={formData.discountType === 'percentage'}
-                          onChange={() =>
-                            setFormData(prev => ({
-                              ...prev,
-                              discountType: 'percentage',
-                              discountValue: 0,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="discount-percentage">Pourcentage</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="discount-amount"
-                          checked={formData.discountType === 'amount'}
-                          onChange={() =>
-                            setFormData(prev => ({
-                              ...prev,
-                              discountType: 'amount',
-                              discountValue: 0,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="discount-amount">Montant</Label>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="discount-value">
-                        {formData.discountType === 'percentage' ? 'Pourcentage (%)' : 'Montant'}
-                      </Label>
-                      <Input
-                        id="discount-value"
-                        type="number"
-                        min="0"
-                        step={formData.discountType === 'percentage' ? '0.01' : '0.01'}
-                        value={formData.discountValue}
-                        onChange={(e) =>
-                          setFormData(prev => ({
-                            ...prev,
-                            discountValue: parseFloat(e.target.value) || 0,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* 3. Lignes de facturation */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Lignes de facturation</CardTitle>
-                  <CardDescription>Ajoutez les produits ou services</CardDescription>
-                </div>
-                <Button onClick={handleAddLine} size="sm" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Ajouter une ligne
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {formData.lines.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Aucune ligne. Cliquez sur "Ajouter une ligne" pour commencer.
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
+          {/* Section Lignes de facturation - Tableau moderne */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
+                Lignes de facturation
+              </h3>
+              <Button onClick={handleAddLine} size="sm" variant="outline" className="gap-2">
+                <Plus className="w-4 h-4" />
+                Ajouter
+              </Button>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Description</TableHead>
+                    <TableHead className="w-20 text-center font-semibold">Qté</TableHead>
+                    <TableHead className="w-28 text-right font-semibold">P.U.</TableHead>
+                    <TableHead className="w-24 text-center font-semibold">TVA</TableHead>
+                    <TableHead className="w-28 text-right font-semibold">Total HT</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formData.lines.length === 0 ? (
                     <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-24">Quantité</TableHead>
-                      <TableHead className="w-32">Prix unitaire</TableHead>
-                      <TableHead className="w-32">Taxe</TableHead>
-                      <TableHead className="w-32">Total</TableHead>
-                      <TableHead className="w-12"></TableHead>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Cliquez sur "Ajouter" pour commencer
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {formData.lines.map((line) => {
+                  ) : (
+                    formData.lines.map((line) => {
                       const lineTotal = line.quantity * line.unitPrice;
-                      // Filtrer uniquement les taxes en pourcentage pour les lignes
                       const availableLineTaxes = percentageTaxes.filter(t => formData.appliedTaxes.includes(t.id));
                       
                       return (
-                        <TableRow key={line.id}>
-                          <TableCell>
+                        <TableRow key={line.id} className="group">
+                          <TableCell className="p-2">
                             <Input
                               value={line.description}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, { description: e.target.value })
-                              }
-                              placeholder="Description"
+                              onChange={(e) => handleUpdateLine(line.id, { description: e.target.value })}
+                              placeholder="Description du produit/service"
+                              className="border-0 bg-transparent focus-visible:ring-1 h-9"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             <Input
                               type="number"
                               min="0"
-                              step="0.01"
+                              step="1"
                               value={line.quantity}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, {
-                                  quantity: parseFloat(e.target.value) || 0,
-                                })
-                              }
+                              onChange={(e) => handleUpdateLine(line.id, { quantity: parseFloat(e.target.value) || 0 })}
+                              className="border-0 bg-transparent focus-visible:ring-1 h-9 text-center"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             <Input
                               type="number"
                               min="0"
-                              step="0.01"
+                              step="0.001"
                               value={line.unitPrice}
-                              onChange={(e) =>
-                                handleUpdateLine(line.id, {
-                                  unitPrice: parseFloat(e.target.value) || 0,
-                                })
-                              }
+                              onChange={(e) => handleUpdateLine(line.id, { unitPrice: parseFloat(e.target.value) || 0 })}
+                              className="border-0 bg-transparent focus-visible:ring-1 h-9 text-right"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             {availableLineTaxes.length > 0 ? (
                               <Select
                                 value={line.taxRateId || "none"}
-                                onValueChange={(value) =>
-                                  handleUpdateLine(line.id, { taxRateId: value === "none" ? "" : value })
-                                }
+                                onValueChange={(value) => handleUpdateLine(line.id, { taxRateId: value === "none" ? "" : value })}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Taxe" />
+                                <SelectTrigger className="border-0 bg-transparent h-9 text-center">
+                                  <SelectValue placeholder="-" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">Aucune</SelectItem>
+                                  <SelectItem value="none">0%</SelectItem>
                                   {availableLineTaxes.map((tax) => (
                                     <SelectItem key={tax.id} value={tax.id}>
-                                      {tax.name} ({tax.value}%)
+                                      {tax.value}%
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -567,111 +443,161 @@ export function InvoiceCreateModal({
                               <span className="text-muted-foreground text-sm">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">
+                          <TableCell className="p-2 text-right font-medium">
                             {formatAmount(lineTotal)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="p-2">
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => handleRemoveLine(line.id)}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </TableCell>
                         </TableRow>
                       );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
 
-          {/* 4. Totaux */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calculator className="w-5 h-5" />
-                Totaux
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Section inférieure: Options fiscales & Totaux en 2 colonnes */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Colonne gauche: Options fiscales */}
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Options fiscales</h3>
+              
+              {/* Taxes */}
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total HT:</span>
+                {percentageTaxes.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {percentageTaxes.map((tax) => (
+                      <label
+                        key={tax.id}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                          formData.appliedTaxes.includes(tax.id)
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-background hover:bg-muted'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={formData.appliedTaxes.includes(tax.id)}
+                          onCheckedChange={() => handleToggleTax(tax.id)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm font-medium">{tax.name} ({tax.value}%)</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                
+                {fixedTaxes.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {fixedTaxes.map((tax) => (
+                      <label
+                        key={tax.id}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                          formData.appliedTaxes.includes(tax.id)
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-background hover:bg-muted'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={formData.appliedTaxes.includes(tax.id)}
+                          onCheckedChange={() => handleToggleTax(tax.id)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm font-medium">{tax.name} ({formatAmount(tax.value)})</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Remise */}
+              <div className="pt-3 border-t">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={formData.applyDiscount}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, applyDiscount: checked as boolean, discountValue: 0 }))}
+                  />
+                  <span className="text-sm font-medium">Appliquer une remise</span>
+                </label>
+                
+                {formData.applyDiscount && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Select
+                      value={formData.discountType}
+                      onValueChange={(value: 'percentage' | 'amount') => setFormData(prev => ({ ...prev, discountType: value, discountValue: 0 }))}
+                    >
+                      <SelectTrigger className="w-32 bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="amount">Montant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.discountValue}
+                      onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
+                      className="w-28 bg-background"
+                      placeholder="Valeur"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Colonne droite: Totaux (style facture) */}
+            <div className="p-4 bg-muted/30 rounded-lg border">
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-4">Récapitulatif</h3>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-muted-foreground">Total HT</span>
                   <span className="font-medium">{formatAmount(totals.totalHT)}</span>
                 </div>
 
-                {formData.applyDiscount && (
-                  <div className="flex justify-between text-orange-600">
-                    <span>Remise:</span>
-                    <span>-{formatAmount(totals.discountAmount)}</span>
+                {formData.applyDiscount && totals.discountAmount > 0 && (
+                  <div className="flex justify-between py-1 text-orange-600">
+                    <span>Remise</span>
+                    <span>- {formatAmount(totals.discountAmount)}</span>
                   </div>
                 )}
 
-                {formData.applyDiscount && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total HT après remise:</span>
-                    <span className="font-medium">{formatAmount(totals.totalHTAfterDiscount)}</span>
-                  </div>
-                )}
-
-                {/* Taxes en pourcentage */}
                 {totals.percentageTaxes.map((tax) => {
                   const taxAmount = calculateTax(totals.totalHTAfterDiscount, tax);
                   return (
-                    <div key={tax.id} className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {tax.name} ({tax.value}%):
-                      </span>
+                    <div key={tax.id} className="flex justify-between py-1">
+                      <span className="text-muted-foreground">{tax.name} ({tax.value}%)</span>
                       <span className="font-medium">{formatAmount(taxAmount)}</span>
                     </div>
                   );
                 })}
 
-                {/* Taxes fixes */}
                 {totals.fixedTaxes.map((tax) => (
-                  <div key={tax.id} className="flex justify-between">
-                    <span className="text-muted-foreground">{tax.name}:</span>
+                  <div key={tax.id} className="flex justify-between py-1">
+                    <span className="text-muted-foreground">{tax.name}</span>
                     <span className="font-medium">{formatAmount(tax.value)}</span>
                   </div>
                 ))}
 
-                <div className="flex justify-between pt-2 border-t font-bold text-lg">
-                  <span>Total TTC:</span>
-                  <span>{formatAmount(totals.totalTTC)}</span>
+                <div className="flex justify-between py-3 border-t mt-2 text-lg font-bold">
+                  <span>Total TTC</span>
+                  <span className="text-primary">{formatAmount(totals.totalTTC)}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optionnel)</Label>
-            <textarea
-              id="notes"
-              className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData(prev => ({ ...prev, notes: e.target.value }))
-              }
-              placeholder="Notes additionnelles..."
-            />
+            </div>
           </div>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!formData.clientId || formData.lines.length === 0}
-          >
-            Enregistrer
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
