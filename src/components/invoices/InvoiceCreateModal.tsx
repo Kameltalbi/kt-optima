@@ -511,15 +511,18 @@ export function InvoiceCreateModal({
 
               {/* Remise */}
               <div className="pt-3 border-t">
-                <div className="flex items-center gap-2">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer select-none"
+                  onClick={() => {
+                    console.log("Discount checkbox clicked, current value:", formData.applyDiscount);
+                    setFormData(prev => ({ ...prev, applyDiscount: !prev.applyDiscount, discountValue: 0 }));
+                  }}
+                >
                   <Checkbox
-                    id="apply-discount-checkbox"
                     checked={formData.applyDiscount}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, applyDiscount: checked as boolean, discountValue: 0 }))}
+                    className="pointer-events-none"
                   />
-                  <label htmlFor="apply-discount-checkbox" className="text-sm font-medium cursor-pointer">
-                    Appliquer une remise
-                  </label>
+                  <span className="text-sm font-medium">Appliquer une remise</span>
                 </div>
                 
                 {formData.applyDiscount && (
