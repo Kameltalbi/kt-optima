@@ -231,9 +231,9 @@ export default function Invoices() {
 
       // Convertir les lignes pour le backend
       const lignes = data.lines.map((line, index) => {
-        const lineTotal = line.quantity * line.unitPrice;
+        const lineTotalHT = line.quantity * line.unitPrice;
         let tauxTVA = 0;
-        
+
         // Utiliser la taxe sélectionnée pour la ligne (si c'est une taxe en pourcentage)
         if (line.taxRateId) {
           const tax = taxes.find(t => t.id === line.taxRateId);
@@ -242,14 +242,18 @@ export default function Invoices() {
           }
         }
 
+        // Calculer la TVA et TTC pour la ligne (sinon la facture reste avec TVA = 0)
+        const montantTVA = (lineTotalHT * tauxTVA) / 100;
+        const montantTTC = lineTotalHT + montantTVA;
+
         return {
           description: line.description,
           quantite: line.quantity,
           prix_unitaire: line.unitPrice,
           taux_tva: tauxTVA,
-          montant_ht: lineTotal,
-          montant_tva: 0, // Sera calculé côté backend
-          montant_ttc: lineTotal,
+          montant_ht: lineTotalHT,
+          montant_tva: montantTVA,
+          montant_ttc: montantTTC,
           ordre: index,
         };
       });
