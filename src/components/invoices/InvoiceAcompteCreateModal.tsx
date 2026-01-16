@@ -361,85 +361,6 @@ export function InvoiceAcompteCreateModal({
             {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
           </Button>
 
-          {/* 1. Informations générales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Informations générales</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client">Client *</Label>
-                  <Select
-                    value={formData.clientId}
-                    onValueChange={(value) =>
-                      setFormData(prev => ({ ...prev, clientId: value }))
-                    }
-                  >
-                    <SelectTrigger id="client">
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientsLoading ? (
-                        <SelectItem value="loading" disabled>Chargement...</SelectItem>
-                      ) : (
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.nom}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, date: e.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reference">Référence</Label>
-                  <Input
-                    id="reference"
-                    value={formData.reference}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, reference: e.target.value }))
-                    }
-                    placeholder="Réf. facture d'acompte (générée automatiquement si vide)"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Devise</Label>
-                  <Select
-                    value={formData.currency}
-                    onValueChange={(value) =>
-                      setFormData(prev => ({ ...prev, currency: value }))
-                    }
-                  >
-                    <SelectTrigger id="currency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MAD">MAD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="TND">TND</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Options fiscales et Remise - Affichées seulement si showSettings */}
           {showSettings && (
             <Card className="border-green-200 bg-green-50/30">
@@ -552,6 +473,85 @@ export function InvoiceAcompteCreateModal({
               </CardContent>
             </Card>
           )}
+
+          {/* 1. Informations générales */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Informations générales</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client">Client *</Label>
+                  <Select
+                    value={formData.clientId}
+                    onValueChange={(value) =>
+                      setFormData(prev => ({ ...prev, clientId: value }))
+                    }
+                  >
+                    <SelectTrigger id="client">
+                      <SelectValue placeholder="Sélectionner un client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientsLoading ? (
+                        <SelectItem value="loading" disabled>Chargement...</SelectItem>
+                      ) : (
+                        clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.nom}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, date: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reference">Référence</Label>
+                  <Input
+                    id="reference"
+                    value={formData.reference}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, reference: e.target.value }))
+                    }
+                    placeholder="Réf. facture d'acompte (générée automatiquement si vide)"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Devise</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) =>
+                      setFormData(prev => ({ ...prev, currency: value }))
+                    }
+                  >
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MAD">MAD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="TND">TND</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 3. Lignes de facturation */}
           <Card>
