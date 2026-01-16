@@ -1,355 +1,368 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Product, Service, ProductCategory } from '@/types/database';
 
-const STORAGE_PREFIX = 'bilvoxa_erp_products_';
-
-// Mock data
-const mockProducts: Product[] = [
-  {
-    id: 'prod_1',
-    code: 'PROD-001',
-    name: 'Ordinateur portable',
-    category_id: 'cat_prod_1',
-    purchase_price: 1200,
-    sale_price: 1800,
-    tax_rate: 19,
-    unit: 'pièce',
-    stockable: true,
-    active: true,
-    description: 'Ordinateur portable professionnel',
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'prod_2',
-    code: 'PROD-002',
-    name: 'Souris sans fil',
-    category_id: 'cat_prod_2',
-    purchase_price: 15,
-    sale_price: 25,
-    tax_rate: 19,
-    unit: 'pièce',
-    stockable: true,
-    active: true,
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-];
-
-const mockServices: Service[] = [
-  {
-    id: 'serv_1',
-    code: 'SERV-001',
-    name: 'Formation ERP',
-    category_id: 'cat_serv_1',
-    price: 5000,
-    tax_rate: 19,
-    billing_type: 'fixed',
-    active: true,
-    description: 'Formation complète sur l\'utilisation de l\'ERP',
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'serv_2',
-    code: 'SERV-002',
-    name: 'Support technique',
-    category_id: 'cat_serv_1',
-    price: 150,
-    tax_rate: 19,
-    billing_type: 'duration',
-    active: true,
-    description: 'Support technique par heure',
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-];
-
-const mockCategories: ProductCategory[] = [
-  {
-    id: 'cat_prod_1',
-    name: 'Informatique',
-    type: 'product',
-    description: 'Produits informatiques',
-    active: true,
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'cat_prod_2',
-    name: 'Périphériques',
-    type: 'product',
-    active: true,
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'cat_serv_1',
-    name: 'Formation & Support',
-    type: 'service',
-    description: 'Services de formation et support',
-    active: true,
-    company_id: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-];
-
 export function useProducts() {
   const { companyId } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [products, setProducts] = useState<Product[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}products`);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          return companyId ? data.filter((p: Product) => p.company_id === companyId) : data;
-        } catch {
-          return companyId ? mockProducts.filter(p => p.company_id === companyId) : mockProducts;
-        }
-      }
+  // Charger les produits et services depuis Supabase (table produits)
+  const fetchProductsAndServices = useCallback(async () => {
+    if (!companyId) {
+      setProducts([]);
+      setServices([]);
+      setLoading(false);
+      return;
     }
-    return companyId ? mockProducts.filter(p => p.company_id === companyId) : mockProducts;
-  });
 
-  const [services, setServices] = useState<Service[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}services`);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          return companyId ? data.filter((s: Service) => s.company_id === companyId) : data;
-        } catch {
-          return companyId ? mockServices.filter(s => s.company_id === companyId) : mockServices;
-        }
-      }
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('actif', true)
+        .order('nom', { ascending: true });
+
+      if (error) throw error;
+
+      // Séparer les produits et services
+      const allItems = data || [];
+      
+      const productsList: Product[] = allItems
+        .filter(item => item.type === 'produit')
+        .map(item => ({
+          id: item.id,
+          code: item.code || '',
+          name: item.nom,
+          category_id: item.categorie || '',
+          purchase_price: Number(item.prix_achat) || 0,
+          sale_price: Number(item.prix_vente) || 0,
+          tax_rate: Number(item.taux_tva) || 0,
+          unit: item.unite || 'pièce',
+          stockable: item.stockable || false,
+          active: item.actif,
+          description: item.description || '',
+          company_id: item.company_id,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        }));
+
+      const servicesList: Service[] = allItems
+        .filter(item => item.type === 'service')
+        .map(item => ({
+          id: item.id,
+          code: item.code || '',
+          name: item.nom,
+          category_id: item.categorie || '',
+          price: Number(item.prix_vente) || 0,
+          tax_rate: Number(item.taux_tva) || 0,
+          billing_type: 'fixed',
+          active: item.actif,
+          description: item.description || '',
+          company_id: item.company_id,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        }));
+
+      setProducts(productsList);
+      setServices(servicesList);
+    } catch (err) {
+      console.error('Error fetching products/services:', err);
+      toast.error('Erreur lors du chargement des produits/services');
+    } finally {
+      setLoading(false);
     }
-    return companyId ? mockServices.filter(s => s.company_id === companyId) : mockServices;
-  });
+  }, [companyId]);
 
-  const [categories, setCategories] = useState<ProductCategory[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}categories`);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          return companyId ? data.filter((c: ProductCategory) => c.company_id === companyId) : data;
-        } catch {
-          return companyId ? mockCategories.filter(c => c.company_id === companyId) : mockCategories;
-        }
-      }
+  // Charger les catégories depuis Supabase
+  const fetchCategories = useCallback(async () => {
+    if (!companyId) {
+      setCategories([]);
+      return;
     }
-    return companyId ? mockCategories.filter(c => c.company_id === companyId) : mockCategories;
-  });
 
-  // Re-load data when companyId changes
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      const categoriesList: ProductCategory[] = (data || []).map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        type: cat.type as 'product' | 'service',
+        description: cat.description || '',
+        active: cat.active ?? true,
+        company_id: cat.company_id,
+        createdAt: cat.created_at,
+        updatedAt: cat.updated_at,
+      }));
+
+      setCategories(categoriesList);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  }, [companyId]);
+
+  // Charger au montage
   useEffect(() => {
-    if (!companyId) return;
-
-    const loadAndFilter = <T extends { company_id: string }>(
-      storageKey: string,
-      mockData: T[],
-      setter: (data: T[]) => void
-    ) => {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(storageKey);
-        if (stored) {
-          try {
-            const allData = JSON.parse(stored);
-            const filtered = allData.filter((item: T) => item.company_id === companyId);
-            setter(filtered);
-            return;
-          } catch {
-            // Fall through to mock data
-          }
-        }
-      }
-      const filtered = mockData.filter(item => item.company_id === companyId);
-      setter(filtered);
-    };
-
-    loadAndFilter(`${STORAGE_PREFIX}products`, mockProducts, setProducts);
-    loadAndFilter(`${STORAGE_PREFIX}services`, mockServices, setServices);
-    loadAndFilter(`${STORAGE_PREFIX}categories`, mockCategories, setCategories);
-  }, [companyId]);
-
-  // Save functions
-  const saveProducts = useCallback((data: Product[]) => {
-    const filtered = companyId ? data.filter(p => p.company_id === companyId) : data;
-    setProducts(filtered);
-    if (typeof window !== 'undefined') {
-      const existing = localStorage.getItem(`${STORAGE_PREFIX}products`);
-      if (existing) {
-        try {
-          const allData = JSON.parse(existing);
-          const otherCompanies = allData.filter((p: Product) => p.company_id !== companyId);
-          localStorage.setItem(`${STORAGE_PREFIX}products`, JSON.stringify([...otherCompanies, ...filtered]));
-        } catch {
-          localStorage.setItem(`${STORAGE_PREFIX}products`, JSON.stringify(filtered));
-        }
-      } else {
-        localStorage.setItem(`${STORAGE_PREFIX}products`, JSON.stringify(filtered));
-      }
-    }
-  }, [companyId]);
-
-  const saveServices = useCallback((data: Service[]) => {
-    const filtered = companyId ? data.filter(s => s.company_id === companyId) : data;
-    setServices(filtered);
-    if (typeof window !== 'undefined') {
-      const existing = localStorage.getItem(`${STORAGE_PREFIX}services`);
-      if (existing) {
-        try {
-          const allData = JSON.parse(existing);
-          const otherCompanies = allData.filter((s: Service) => s.company_id !== companyId);
-          localStorage.setItem(`${STORAGE_PREFIX}services`, JSON.stringify([...otherCompanies, ...filtered]));
-        } catch {
-          localStorage.setItem(`${STORAGE_PREFIX}services`, JSON.stringify(filtered));
-        }
-      } else {
-        localStorage.setItem(`${STORAGE_PREFIX}services`, JSON.stringify(filtered));
-      }
-    }
-  }, [companyId]);
-
-  const saveCategories = useCallback((data: ProductCategory[]) => {
-    const filtered = companyId ? data.filter(c => c.company_id === companyId) : data;
-    setCategories(filtered);
-    if (typeof window !== 'undefined') {
-      const existing = localStorage.getItem(`${STORAGE_PREFIX}categories`);
-      if (existing) {
-        try {
-          const allData = JSON.parse(existing);
-          const otherCompanies = allData.filter((c: ProductCategory) => c.company_id !== companyId);
-          localStorage.setItem(`${STORAGE_PREFIX}categories`, JSON.stringify([...otherCompanies, ...filtered]));
-        } catch {
-          localStorage.setItem(`${STORAGE_PREFIX}categories`, JSON.stringify(filtered));
-        }
-      } else {
-        localStorage.setItem(`${STORAGE_PREFIX}categories`, JSON.stringify(filtered));
-      }
-    }
-  }, [companyId]);
+    fetchProductsAndServices();
+    fetchCategories();
+  }, [fetchProductsAndServices, fetchCategories]);
 
   // Product methods
-  const createProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
+  const createProduct = useCallback(async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
     if (!companyId) {
       toast.error('Aucune entreprise sélectionnée');
       throw new Error('Company ID is required');
     }
 
-    // Vérifier si le code existe déjà
-    const codeExists = products.some(p => p.code.toLowerCase() === productData.code.toLowerCase());
-    if (codeExists) {
-      toast.error('Un produit avec ce code existe déjà');
-      throw new Error('Product code already exists');
-    }
+    try {
+      const { data, error } = await supabase
+        .from('produits')
+        .insert({
+          company_id: companyId,
+          code: productData.code,
+          nom: productData.name,
+          description: productData.description,
+          type: 'produit',
+          stockable: productData.stockable,
+          unite: productData.unit,
+          prix_achat: productData.purchase_price,
+          prix_vente: productData.sale_price,
+          taux_tva: productData.tax_rate,
+          categorie: productData.category_id,
+          actif: productData.active ?? true,
+        })
+        .select()
+        .single();
 
-    const newProduct: Product = {
-      ...productData,
-      company_id: companyId,
-      id: `prod_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveProducts([...products, newProduct]);
-    return newProduct;
-  }, [products, saveProducts, companyId]);
+      if (error) throw error;
 
-  const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
-    const product = products.find(p => p.id === id);
-    if (!product) {
-      toast.error('Produit introuvable');
-      throw new Error('Product not found');
-    }
-
-    // Vérifier si le code existe déjà (sauf pour le produit en cours de modification)
-    if (updates.code && updates.code.toLowerCase() !== product.code.toLowerCase()) {
-      const codeExists = products.some(p => p.id !== id && p.code.toLowerCase() === updates.code!.toLowerCase());
-      if (codeExists) {
+      toast.success('Produit créé avec succès');
+      await fetchProductsAndServices();
+      return data;
+    } catch (err: any) {
+      if (err?.code === '23505') {
         toast.error('Un produit avec ce code existe déjà');
-        throw new Error('Product code already exists');
+      } else {
+        toast.error('Erreur lors de la création du produit');
       }
+      throw err;
     }
+  }, [companyId, fetchProductsAndServices]);
 
-    const updated = products.map(p =>
-      p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-    );
-    saveProducts(updated);
-    return updated.find(p => p.id === id);
-  }, [products, saveProducts]);
+  const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
+    try {
+      const updateData: any = {};
+      if (updates.code !== undefined) updateData.code = updates.code;
+      if (updates.name !== undefined) updateData.nom = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.stockable !== undefined) updateData.stockable = updates.stockable;
+      if (updates.unit !== undefined) updateData.unite = updates.unit;
+      if (updates.purchase_price !== undefined) updateData.prix_achat = updates.purchase_price;
+      if (updates.sale_price !== undefined) updateData.prix_vente = updates.sale_price;
+      if (updates.tax_rate !== undefined) updateData.taux_tva = updates.tax_rate;
+      if (updates.category_id !== undefined) updateData.categorie = updates.category_id;
+      if (updates.active !== undefined) updateData.actif = updates.active;
 
-  const deleteProduct = useCallback((id: string) => {
-    const filtered = products.filter(p => p.id !== id);
-    saveProducts(filtered);
-  }, [products, saveProducts]);
+      const { data, error } = await supabase
+        .from('produits')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Produit mis à jour avec succès');
+      await fetchProductsAndServices();
+      return data;
+    } catch (err) {
+      toast.error('Erreur lors de la mise à jour du produit');
+      throw err;
+    }
+  }, [fetchProductsAndServices]);
+
+  const deleteProduct = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('produits')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Produit supprimé avec succès');
+      await fetchProductsAndServices();
+    } catch (err) {
+      toast.error('Erreur lors de la suppression du produit');
+      throw err;
+    }
+  }, [fetchProductsAndServices]);
 
   // Service methods
-  const createService = useCallback((serviceData: Omit<Service, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
+  const createService = useCallback(async (serviceData: Omit<Service, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
     if (!companyId) {
       throw new Error('Company ID is required');
     }
-    const newService: Service = {
-      ...serviceData,
-      company_id: companyId,
-      id: `serv_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveServices([...services, newService]);
-    return newService;
-  }, [services, saveServices, companyId]);
 
-  const updateService = useCallback((id: string, updates: Partial<Service>) => {
-    const updated = services.map(s =>
-      s.id === id ? { ...s, ...updates, updatedAt: new Date().toISOString() } : s
-    );
-    saveServices(updated);
-    return updated.find(s => s.id === id);
-  }, [services, saveServices]);
+    try {
+      const { data, error } = await supabase
+        .from('produits')
+        .insert({
+          company_id: companyId,
+          code: serviceData.code,
+          nom: serviceData.name,
+          description: serviceData.description,
+          type: 'service',
+          stockable: false,
+          prix_vente: serviceData.price,
+          taux_tva: serviceData.tax_rate,
+          categorie: serviceData.category_id,
+          actif: serviceData.active ?? true,
+        })
+        .select()
+        .single();
 
-  const deleteService = useCallback((id: string) => {
-    const filtered = services.filter(s => s.id !== id);
-    saveServices(filtered);
-  }, [services, saveServices]);
+      if (error) throw error;
+
+      toast.success('Service créé avec succès');
+      await fetchProductsAndServices();
+      return data;
+    } catch (err) {
+      toast.error('Erreur lors de la création du service');
+      throw err;
+    }
+  }, [companyId, fetchProductsAndServices]);
+
+  const updateService = useCallback(async (id: string, updates: Partial<Service>) => {
+    try {
+      const updateData: any = {};
+      if (updates.code !== undefined) updateData.code = updates.code;
+      if (updates.name !== undefined) updateData.nom = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.price !== undefined) updateData.prix_vente = updates.price;
+      if (updates.tax_rate !== undefined) updateData.taux_tva = updates.tax_rate;
+      if (updates.category_id !== undefined) updateData.categorie = updates.category_id;
+      if (updates.active !== undefined) updateData.actif = updates.active;
+
+      const { data, error } = await supabase
+        .from('produits')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Service mis à jour avec succès');
+      await fetchProductsAndServices();
+      return data;
+    } catch (err) {
+      toast.error('Erreur lors de la mise à jour du service');
+      throw err;
+    }
+  }, [fetchProductsAndServices]);
+
+  const deleteService = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('produits')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Service supprimé avec succès');
+      await fetchProductsAndServices();
+    } catch (err) {
+      toast.error('Erreur lors de la suppression du service');
+      throw err;
+    }
+  }, [fetchProductsAndServices]);
 
   // Category methods
-  const createCategory = useCallback((categoryData: Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
+  const createCategory = useCallback(async (categoryData: Omit<ProductCategory, 'id' | 'createdAt' | 'updatedAt' | 'company_id'>) => {
     if (!companyId) {
       throw new Error('Company ID is required');
     }
-    const newCategory: ProductCategory = {
-      ...categoryData,
-      company_id: companyId,
-      id: `cat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveCategories([...categories, newCategory]);
-    return newCategory;
-  }, [categories, saveCategories, companyId]);
 
-  const updateCategory = useCallback((id: string, updates: Partial<ProductCategory>) => {
-    const updated = categories.map(c =>
-      c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c
-    );
-    saveCategories(updated);
-    return updated.find(c => c.id === id);
-  }, [categories, saveCategories]);
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .insert({
+          company_id: companyId,
+          name: categoryData.name,
+          type: categoryData.type,
+          description: categoryData.description,
+          active: categoryData.active ?? true,
+        })
+        .select()
+        .single();
 
-  const deleteCategory = useCallback((id: string) => {
-    const filtered = categories.filter(c => c.id !== id);
-    saveCategories(filtered);
-  }, [categories, saveCategories]);
+      if (error) throw error;
+
+      toast.success('Catégorie créée avec succès');
+      await fetchCategories();
+      return data;
+    } catch (err) {
+      toast.error('Erreur lors de la création de la catégorie');
+      throw err;
+    }
+  }, [companyId, fetchCategories]);
+
+  const updateCategory = useCallback(async (id: string, updates: Partial<ProductCategory>) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .update({
+          name: updates.name,
+          type: updates.type,
+          description: updates.description,
+          active: updates.active,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Catégorie mise à jour avec succès');
+      await fetchCategories();
+      return data;
+    } catch (err) {
+      toast.error('Erreur lors de la mise à jour de la catégorie');
+      throw err;
+    }
+  }, [fetchCategories]);
+
+  const deleteCategory = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('product_categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Catégorie supprimée avec succès');
+      await fetchCategories();
+    } catch (err) {
+      toast.error('Erreur lors de la suppression de la catégorie');
+      throw err;
+    }
+  }, [fetchCategories]);
 
   // Helper methods
   const getProductsByCategory = useCallback((categoryId: string): Product[] => {
@@ -376,6 +389,7 @@ export function useProducts() {
     products,
     services,
     categories,
+    loading,
     createProduct,
     updateProduct,
     deleteProduct,
@@ -390,5 +404,7 @@ export function useProducts() {
     getProductCategories,
     getServiceCategories,
     getStockableProducts,
+    refreshProducts: fetchProductsAndServices,
+    refreshCategories: fetchCategories,
   };
 }
