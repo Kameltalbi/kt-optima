@@ -11,12 +11,14 @@ interface Company {
   footer?: string | null;
 }
 
-// Formater un nombre avec espace comme séparateur de milliers et 2 décimales
+// Formater un nombre avec espace comme séparateur de milliers et 3 décimales (format TND)
 function formatAmount(num: number): string {
-  return num.toLocaleString('fr-TN', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  });
+  // Format: 2 300,000 (espace pour milliers, virgule pour décimales)
+  const fixed = num.toFixed(3);
+  const [intPart, decPart] = fixed.split('.');
+  // Ajouter des espaces comme séparateurs de milliers
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${formattedInt},${decPart}`;
 }
 
 /**
