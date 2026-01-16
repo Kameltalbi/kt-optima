@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
@@ -34,7 +41,10 @@ import {
   DollarSign,
   TrendingUp,
   AlertCircle,
-  Loader2
+  Loader2,
+  Copy,
+  Send,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -65,7 +75,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Invoices() {
-  const { factures, loading, refreshFactures, createFacture } = useFacturesVentes();
+  const { factures, loading, refreshFactures, createFacture, deleteFacture } = useFacturesVentes();
   const { clients } = useClients();
   const { taxes } = useTaxes();
   const { company } = useAuth();
@@ -502,9 +512,57 @@ export default function Invoices() {
                               >
                                 <Download className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem 
+                                    onClick={() => handleViewInvoice(invoice)}
+                                    className="gap-2"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    Voir la facture
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      toast.info('Fonctionnalité à venir : Dupliquer');
+                                    }}
+                                    className="gap-2"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                    Dupliquer
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      toast.info('Fonctionnalité à venir : Envoyer par email');
+                                    }}
+                                    className="gap-2"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                    Envoyer par email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      if (confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
+                                        try {
+                                          await deleteFacture(invoice.id);
+                                          toast.success('Facture supprimée');
+                                        } catch (error) {
+                                          toast.error('Erreur lors de la suppression');
+                                        }
+                                      }
+                                    }}
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Supprimer
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>
