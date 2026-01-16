@@ -387,28 +387,28 @@ export function InvoiceCreateModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="text-xl font-bold">
-            {editData ? 'Modifier la facture' : 'Nouvelle facture'}
-          </DialogTitle>
-          <DialogDescription className="text-sm">
-            {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client'}
-          </DialogDescription>
+        <DialogHeader className="px-6 py-4 border-b flex flex-row items-start justify-between gap-4">
+          <div className="flex-1">
+            <DialogTitle className="text-xl font-bold">
+              {editData ? 'Modifier la facture' : 'Nouvelle facture'}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client'}
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={showSettings ? "default" : "outline"}
+            onClick={() => setShowSettings(!showSettings)}
+            className={`gap-2 shrink-0 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
+          >
+            <Settings className="w-4 h-4" />
+            {showSettings ? 'Masquer' : 'Réglages'}
+          </Button>
         </DialogHeader>
 
         <div className="p-6">
-          {/* Bouton Réglages */}
-          <div className="mb-6">
-            <Button
-              type="button"
-              variant={showSettings ? "default" : "outline"}
-              onClick={() => setShowSettings(!showSettings)}
-              className={`gap-2 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
-            >
-              <Settings className="w-4 h-4" />
-              {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
-            </Button>
-          </div>
 
           {/* Options fiscales et Remise - Affichées seulement si showSettings */}
           {showSettings && (
