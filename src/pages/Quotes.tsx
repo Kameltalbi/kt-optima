@@ -58,6 +58,7 @@ import { useTaxes } from "@/hooks/use-taxes";
 import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
 import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
 import { supabase } from "@/integrations/supabase/client";
+import { getNextDocumentNumber } from "@/hooks/use-document-numbering";
 
 const statusStyles = {
   accepted: "bg-success/10 text-success border-0",
@@ -381,16 +382,76 @@ export default function Quotes() {
   };
 
 
-  const handleConvertToInvoice = (quote: Quote) => {
-    setQuoteToConvert(quote);
-    setIsConvertModalOpen(true);
-  };
+  const handleConvertToInvoice = async (quote: Quote) => {
+    try {
+      // Charger les lignes du devis
+      const { data: quoteItemsData, error: itemsError } = await supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quote.id)
+        .order('created_at', { ascending: true });
 
-  const handleSaveInvoice = () => {
-    console.log("Converting quote to invoice:", quoteToConvert);
-    setIsConvertModalOpen(false);
-    setQuoteToConvert(null);
-    toast.success("Facture créée avec succès à partir du devis");
+      if (itemsError) throw itemsError;
+
+      const items = (quoteItemsData || []) as QuoteItem[];
+
+      // Générer le numéro de facture
+      const dateFacture = new Date().toISOString().split('T')[0];
+      const numeroFacture = await getNextDocumentNumber('facture', dateFacture);
+
+      // Créer la facture avec les mêmes données que le devis
+      const { data: facture, error: factureError } = await supabase
+        .from('factures_ventes')
+        .insert([{
+          numero: numeroFacture,
+          company_id: company?.id,
+          client_id: quote.client_id,
+          date_facture: dateFacture,
+          date_echeance: quote.expires_at || null,
+          type_facture: 'standard' as const,
+          statut: 'brouillon' as const,
+          montant_ht: quote.subtotal || 0,
+          montant_tva: quote.tax || 0,
+          montant_ttc: quote.total,
+          montant_paye: 0,
+          montant_restant: quote.total,
+          notes: quote.notes,
+        }])
+        .select()
+        .single();
+
+      if (factureError) throw factureError;
+
+      // Créer les lignes de la facture
+      if (items.length > 0 && facture) {
+        const lignesFacture = items.map((item, index) => ({
+          facture_vente_id: facture.id,
+          produit_id: null,
+          description: item.description,
+          quantite: item.quantity,
+          prix_unitaire: item.unit_price,
+          taux_tva: item.tax_rate || 0,
+          montant_ht: item.unit_price * item.quantity,
+          montant_tva: (item.unit_price * item.quantity * (item.tax_rate || 0)) / 100,
+          montant_ttc: item.total,
+          ordre: index,
+        }));
+
+        const { error: lignesError } = await supabase
+          .from('facture_vente_lignes')
+          .insert(lignesFacture);
+
+        if (lignesError) throw lignesError;
+      }
+
+      // Supprimer le devis après conversion
+      await deleteQuote(quote.id);
+
+      toast.success(`Devis ${quote.number} converti en facture avec succès`);
+    } catch (error) {
+      console.error("Error converting quote to invoice:", error);
+      toast.error("Erreur lors de la conversion du devis en facture");
+    }
   };
 
   const handleDuplicateQuote = (quote: Quote) => {
