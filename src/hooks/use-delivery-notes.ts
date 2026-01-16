@@ -179,12 +179,44 @@ export function useDeliveryNotes() {
     }
   }, []);
 
+  // Supprimer un bon de livraison
+  const deleteBonLivraison = useCallback(async (id: string): Promise<void> => {
+    try {
+      // Supprimer d'abord les lignes
+      const { error: lignesError } = await supabase
+        .from('bon_livraison_lignes')
+        .delete()
+        .eq('bon_livraison_id', id);
+
+      if (lignesError) {
+        throw lignesError;
+      }
+
+      // Supprimer le bon de livraison
+      const { error } = await supabase
+        .from('bons_livraison')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchBonsLivraison();
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erreur lors de la suppression');
+      toast.error(error.message);
+      throw error;
+    }
+  }, [fetchBonsLivraison]);
+
   return {
     bonsLivraison,
     loading,
     error,
     fetchBonsLivraison,
     createBonLivraison,
+    deleteBonLivraison,
     getLignes,
     refreshBonsLivraison: fetchBonsLivraison,
   };
