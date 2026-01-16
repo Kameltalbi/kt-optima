@@ -188,6 +188,7 @@ export default function Quotes() {
         lines: documentLines,
         total_ht: selectedQuote.subtotal,
         applied_taxes: appliedTaxes,
+        fiscal_stamp: selectedQuote.total > 0 ? 1 : 0,
         total_ttc: selectedQuote.total,
         notes: selectedQuote.notes,
       };
@@ -536,6 +537,7 @@ export default function Quotes() {
                                     lines: documentLines,
                                     total_ht: quote.subtotal,
                                     applied_taxes: appliedTaxes,
+                                    fiscal_stamp: quote.total > 0 ? 1 : 0,
                                     total_ttc: quote.total,
                                     notes: quote.notes,
                                   };
