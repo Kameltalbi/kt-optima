@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SettingsInvoicing from "./SettingsInvoicing";
 import { AccountingSettings } from "./SettingsSections";
-import SettingsPayroll from "./SettingsPayroll";
+import SettingsPayrollComplete from "./SettingsPayrollComplete";
 import SettingsTemplates from "./SettingsTemplates";
 import ComingSoon from "./ComingSoon";
 import { ResponsiveTabs, ResponsiveTabsContent } from "@/components/settings/ResponsiveTabs";
@@ -44,7 +44,7 @@ export default function SettingsModulesPage() {
       <ResponsiveTabs
         value={activeModule}
         onValueChange={setActiveModule}
-        items={modules.map(m => ({ value: m.id, label: m.label }))}
+        items={modules.map(m => ({ value: m.id, label: m.label, icon: m.icon }))}
       >
         <ResponsiveTabsContent value="crm" className="mt-6">
           <ComingSoon 
@@ -108,7 +108,7 @@ export default function SettingsModulesPage() {
         </ResponsiveTabsContent>
 
         <ResponsiveTabsContent value="rh" className="mt-6">
-          <SettingsPayroll />
+          <SettingsPayrollComplete />
         </ResponsiveTabsContent>
 
         <ResponsiveTabsContent value="parc" className="mt-6">

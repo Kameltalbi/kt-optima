@@ -3,6 +3,7 @@ import SettingsRoles from "./SettingsRoles";
 import SettingsPermissions from "./SettingsPermissions";
 import ComingSoon from "./ComingSoon";
 import { ResponsiveTabs, ResponsiveTabsContent } from "@/components/settings/ResponsiveTabs";
+import { Users, Shield, KeyRound, Lock } from "lucide-react";
 
 export default function SettingsUsersSecurity() {
   return (
@@ -17,10 +18,10 @@ export default function SettingsUsersSecurity() {
       <ResponsiveTabs
         defaultValue="users"
         items={[
-          { value: "users", label: "Utilisateurs" },
-          { value: "roles", label: "Rôles" },
-          { value: "permissions", label: "Permissions" },
-          { value: "security", label: "Sécurité" },
+          { value: "users", label: "Utilisateurs", icon: Users },
+          { value: "roles", label: "Rôles", icon: Shield },
+          { value: "permissions", label: "Permissions", icon: KeyRound },
+          { value: "security", label: "Sécurité", icon: Lock },
         ]}
       >
         <ResponsiveTabsContent value="users" className="mt-6">

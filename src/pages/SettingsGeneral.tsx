@@ -8,6 +8,7 @@ import Products from "./Products";
 import Services from "./Services";
 import Categories from "./Categories";
 import { ResponsiveTabs, ResponsiveTabsContent } from "@/components/settings/ResponsiveTabs";
+import { Building2, DollarSign, Globe, Percent, Package, Briefcase, Folder } from "lucide-react";
 
 export default function SettingsGeneral() {
   return (
@@ -22,11 +23,11 @@ export default function SettingsGeneral() {
       <ResponsiveTabs
         defaultValue="company"
         items={[
-          { value: "company", label: "Entreprise" },
-          { value: "currency", label: "Devise" },
-          { value: "regional", label: "Langue & Formats" },
-          { value: "taxes", label: "TVA & Taxes" },
-          { value: "products-services", label: "Produits & Services" },
+          { value: "company", label: "Entreprise", icon: Building2 },
+          { value: "currency", label: "Devise", icon: DollarSign },
+          { value: "regional", label: "Langue & Formats", icon: Globe },
+          { value: "taxes", label: "TVA & Taxes", icon: Percent },
+          { value: "products-services", label: "Produits & Services", icon: Package },
         ]}
       >
         <ResponsiveTabsContent value="company" className="mt-6">
@@ -115,9 +116,9 @@ export default function SettingsGeneral() {
           <ResponsiveTabs
             defaultValue="products"
             items={[
-              { value: "products", label: "Produits" },
-              { value: "services", label: "Services" },
-              { value: "categories", label: "Catégories" },
+              { value: "products", label: "Produits", icon: Package },
+              { value: "services", label: "Services", icon: Briefcase },
+              { value: "categories", label: "Catégories", icon: Folder },
             ]}
           >
             <ResponsiveTabsContent value="products" className="mt-6">

@@ -43,6 +43,7 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Product } from "@/types/database";
+import { generateNextCode } from "@/utils/numbering";
 
 export default function Products() {
   const { company } = useAuth();
@@ -104,8 +105,8 @@ export default function Products() {
     e.preventDefault();
     
     // Validation
-    if (!formData.code.trim() || !formData.name.trim()) {
-      toast.error("Le code et le libellé sont obligatoires");
+    if (!formData.name.trim()) {
+      toast.error("Le libellé est obligatoire");
       return;
     }
 
@@ -115,8 +116,14 @@ export default function Products() {
     }
 
     try {
+      // Générer le code automatiquement si non saisi
+      let finalCode = formData.code.trim();
+      if (!finalCode) {
+        finalCode = generateNextCode(products, "PROD", (p) => p.code);
+      }
+
       const productData = {
-        code: formData.code.trim(),
+        code: finalCode,
         name: formData.name.trim(),
         category_id: formData.category_id || undefined,
         purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
@@ -308,8 +315,13 @@ export default function Products() {
                     let errorCount = 0;
                     for (const row of data) {
                       try {
+                        // Générer le code automatiquement si non fourni
+                        let productCode = row.code?.trim() || "";
+                        if (!productCode) {
+                          productCode = generateNextCode(products, "PROD", (p) => p.code);
+                        }
                         await createProduct({
-                          code: row.code || "",
+                          code: productCode,
                           name: row.name || "",
                           category_id: row.category || "",
                           purchase_price: parseFloat(row.purchase_price) || 0,
@@ -477,14 +489,18 @@ export default function Products() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code produit *</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  required
-                  placeholder="PROD-001"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="code">Code produit</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Laissé vide pour génération automatique (ex: PROD-001)
+                  </p>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="PROD-001"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Libellé *</Label>

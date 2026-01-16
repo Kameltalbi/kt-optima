@@ -39,10 +39,13 @@ import {
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDeliveryNotes, type BonLivraison } from "@/hooks/use-delivery-notes";
+import { useDeliveryNotes, type BonLivraison, type BonLivraisonLigne } from "@/hooks/use-delivery-notes";
 import { useClients } from "@/hooks/use-clients";
 import { useTaxes } from "@/hooks/use-taxes";
 import { DeliveryNoteCreateModal, DeliveryNoteFormData } from "@/components/delivery-notes/DeliveryNoteCreateModal";
+import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
+import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const statusStyles: Record<string, string> = {
@@ -107,6 +110,55 @@ export default function DeliveryNotes() {
   const handleViewDeliveryNote = (note: BonLivraison) => {
     setSelectedDeliveryNote(note);
     setIsViewModalOpen(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedDeliveryNote) return;
+    
+    try {
+      const client = clients.find(c => c.id === selectedDeliveryNote.client_id);
+      if (!client) {
+        toast.error("Client introuvable");
+        return;
+      }
+
+      // Charger les lignes du bon de livraison
+      const lignes = await getLignes(selectedDeliveryNote.id);
+
+      const documentLines = lignes.map((ligne) => ({
+        description: ligne.description || 'Article',
+        quantity: ligne.quantite,
+        unit_price: 0, // Les bons de livraison n'ont généralement pas de prix
+        total_ht: 0,
+      }));
+
+      const deliveryNoteData: InvoiceDocumentData = {
+        type: 'quote', // Utiliser 'quote' car il n'y a pas de type 'delivery_note' dans InvoiceDocumentData
+        number: selectedDeliveryNote.numero,
+        date: selectedDeliveryNote.date_livraison,
+        client: {
+          name: client.nom,
+          address: selectedDeliveryNote.adresse_livraison || client.adresse || null,
+        },
+        lines: documentLines,
+        total_ht: 0,
+        applied_taxes: [],
+        total_ttc: 0,
+        notes: selectedDeliveryNote.notes,
+      };
+
+      const pdfBlob = generateDocumentPDF(deliveryNoteData, company || null);
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bon-livraison-${selectedDeliveryNote.numero}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF téléchargé avec succès');
+    } catch (error) {
+      console.error('Erreur génération PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
   };
 
   const handleCreateDeliveryNote = () => {
@@ -303,7 +355,56 @@ export default function DeliveryNotes() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={async () => {
+                                  try {
+                                    const client = clients.find(c => c.id === note.client_id);
+                                    if (!client) {
+                                      toast.error("Client introuvable");
+                                      return;
+                                    }
+
+                                    const lignes = await getLignes(note.id);
+
+                                    const documentLines = lignes.map((ligne) => ({
+                                      description: ligne.description || 'Article',
+                                      quantity: ligne.quantite,
+                                      unit_price: 0,
+                                      total_ht: 0,
+                                    }));
+
+                                    const deliveryNoteData: InvoiceDocumentData = {
+                                      type: 'quote',
+                                      number: note.numero,
+                                      date: note.date_livraison,
+                                      client: {
+                                        name: client.nom,
+                                        address: note.adresse_livraison || client.adresse || null,
+                                      },
+                                      lines: documentLines,
+                                      total_ht: 0,
+                                      applied_taxes: [],
+                                      total_ttc: 0,
+                                      notes: note.notes,
+                                    };
+
+                                    const pdfBlob = generateDocumentPDF(deliveryNoteData, company || null);
+                                    const url = URL.createObjectURL(pdfBlob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `bon-livraison-${note.numero}.pdf`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                    toast.success('PDF téléchargé avec succès');
+                                  } catch (error) {
+                                    console.error('Erreur génération PDF:', error);
+                                    toast.error('Erreur lors de la génération du PDF');
+                                  }
+                                }}
+                              >
                                 <Download className="w-4 h-4" />
                               </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -339,7 +440,13 @@ export default function DeliveryNotes() {
                 {selectedDeliveryNote?.numero}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={handleDownloadPDF}
+                  disabled={!selectedDeliveryNote}
+                >
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>

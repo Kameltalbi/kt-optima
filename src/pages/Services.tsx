@@ -43,6 +43,7 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Service } from "@/types/database";
+import { generateNextCode } from "@/utils/numbering";
 
 export default function Services() {
   const { company } = useAuth();
@@ -97,9 +98,27 @@ export default function Services() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error("Le libellé est obligatoire");
+      return;
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error("Le prix doit être supérieur à 0");
+      return;
+    }
+
+    // Générer le code automatiquement si non saisi
+    let finalCode = formData.code.trim();
+    if (!finalCode) {
+      finalCode = generateNextCode(services, "SERV", (s) => s.code);
+    }
+
     const serviceData = {
-      code: formData.code,
-      name: formData.name,
+      code: finalCode,
+      name: formData.name.trim(),
       category_id: formData.category_id || undefined,
       price: parseFloat(formData.price),
       tax_rate: formData.tax_rate,
@@ -248,8 +267,13 @@ export default function Services() {
                     let errorCount = 0;
                     for (const row of data) {
                       try {
+                        // Générer le code automatiquement si non fourni
+                        let serviceCode = row.code?.trim() || "";
+                        if (!serviceCode) {
+                          serviceCode = generateNextCode(services, "SERV", (s) => s.code);
+                        }
                         await createService({
-                          code: row.code || "",
+                          code: serviceCode,
                           name: row.name || "",
                           category_id: row.category || "",
                           price: parseFloat(row.price) || 0,
@@ -411,12 +435,14 @@ export default function Services() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code service *</Label>
+                <Label htmlFor="code">Code service</Label>
+                <p className="text-xs text-muted-foreground">
+                  Laissé vide pour génération automatique (ex: SERV-001)
+                </p>
                 <Input
                   id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  required
                   placeholder="SERV-001"
                 />
               </div>

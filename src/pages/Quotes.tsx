@@ -49,11 +49,14 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { QuoteCreateModal, QuoteFormData } from "@/components/quotes/QuoteCreateModal";
-import { useQuotes, Quote } from "@/hooks/use-quotes";
+import { useQuotes, Quote, QuoteItem } from "@/hooks/use-quotes";
 import { useClients } from "@/hooks/use-clients";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTaxes } from "@/hooks/use-taxes";
+import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
+import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusStyles = {
   accepted: "bg-success/10 text-success border-0",
@@ -83,6 +86,8 @@ export default function Quotes() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
+  const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   // Créer un map des clients pour accès rapide
   const clientMap = new Map(clients.map(client => [client.id, client]));
@@ -105,9 +110,98 @@ export default function Quotes() {
     .filter(q => q.status === "sent" || q.status === "expired")
     .reduce((sum, q) => sum + q.total, 0);
 
-  const handleViewQuote = (quote: Quote) => {
+  const handleViewQuote = async (quote: Quote) => {
     setSelectedQuote(quote);
     setIsViewModalOpen(true);
+    // Charger les lignes du devis
+    setLoadingItems(true);
+    try {
+      const { data, error } = await supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quote.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setQuoteItems((data || []) as QuoteItem[]);
+    } catch (error) {
+      console.error('Erreur chargement lignes devis:', error);
+      toast.error('Erreur lors du chargement des lignes');
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedQuote) return;
+    
+    try {
+      const client = clientMap.get(selectedQuote.client_id);
+      if (!client) {
+        toast.error("Client introuvable");
+        return;
+      }
+
+      // Charger les lignes si pas encore chargées
+      let items = quoteItems;
+      if (items.length === 0) {
+        const { data } = await supabase
+          .from('quote_items')
+          .select('*')
+          .eq('quote_id', selectedQuote.id)
+          .order('created_at', { ascending: true });
+        items = (data || []) as QuoteItem[];
+      }
+
+      const documentLines = items.map((item) => ({
+        description: item.description || '',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_ht: item.total - (item.total * item.tax_rate / (100 + item.tax_rate)),
+      }));
+
+      const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+      if (selectedQuote.tax > 0) {
+        // Calculer le taux de TVA moyen
+        const avgTaxRate = items.length > 0 
+          ? items.reduce((sum, item) => sum + item.tax_rate, 0) / items.length 
+          : 19;
+        appliedTaxes.push({
+          tax_id: 'tva',
+          name: 'TVA',
+          type: 'percentage',
+          rate_or_value: avgTaxRate,
+          amount: selectedQuote.tax,
+        });
+      }
+
+      const quoteData: InvoiceDocumentData = {
+        type: 'quote',
+        number: selectedQuote.number,
+        date: selectedQuote.date,
+        client: {
+          name: client.nom,
+          address: client.adresse || null,
+        },
+        lines: documentLines,
+        total_ht: selectedQuote.subtotal,
+        applied_taxes: appliedTaxes,
+        total_ttc: selectedQuote.total,
+        notes: selectedQuote.notes,
+      };
+
+      const pdfBlob = generateDocumentPDF(quoteData, company || null);
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `devis-${selectedQuote.number}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF téléchargé avec succès');
+    } catch (error) {
+      console.error('Erreur génération PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
   };
 
   const handleCreateQuote = () => {
@@ -387,7 +481,76 @@ export default function Quotes() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={async () => {
+                                try {
+                                  const client = clientMap.get(quote.client_id);
+                                  if (!client) {
+                                    toast.error("Client introuvable");
+                                    return;
+                                  }
+
+                                  const { data } = await supabase
+                                    .from('quote_items')
+                                    .select('*')
+                                    .eq('quote_id', quote.id)
+                                    .order('created_at', { ascending: true });
+                                  
+                                  const items = (data || []) as QuoteItem[];
+
+                                  const documentLines = items.map((item) => ({
+                                    description: item.description || '',
+                                    quantity: item.quantity,
+                                    unit_price: item.unit_price,
+                                    total_ht: item.total - (item.total * item.tax_rate / (100 + item.tax_rate)),
+                                  }));
+
+                                  const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+                                  if (quote.tax > 0) {
+                                    const avgTaxRate = items.length > 0 
+                                      ? items.reduce((sum, item) => sum + item.tax_rate, 0) / items.length 
+                                      : 19;
+                                    appliedTaxes.push({
+                                      tax_id: 'tva',
+                                      name: 'TVA',
+                                      type: 'percentage',
+                                      rate_or_value: avgTaxRate,
+                                      amount: quote.tax,
+                                    });
+                                  }
+
+                                  const quoteData: InvoiceDocumentData = {
+                                    type: 'quote',
+                                    number: quote.number,
+                                    date: quote.date,
+                                    client: {
+                                      name: client.nom,
+                                      address: client.adresse || null,
+                                    },
+                                    lines: documentLines,
+                                    total_ht: quote.subtotal,
+                                    applied_taxes: appliedTaxes,
+                                    total_ttc: quote.total,
+                                    notes: quote.notes,
+                                  };
+
+                                  const pdfBlob = generateDocumentPDF(quoteData, company || null);
+                                  const url = URL.createObjectURL(pdfBlob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `devis-${quote.number}.pdf`;
+                                  link.click();
+                                  URL.revokeObjectURL(url);
+                                  toast.success('PDF téléchargé avec succès');
+                                } catch (error) {
+                                  console.error('Erreur génération PDF:', error);
+                                  toast.error('Erreur lors de la génération du PDF');
+                                }
+                              }}
+                            >
                               <Download className="w-4 h-4" />
                             </Button>
                             <DropdownMenu>
@@ -448,7 +611,13 @@ export default function Quotes() {
                 {selectedQuote?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={handleDownloadPDF}
+                  disabled={!selectedQuote}
+                >
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>

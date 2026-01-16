@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,11 +39,15 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { InvoiceCreateModal, InvoiceFormData } from "@/components/invoices/InvoiceCreateModal";
-import { useFacturesVentes, type FactureVente } from "@/hooks/use-factures-ventes";
+import { useFacturesVentes, type FactureVente, type FactureVenteLigne } from "@/hooks/use-factures-ventes";
 import { useClients } from "@/hooks/use-clients";
 import { useTaxes } from "@/hooks/use-taxes";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
+import { CompanyDocumentLayout } from "@/components/documents/CompanyDocumentLayout";
+import { InvoiceDocument, type InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
+import { generateInvoicePDF } from "@/components/documents/InvoicePDF";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mapping des statuts réels vers les statuts d'affichage
 const statusStyles: Record<string, string> = {
@@ -74,6 +78,8 @@ export default function Invoices() {
   const [selectedInvoice, setSelectedInvoice] = useState<FactureVente | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [invoiceDocumentData, setInvoiceDocumentData] = useState<InvoiceDocumentData | null>(null);
+  const [loadingDocument, setLoadingDocument] = useState(false);
 
   // Créer un map des clients pour accès rapide
   const clientsMap = useMemo(() => {
@@ -108,9 +114,77 @@ export default function Invoices() {
     return { totalInvoices, totalAmount, paidAmount, pendingAmount };
   }, [factures]);
 
-  const handleViewInvoice = (invoice: FactureVente) => {
+  const handleViewInvoice = async (invoice: FactureVente) => {
     setSelectedInvoice(invoice);
     setIsViewModalOpen(true);
+    setLoadingDocument(true);
+    
+    try {
+      // Récupérer les lignes de la facture
+      const { data: lignes, error: lignesError } = await supabase
+        .from('facture_vente_lignes')
+        .select('*')
+        .eq('facture_vente_id', invoice.id)
+        .order('ordre', { ascending: true });
+
+      if (lignesError) {
+        throw lignesError;
+      }
+
+      // Récupérer le client
+      const client = clients.find(c => c.id === invoice.client_id);
+      if (!client) {
+        toast.error("Client introuvable");
+        return;
+      }
+
+      // Transformer les lignes
+      const documentLines = (lignes || []).map((ligne: FactureVenteLigne) => ({
+        description: ligne.description || '',
+        quantity: ligne.quantite,
+        unit_price: ligne.prix_unitaire,
+        total_ht: ligne.montant_ht,
+      }));
+
+      // Construire les taxes appliquées
+      const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+      
+      // Si montant_tva > 0, on ajoute une taxe TVA
+      if (invoice.montant_tva > 0) {
+        // Trouver le taux de TVA depuis les lignes
+        const tauxTVA = (lignes as any)?.[0]?.taux_tva || 19;
+        appliedTaxes.push({
+          tax_id: 'tva',
+          name: 'TVA',
+          type: 'percentage',
+          rate_or_value: tauxTVA,
+          amount: invoice.montant_tva,
+        });
+      }
+
+      // Construire les données du document
+      const data: InvoiceDocumentData = {
+        type: 'invoice',
+        number: invoice.numero,
+        date: invoice.date_facture,
+        client: {
+          name: client.nom,
+          address: client.adresse || null,
+        },
+        lines: documentLines,
+        total_ht: invoice.montant_ht,
+        applied_taxes: appliedTaxes,
+        total_ttc: invoice.montant_ttc,
+        notes: invoice.notes,
+      };
+
+      setInvoiceDocumentData(data);
+    } catch (error) {
+      console.error("Error loading invoice:", error);
+      toast.error("Erreur lors du chargement de la facture");
+    } finally {
+      setLoadingDocument(false);
+    }
   };
 
   const handleCreateInvoice = () => {
@@ -355,7 +429,73 @@ export default function Invoices() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={async () => {
+                                  try {
+                                    // Charger les données de la facture pour le PDF
+                                    const { data: lignes } = await supabase
+                                      .from('facture_vente_lignes')
+                                      .select('*')
+                                      .eq('facture_vente_id', invoice.id)
+                                      .order('ordre', { ascending: true });
+
+                                    const client = clients.find(c => c.id === invoice.client_id);
+                                    if (!client) {
+                                      toast.error("Client introuvable");
+                                      return;
+                                    }
+
+                                    const documentLines = (lignes || []).map((ligne: any) => ({
+                                      description: ligne.description || '',
+                                      quantity: ligne.quantite,
+                                      unit_price: ligne.prix_unitaire,
+                                      total_ht: ligne.montant_ht,
+                                    }));
+
+                                    const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+                                    if (invoice.montant_tva > 0) {
+                                      const tauxTVA = (lignes as any)?.[0]?.taux_tva || 19;
+                                      appliedTaxes.push({
+                                        tax_id: 'tva',
+                                        name: 'TVA',
+                                        type: 'percentage',
+                                        rate_or_value: tauxTVA,
+                                        amount: invoice.montant_tva,
+                                      });
+                                    }
+
+                                    const invoiceData: InvoiceDocumentData = {
+                                      type: 'invoice',
+                                      number: invoice.numero,
+                                      date: invoice.date_facture,
+                                      client: {
+                                        name: client.nom,
+                                        address: client.adresse || null,
+                                      },
+                                      lines: documentLines,
+                                      total_ht: invoice.montant_ht,
+                                      applied_taxes: appliedTaxes,
+                                      total_ttc: invoice.montant_ttc,
+                                      notes: invoice.notes,
+                                    };
+
+                                    const pdfBlob = generateInvoicePDF(invoiceData, company || null);
+                                    const url = URL.createObjectURL(pdfBlob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `facture-${invoice.numero}.pdf`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                    toast.success('PDF téléchargé avec succès');
+                                  } catch (error) {
+                                    console.error('Erreur génération PDF:', error);
+                                    toast.error('Erreur lors de la génération du PDF');
+                                  }
+                                }}
+                              >
                                 <Download className="w-4 h-4" />
                               </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -382,28 +522,63 @@ export default function Invoices() {
       />
 
       {/* Modal pour voir une facture existante */}
-      {/* TODO: Créer une page Preview Document avec CompanyDocumentLayout */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b print:hidden">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-bold">
                 {selectedInvoice?.numero}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => {
+                    if (invoiceDocumentData) {
+                      const pdfBlob = generateInvoicePDF(invoiceDocumentData, company || null);
+                      const url = URL.createObjectURL(pdfBlob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `facture-${invoiceDocumentData.number}.pdf`;
+                      link.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('PDF téléchargé avec succès');
+                    }
+                  }}
+                  disabled={!invoiceDocumentData}
+                >
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => window.print()}
+                >
                   <Printer className="w-4 h-4" />
                   Imprimer
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6">
-            <p className="text-muted-foreground">Prévisualisation du document à implémenter avec CompanyDocumentLayout</p>
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] p-6 bg-gray-50">
+            {loadingDocument ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : invoiceDocumentData ? (
+              <div className="flex justify-center">
+                <CompanyDocumentLayout>
+                  <InvoiceDocument data={invoiceDocumentData} />
+                </CompanyDocumentLayout>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <p className="text-muted-foreground">Erreur lors du chargement du document</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

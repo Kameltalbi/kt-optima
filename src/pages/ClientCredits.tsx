@@ -44,6 +44,9 @@ import { cn } from "@/lib/utils";
 import { CreditNoteCreateModal, CreditNoteFormData } from "@/components/credit-notes/CreditNoteCreateModal";
 import type { ClientCredit } from "@/types/database";
 import { useTaxes } from "@/hooks/use-taxes";
+import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
+import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
+import { useClients } from "@/hooks/use-clients";
 import { toast } from "sonner";
 
 
@@ -66,6 +69,7 @@ export default function ClientCredits() {
   const { clientCredits, createClientCredit, applyClientCredit, refundClientCredit } = useCredits();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const { taxes, calculateTax } = useTaxes();
+  const { clients } = useClients();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -91,6 +95,69 @@ export default function ClientCredits() {
   const handleViewCredit = (credit: ClientCredit) => {
     setSelectedCredit(credit);
     setIsViewModalOpen(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedCredit) return;
+    
+    try {
+      const client = clients.find(c => c.id === selectedCredit.client_id);
+      if (!client) {
+        toast.error("Client introuvable");
+        return;
+      }
+
+      // Pour les avoirs, on utilise les données de base (subtotal, tax, total)
+      // Les lignes ne sont pas stockées dans la table ClientCredit actuellement
+      // On crée une ligne fictive avec le total
+      const documentLines = [{
+        description: 'Avoir client',
+        quantity: 1,
+        unit_price: selectedCredit.subtotal,
+        total_ht: selectedCredit.subtotal,
+      }];
+
+      const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+      if (selectedCredit.tax > 0) {
+        const taxRate = selectedCredit.subtotal > 0 
+          ? (selectedCredit.tax / selectedCredit.subtotal) * 100 
+          : 19;
+        appliedTaxes.push({
+          tax_id: 'tva',
+          name: 'TVA',
+          type: 'percentage',
+          rate_or_value: taxRate,
+          amount: selectedCredit.tax,
+        });
+      }
+
+      const creditData: InvoiceDocumentData = {
+        type: 'credit_note',
+        number: selectedCredit.number,
+        date: selectedCredit.date,
+        client: {
+          name: client.nom,
+          address: client.adresse || null,
+        },
+        lines: documentLines,
+        total_ht: selectedCredit.subtotal,
+        applied_taxes: appliedTaxes,
+        total_ttc: selectedCredit.total,
+        notes: selectedCredit.comments || null,
+      };
+
+      const pdfBlob = generateDocumentPDF(creditData, company || null);
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `avoir-${selectedCredit.number}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF téléchargé avec succès');
+    } catch (error) {
+      console.error('Erreur génération PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
   };
 
   const handleCreateCredit = () => {
@@ -339,6 +406,70 @@ export default function ClientCredits() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={async () => {
+                                try {
+                                  const client = clients.find(c => c.id === credit.client_id);
+                                  if (!client) {
+                                    toast.error("Client introuvable");
+                                    return;
+                                  }
+
+                                  const documentLines = [{
+                                    description: 'Avoir client',
+                                    quantity: 1,
+                                    unit_price: credit.subtotal,
+                                    total_ht: credit.subtotal,
+                                  }];
+
+                                  const appliedTaxes: InvoiceDocumentData['applied_taxes'] = [];
+                                  if (credit.tax > 0) {
+                                    const taxRate = credit.subtotal > 0 
+                                      ? (credit.tax / credit.subtotal) * 100 
+                                      : 19;
+                                    appliedTaxes.push({
+                                      tax_id: 'tva',
+                                      name: 'TVA',
+                                      type: 'percentage',
+                                      rate_or_value: taxRate,
+                                      amount: credit.tax,
+                                    });
+                                  }
+
+                                  const creditData: InvoiceDocumentData = {
+                                    type: 'credit_note',
+                                    number: credit.number,
+                                    date: credit.date,
+                                    client: {
+                                      name: client.nom,
+                                      address: client.adresse || null,
+                                    },
+                                    lines: documentLines,
+                                    total_ht: credit.subtotal,
+                                    applied_taxes: appliedTaxes,
+                                    total_ttc: credit.total,
+                                    notes: credit.comments || null,
+                                  };
+
+                                  const pdfBlob = generateDocumentPDF(creditData, company || null);
+                                  const url = URL.createObjectURL(pdfBlob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `avoir-${credit.number}.pdf`;
+                                  link.click();
+                                  URL.revokeObjectURL(url);
+                                  toast.success('PDF téléchargé avec succès');
+                                } catch (error) {
+                                  console.error('Erreur génération PDF:', error);
+                                  toast.error('Erreur lors de la génération du PDF');
+                                }
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
                             {credit.status !== 'applied' && credit.status !== 'refunded' && (
                               <>
                                 <Button
@@ -389,7 +520,13 @@ export default function ClientCredits() {
                 {selectedCredit?.number}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={handleDownloadPDF}
+                  disabled={!selectedCredit}
+                >
                   <Download className="w-4 h-4" />
                   PDF
                 </Button>
