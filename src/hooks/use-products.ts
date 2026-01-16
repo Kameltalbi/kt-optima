@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Product, Service, ProductCategory } from '@/types/database';
 
+// Hook pour gérer les produits et services depuis Supabase
 export function useProducts() {
   const { companyId } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
