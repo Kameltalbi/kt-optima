@@ -57,12 +57,21 @@ interface InvoiceCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: InvoiceFormData) => void;
+  editData?: {
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    notes: string;
+    lines: InvoiceLine[];
+  } | null;
 }
 
 export function InvoiceCreateModal({
   open,
   onOpenChange,
   onSave,
+  editData,
 }: InvoiceCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
@@ -83,13 +92,45 @@ export function InvoiceCreateModal({
 
   // Initialiser avec les taxes activées par défaut
   useEffect(() => {
-    if (enabledTaxes.length > 0 && formData.appliedTaxes.length === 0) {
+    if (enabledTaxes.length > 0 && formData.appliedTaxes.length === 0 && !editData) {
       setFormData(prev => ({
         ...prev,
         appliedTaxes: enabledTaxes.map(t => t.id),
       }));
     }
-  }, [enabledTaxes]);
+  }, [enabledTaxes, editData]);
+
+  // Pré-remplir le formulaire en mode édition
+  useEffect(() => {
+    if (editData && open) {
+      setFormData({
+        clientId: editData.clientId,
+        date: editData.date,
+        reference: editData.reference,
+        currency: String(defaultCurrency),
+        appliedTaxes: enabledTaxes.map(t => t.id),
+        applyDiscount: false,
+        discountType: 'percentage',
+        discountValue: 0,
+        lines: editData.lines,
+        notes: editData.notes,
+      });
+    } else if (!editData && open) {
+      // Reset form when opening in create mode
+      setFormData({
+        clientId: "",
+        date: new Date().toISOString().split("T")[0],
+        reference: "",
+        currency: String(defaultCurrency),
+        appliedTaxes: enabledTaxes.map(t => t.id),
+        applyDiscount: false,
+        discountType: 'percentage',
+        discountValue: 0,
+        lines: [],
+        notes: "",
+      });
+    }
+  }, [editData, open, defaultCurrency, enabledTaxes]);
 
   // Calculs dynamiques
   const calculateTotals = () => {
@@ -205,9 +246,9 @@ export function InvoiceCreateModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouvelle facture</DialogTitle>
+          <DialogTitle>{editData ? 'Modifier la facture' : 'Nouvelle facture'}</DialogTitle>
           <DialogDescription>
-            Créez une nouvelle facture client avec options fiscales configurables
+            {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client avec options fiscales configurables'}
           </DialogDescription>
         </DialogHeader>
 

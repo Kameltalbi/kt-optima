@@ -76,7 +76,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Invoices() {
-  const { factures, loading, refreshFactures, createFacture, deleteFacture } = useFacturesVentes();
+  const { factures, loading, refreshFactures, createFacture, updateFacture, deleteFacture, getLignes } = useFacturesVentes();
   const { clients } = useClients();
   const { taxes } = useTaxes();
   const { company } = useAuth();
@@ -91,6 +91,14 @@ export default function Invoices() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [invoiceDocumentData, setInvoiceDocumentData] = useState<InvoiceDocumentData | null>(null);
   const [loadingDocument, setLoadingDocument] = useState(false);
+  const [editInvoiceData, setEditInvoiceData] = useState<{
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; }[];
+  } | null>(null);
 
   // Créer un map des clients pour accès rapide
   const clientsMap = useMemo(() => {
@@ -201,7 +209,43 @@ export default function Invoices() {
   };
 
   const handleCreateInvoice = () => {
+    setEditInvoiceData(null);
     setIsCreateModalOpen(true);
+  };
+
+  // Handler pour ouvrir le modal en mode édition
+  const handleEditInvoice = async (invoice: FactureVente) => {
+    try {
+      // Récupérer les lignes de la facture
+      const lignes = await getLignes(invoice.id);
+      
+      // Trouver la taxe par défaut (TVA) pour les lignes
+      const defaultTax = taxes.find(t => t.type === 'percentage' && t.enabled);
+      
+      // Convertir les lignes pour le formulaire
+      const formLines = lignes.map(ligne => ({
+        id: ligne.id,
+        description: ligne.description || '',
+        quantity: ligne.quantite,
+        unitPrice: ligne.prix_unitaire,
+        taxRateId: ligne.taux_tva && ligne.taux_tva > 0 
+          ? (taxes.find(t => t.type === 'percentage' && t.value === ligne.taux_tva)?.id || defaultTax?.id || null)
+          : null,
+      }));
+
+      setEditInvoiceData({
+        id: invoice.id,
+        clientId: invoice.client_id,
+        date: invoice.date_facture,
+        reference: invoice.numero,
+        notes: invoice.notes || '',
+        lines: formLines,
+      });
+      setIsCreateModalOpen(true);
+    } catch (error) {
+      console.error('Error loading invoice for edit:', error);
+      toast.error('Erreur lors du chargement de la facture');
+    }
   };
 
   // Handler pour le nouveau modal InvoiceCreateModal
@@ -258,23 +302,62 @@ export default function Invoices() {
         };
       });
 
-      // Créer la facture via le hook
-      const factureData = {
-        numero: data.reference || '', // Le numéro sera généré automatiquement
-        date_facture: data.date,
-        client_id: data.clientId,
-        notes: data.notes || null,
-      };
+      // Mode édition ou création
+      if (editInvoiceData) {
+        // Supprimer les anciennes lignes et ajouter les nouvelles
+        await supabase
+          .from('facture_vente_lignes')
+          .delete()
+          .eq('facture_vente_id', editInvoiceData.id);
 
-      await createFacture(factureData, lignes, []);
+        // Insérer les nouvelles lignes
+        if (lignes.length > 0) {
+          await supabase
+            .from('facture_vente_lignes')
+            .insert(lignes.map(l => ({
+              ...l,
+              facture_vente_id: editInvoiceData.id,
+            })));
+        }
+
+        // Calculer les totaux
+        const montant_ht = lignes.reduce((sum, l) => sum + l.montant_ht, 0);
+        const montant_tva = lignes.reduce((sum, l) => sum + l.montant_tva, 0);
+        const montant_ttc = lignes.reduce((sum, l) => sum + l.montant_ttc, 0);
+
+        // Mettre à jour la facture
+        await updateFacture(editInvoiceData.id, {
+          date_facture: data.date,
+          client_id: data.clientId,
+          notes: data.notes || null,
+          montant_ht,
+          montant_tva,
+          montant_ttc,
+        });
+
+        setIsCreateModalOpen(false);
+        setEditInvoiceData(null);
+        toast.success("Facture modifiée avec succès");
+      } else {
+        // Créer la facture via le hook
+        const factureData = {
+          numero: data.reference || '', // Le numéro sera généré automatiquement
+          date_facture: data.date,
+          client_id: data.clientId,
+          notes: data.notes || null,
+        };
+
+        await createFacture(factureData, lignes, []);
+        
+        setIsCreateModalOpen(false);
+        toast.success("Facture créée avec succès");
+      }
       
-      setIsCreateModalOpen(false);
-      toast.success("Facture créée avec succès");
       // Rafraîchir la liste des factures
       await refreshFactures();
     } catch (error) {
       console.error("Error saving invoice:", error);
-      toast.error("Erreur lors de la création de la facture");
+      toast.error(editInvoiceData ? "Erreur lors de la modification de la facture" : "Erreur lors de la création de la facture");
     }
   };
 
@@ -532,9 +615,7 @@ export default function Invoices() {
                                     Voir la facture
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => {
-                                      toast.info('Fonctionnalité à venir : Modifier');
-                                    }}
+                                    onClick={() => handleEditInvoice(invoice)}
                                     className="gap-2"
                                   >
                                     <Edit className="w-4 h-4" />
@@ -590,11 +671,15 @@ export default function Invoices() {
         </Card>
       </div>
 
-      {/* Modal pour créer une nouvelle facture */}
+      {/* Modal pour créer/modifier une facture */}
       <InvoiceCreateModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open);
+          if (!open) setEditInvoiceData(null);
+        }}
         onSave={handleSaveInvoice}
+        editData={editInvoiceData}
       />
 
       {/* Modal pour voir une facture existante */}
