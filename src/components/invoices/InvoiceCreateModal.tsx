@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -100,36 +100,42 @@ export function InvoiceCreateModal({
     }
   }, [enabledTaxes, editData]);
 
-  // Pré-remplir le formulaire en mode édition
+  const wasOpenRef = useRef(false);
+
+  // Pré-remplir le formulaire en mode édition / reset en création (uniquement à l'ouverture)
   useEffect(() => {
-    if (editData && open) {
-      setFormData({
-        clientId: editData.clientId,
-        date: editData.date,
-        reference: editData.reference,
-        currency: String(defaultCurrency),
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: editData.lines,
-        notes: editData.notes,
-      });
-    } else if (!editData && open) {
-      // Reset form when opening in create mode
-      setFormData({
-        clientId: "",
-        date: new Date().toISOString().split("T")[0],
-        reference: "",
-        currency: String(defaultCurrency),
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: [],
-        notes: "",
-      });
+    if (open && !wasOpenRef.current) {
+      if (editData) {
+        setFormData({
+          clientId: editData.clientId,
+          date: editData.date,
+          reference: editData.reference,
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
+          applyDiscount: false,
+          discountType: "percentage",
+          discountValue: 0,
+          lines: editData.lines,
+          notes: editData.notes,
+        });
+      } else {
+        // Reset form when opening in create mode
+        setFormData({
+          clientId: "",
+          date: new Date().toISOString().split("T")[0],
+          reference: "",
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
+          applyDiscount: false,
+          discountType: "percentage",
+          discountValue: 0,
+          lines: [],
+          notes: "",
+        });
+      }
     }
+
+    wasOpenRef.current = open;
   }, [editData, open, defaultCurrency, enabledTaxes]);
 
   // Calculs dynamiques

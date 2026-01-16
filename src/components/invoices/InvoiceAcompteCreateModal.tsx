@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -90,9 +90,11 @@ export function InvoiceAcompteCreateModal({
     notes: "",
   });
 
+  const wasOpenRef = useRef(false);
+
   // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       if (editData) {
         // Mode édition
         setFormData({
@@ -100,11 +102,11 @@ export function InvoiceAcompteCreateModal({
           date: editData.date,
           reference: editData.reference,
           currency: String(defaultCurrency),
-          appliedTaxes: enabledTaxes.map(t => t.id),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
           applyDiscount: false,
-          discountType: 'percentage',
+          discountType: "percentage",
           discountValue: 0,
-          lines: editData.lines.map(l => ({
+          lines: editData.lines.map((l) => ({
             id: l.id,
             description: l.description,
             quantity: l.quantity,
@@ -120,15 +122,17 @@ export function InvoiceAcompteCreateModal({
           date: new Date().toISOString().split("T")[0],
           reference: "",
           currency: String(defaultCurrency),
-          appliedTaxes: enabledTaxes.map(t => t.id),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
           applyDiscount: false,
-          discountType: 'percentage',
+          discountType: "percentage",
           discountValue: 0,
           lines: [],
           notes: "",
         });
       }
     }
+
+    wasOpenRef.current = open;
   }, [open, defaultCurrency, enabledTaxes, editData]);
 
   // Initialiser avec les taxes activées par défaut

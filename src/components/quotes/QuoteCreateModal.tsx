@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -253,39 +253,59 @@ export function QuoteCreateModal({
     validityDays: 30,
   });
 
-  // Pré-remplir le formulaire si on est en mode édition
+  // Pré-remplir le formulaire si on est en mode édition (uniquement à l'ouverture)
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (editData && open) {
-      setFormData({
-        clientId: editData.clientId,
-        date: editData.date,
-        reference: "",
-        currency: String(defaultCurrency),
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: editData.lines,
-        notes: editData.notes || "",
-        validityDays: editData.validityDays || 30,
-      });
-    } else if (!editData && open) {
-      // Reset pour création
-      setFormData({
-        clientId: "",
-        date: new Date().toISOString().split("T")[0],
-        reference: "",
-        currency: String(defaultCurrency),
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: [],
-        notes: "",
-        validityDays: 30,
-      });
+    if (open && !wasOpenRef.current) {
+      if (editData) {
+        setFormData({
+          clientId: editData.clientId,
+          date: editData.date,
+          reference: "",
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
+          applyDiscount: false,
+          discountType: "percentage",
+          discountValue: 0,
+          lines: editData.lines,
+          notes: editData.notes || "",
+          validityDays: editData.validityDays || 30,
+        });
+      } else {
+        // Reset pour création
+        setFormData({
+          clientId: "",
+          date: new Date().toISOString().split("T")[0],
+          reference: "",
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map((t) => t.id),
+          applyDiscount: false,
+          discountType: "percentage",
+          discountValue: 0,
+          lines: [],
+          notes: "",
+          validityDays: 30,
+        });
+      }
     }
+
+    wasOpenRef.current = open;
   }, [editData, open, defaultCurrency, enabledTaxes]);
+
+  // Si les taxes se chargent après l'ouverture, ne remplir que le champ appliedTaxes
+  useEffect(() => {
+    if (!open) return;
+    if (enabledTaxes.length === 0) return;
+
+    setFormData((prev) => {
+      if (prev.appliedTaxes.length > 0) return prev;
+      return {
+        ...prev,
+        appliedTaxes: enabledTaxes.map((t) => t.id),
+      };
+    });
+  }, [enabledTaxes, open]);
 
   // Calculs dynamiques (identique à InvoiceCreateModal)
   const calculateTotals = () => {
