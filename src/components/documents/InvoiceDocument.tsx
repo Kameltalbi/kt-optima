@@ -22,11 +22,15 @@ export interface InvoiceDocumentData {
   client: {
     name: string;
     address?: string | null;
+    tax_number?: string | null; // Numéro fiscal du client (MF)
   };
   lines: DocumentLine[];
   total_ht: number;
+  discount?: number | null; // Remise
   applied_taxes: AppliedTax[];
+  fiscal_stamp?: number | null; // Timbre fiscal (1,000 TND)
   total_ttc: number;
+  amount_in_words?: string | null; // Montant en toutes lettres
   notes?: string | null;
 }
 
@@ -66,6 +70,9 @@ export function InvoiceDocument({ data }: InvoiceDocumentProps) {
           <p className="text-sm text-gray-700">{data.client.name}</p>
           {data.client.address && (
             <p className="text-xs text-gray-600 mt-1">{data.client.address}</p>
+          )}
+          {data.client.tax_number && (
+            <p className="text-xs text-gray-600 mt-1 font-medium">MF: {data.client.tax_number}</p>
           )}
         </div>
       </div>
@@ -127,6 +134,14 @@ export function InvoiceDocument({ data }: InvoiceDocumentProps) {
             <span className="font-medium text-gray-900">{formatAmount(data.total_ht)}</span>
           </div>
 
+          {/* Remise */}
+          {data.discount && data.discount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Remise:</span>
+              <span className="font-medium text-red-600">-{formatAmount(data.discount)}</span>
+            </div>
+          )}
+
           {/* Taxes appliquées */}
           {data.applied_taxes.length > 0 && (
             <>
@@ -139,16 +154,32 @@ export function InvoiceDocument({ data }: InvoiceDocumentProps) {
                   <span className="font-medium text-gray-900">{formatAmount(tax.amount)}</span>
                 </div>
               ))}
-              {/* Ligne de séparation */}
-              <div className="border-t border-gray-300 my-2"></div>
             </>
           )}
+
+          {/* Timbre fiscal */}
+          {data.fiscal_stamp && data.fiscal_stamp > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Timbre fiscal:</span>
+              <span className="font-medium text-gray-900">{formatAmount(data.fiscal_stamp)}</span>
+            </div>
+          )}
+
+          {/* Ligne de séparation */}
+          <div className="border-t border-gray-300 my-2"></div>
 
           {/* Total TTC */}
           <div className="flex justify-between text-lg font-bold pt-2 border-t-2 border-gray-400">
             <span className="text-gray-900">Total TTC:</span>
             <span className="text-gray-900">{formatAmount(data.total_ttc)}</span>
           </div>
+
+          {/* Montant en toutes lettres */}
+          {data.amount_in_words && (
+            <div className="pt-2 text-sm italic text-gray-600">
+              Arrêté la présente facture à la somme de: <span className="font-medium">{data.amount_in_words}</span>
+            </div>
+          )}
         </div>
       </div>
 

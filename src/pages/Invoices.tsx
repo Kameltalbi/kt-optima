@@ -170,10 +170,12 @@ export default function Invoices() {
         client: {
           name: client.nom,
           address: client.adresse || null,
+          tax_number: client.numero_fiscal || null,
         },
         lines: documentLines,
         total_ht: invoice.montant_ht,
         applied_taxes: appliedTaxes,
+        fiscal_stamp: invoice.montant_ttc > 0 ? 1 : 0,
         total_ttc: invoice.montant_ttc,
         notes: invoice.notes,
       };
@@ -474,10 +476,12 @@ export default function Invoices() {
                                       client: {
                                         name: client.nom,
                                         address: client.adresse || null,
+                                        tax_number: client.numero_fiscal || null,
                                       },
                                       lines: documentLines,
                                       total_ht: invoice.montant_ht,
                                       applied_taxes: appliedTaxes,
+                                      fiscal_stamp: invoice.montant_ttc > 0 ? 1 : 0, // Timbre fiscal 1 TND
                                       total_ttc: invoice.montant_ttc,
                                       notes: invoice.notes,
                                     };

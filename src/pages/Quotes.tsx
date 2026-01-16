@@ -182,6 +182,7 @@ export default function Quotes() {
         client: {
           name: client.nom,
           address: client.adresse || null,
+          tax_number: client.numero_fiscal || null,
         },
         lines: documentLines,
         total_ht: selectedQuote.subtotal,
@@ -529,6 +530,7 @@ export default function Quotes() {
                                     client: {
                                       name: client.nom,
                                       address: client.adresse || null,
+                                      tax_number: client.numero_fiscal || null,
                                     },
                                     lines: documentLines,
                                     total_ht: quote.subtotal,
