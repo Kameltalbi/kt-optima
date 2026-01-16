@@ -514,49 +514,45 @@ export function InvoiceCreateModal({
                 <Label className="text-sm font-medium mb-2 block">Remise</Label>
                 <div className="flex items-center gap-3">
                   <Select
-                    value={formData.applyDiscount ? formData.discountType : 'none'}
+                    value={formData.discountType}
                     onValueChange={(value) => {
-                      if (value === 'none') {
-                        setFormData(prev => ({
-                          ...prev,
-                          applyDiscount: false,
-                          discountValue: 0,
-                        }));
-                      } else {
-                        setFormData(prev => ({
-                          ...prev,
-                          applyDiscount: true,
-                          discountType: value as 'percentage' | 'amount',
-                        }));
-                      }
+                      setFormData(prev => ({
+                        ...prev,
+                        discountType: value as 'percentage' | 'amount',
+                        applyDiscount: true,
+                      }));
                     }}
                   >
                     <SelectTrigger className="w-[160px] bg-background">
                       <SelectValue placeholder="Type de remise" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Aucune remise</SelectItem>
                       <SelectItem value="percentage">Pourcentage (%)</SelectItem>
                       <SelectItem value="amount">Montant fixe</SelectItem>
                     </SelectContent>
                   </Select>
                   
-                  {formData.applyDiscount && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.discountValue || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
-                        className="w-24 bg-background"
-                        placeholder="Valeur"
-                      />
-                      <span className="text-muted-foreground text-sm">
-                        {formData.discountType === 'percentage' ? '%' : formData.currency}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.discountValue || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          discountValue: value,
+                          applyDiscount: value > 0,
+                        }));
+                      }}
+                      className="w-24 bg-background"
+                      placeholder="Valeur"
+                    />
+                    <span className="text-muted-foreground text-sm">
+                      {formData.discountType === 'percentage' ? '%' : formData.currency}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
