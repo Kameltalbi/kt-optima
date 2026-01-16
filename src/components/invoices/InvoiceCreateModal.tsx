@@ -387,32 +387,14 @@ export function InvoiceCreateModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
-        {/* Header moderne */}
-        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl font-bold">
-                {editData ? 'Modifier la facture' : 'Nouvelle facture'}
-              </DialogTitle>
-              <DialogDescription className="text-sm">
-                {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client'}
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Annuler
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={!formData.clientId || formData.lines.length === 0}
-                className="gap-2"
-              >
-                <Calculator className="w-4 h-4" />
-                Enregistrer
-              </Button>
-            </div>
-          </div>
-        </div>
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="text-xl font-bold">
+            {editData ? 'Modifier la facture' : 'Nouvelle facture'}
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            {editData ? 'Modifiez les informations de la facture' : 'Créez une nouvelle facture client'}
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="p-6">
           {/* Bouton Réglages */}
@@ -765,6 +747,20 @@ export function InvoiceCreateModal({
             </div>
           </div>
         </div>
+
+        <DialogFooter className="px-6 py-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!formData.clientId || formData.lines.length === 0}
+            className="gap-2"
+          >
+            <Calculator className="w-4 h-4" />
+            Enregistrer
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
