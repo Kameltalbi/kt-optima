@@ -273,7 +273,8 @@ export function QuoteCreateModal({
           validityDays: editData.validityDays || 30,
         });
       } else {
-        // Reset pour création
+        // Reset pour création avec une ligne vide par défaut
+        const firstPercentageTax = enabledTaxes.find((t) => t.type === "percentage");
         setFormData({
           clientId: "",
           date: new Date().toISOString().split("T")[0],
@@ -283,7 +284,15 @@ export function QuoteCreateModal({
           applyDiscount: false,
           discountType: "percentage",
           discountValue: 0,
-          lines: [],
+          lines: [
+            {
+              id: `line_${Date.now()}`,
+              description: "",
+              quantity: 1,
+              unitPrice: 0,
+              taxRateId: firstPercentageTax?.id || null,
+            },
+          ],
           notes: "",
           validityDays: 30,
         });
@@ -677,8 +686,20 @@ export function QuoteCreateModal({
             </CardHeader>
             <CardContent>
               {formData.lines.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Aucune ligne. Cliquez sur "Ajouter une ligne" pour commencer.
+                <div className="text-center py-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddLine(e);
+                    }}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Ajouter une première ligne
+                  </Button>
                 </div>
               ) : (
                 <Table>
