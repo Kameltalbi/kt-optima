@@ -12,320 +12,313 @@ interface Company {
 }
 
 // Formater un nombre avec espace comme séparateur de milliers et 2 décimales
-// Correspond au format français: "2 300,00"
 function formatAmount(num: number): string {
-  // Utiliser toLocaleString pour le format français
-  return num.toLocaleString('fr-FR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  return num.toLocaleString('fr-TN', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   });
 }
 
 /**
- * Fonction générique pour générer un PDF de document (facture, devis, avoir, bon de livraison)
- * Correspond exactement au design HTML de CompanyDocumentLayout + InvoiceDocument
+ * Convertir une image URL en base64 pour jsPDF
  */
-export function generateDocumentPDF(
+async function loadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error loading image:', error);
+    return null;
+  }
+}
+
+/**
+ * Fonction générique pour générer un PDF de document (facture, devis, avoir)
+ * Design professionnel A4
+ */
+export async function generateDocumentPDF(
   data: InvoiceDocumentData,
   company: Company | null
-): Blob {
-  // Format A4: 210mm x 297mm (portrait)
+): Promise<Blob> {
   const doc = new jsPDF('portrait', 'mm', 'a4');
   
   // Dimensions A4
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 15; // 15mm comme dans CompanyDocumentLayout (padding: 15mm 10mm)
-  const startX = 10; // 10mm de marge gauche
-  const endX = pageWidth - 10; // 10mm de marge droite
-  const contentWidth = pageWidth - 20; // 10mm de chaque côté
+  const marginLeft = 15;
+  const marginRight = 15;
+  const contentWidth = pageWidth - marginLeft - marginRight;
   
-  let y = 15; // Commencer à 15mm du haut
+  let y = 20;
   
-  // ============ HEADER SECTION (DocumentHeader) ============
-  // Logo ou icône (si disponible)
+  // ============ HEADER - LOGO ET INFOS ENTREPRISE ============
+  let logoLoaded = false;
+  
   if (company?.logo) {
-    // Note: jsPDF ne peut pas charger directement les images depuis URL
-    // Il faudrait convertir l'image en base64 ou utiliser une autre méthode
-    // Pour l'instant, on saute le logo
-  } else {
-    // Icône Building2 (cercle avec icône)
-    doc.setFillColor(59, 130, 246, 0.1); // bg-primary/10
-    doc.circle(startX + 6, y + 6, 6, 'F');
-    // On ne peut pas dessiner l'icône SVG, donc on saute
+    try {
+      const base64Logo = await loadImageAsBase64(company.logo);
+      if (base64Logo) {
+        // Logo à gauche, hauteur 20mm max
+        doc.addImage(base64Logo, 'PNG', marginLeft, y, 30, 20);
+        logoLoaded = true;
+      }
+    } catch (error) {
+      console.error('Error adding logo:', error);
+    }
   }
   
-  y += 8; // Espace pour le logo/icône
+  // Infos entreprise à gauche (sous le logo ou à la place)
+  const companyInfoX = marginLeft;
+  let companyY = logoLoaded ? y + 25 : y;
   
-  // Nom de l'entreprise (text-xl font-bold)
-  doc.setFontSize(20); // text-xl = 20px ≈ 7.5mm
+  // Nom de l'entreprise
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39); // text-gray-900
-  doc.text((company?.name || 'ENTREPRISE').toUpperCase(), startX, y);
+  doc.setTextColor(30, 41, 59); // slate-800
+  doc.text(company?.name?.toUpperCase() || 'ENTREPRISE', companyInfoX, companyY);
+  companyY += 6;
   
-  y += 6;
-  
-  // Adresse (text-sm text-gray-600)
+  // Adresse
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105); // slate-600
   if (company?.address) {
-    doc.setFontSize(11); // text-sm = 14px ≈ 5mm
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(75, 85, 99); // text-gray-600
-    doc.text(company.address, startX, y);
-    y += 5;
+    const addressLines = doc.splitTextToSize(company.address, 80);
+    doc.text(addressLines, companyInfoX, companyY);
+    companyY += addressLines.length * 4;
   }
   
-  // Contact (text-sm text-gray-600)
-  doc.setFontSize(11);
+  // Contact
   if (company?.phone) {
-    doc.text(`Tél: ${company.phone}`, startX, y);
-    y += 4;
+    doc.text(`Tél: ${company.phone}`, companyInfoX, companyY);
+    companyY += 4;
   }
   if (company?.email) {
-    doc.text(company.email, startX, y);
-    y += 4;
+    doc.text(company.email, companyInfoX, companyY);
+    companyY += 4;
   }
   if (company?.tax_number) {
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(55, 65, 81); // text-gray-700
-    doc.text(`IF: ${company.tax_number}`, startX, y);
-    y += 6;
+    doc.text(`MF: ${company.tax_number}`, companyInfoX, companyY);
+    companyY += 4;
   }
   
-  // Ligne de séparation (border-b-2 border-gray-200)
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(229, 231, 235); // border-gray-200
-  doc.line(startX, y, endX, y);
-  y += 8; // mb-8 pb-6
+  // ============ TITRE DOCUMENT (à droite) ============
+  const rightX = pageWidth - marginRight;
+  let titleY = y;
   
-  // ============ DOCUMENT TITLE AND INFO (InvoiceDocument header) ============
-  // Titre du document (droite) - text-2xl font-bold
+  // Type de document
   const getDocumentLabel = () => {
     switch (data.type) {
-      case 'invoice':
-        return 'FACTURE';
-      case 'quote':
-        return 'DEVIS';
-      case 'credit_note':
-        return 'AVOIR';
-      default:
-        return 'DOCUMENT';
+      case 'invoice': return 'FACTURE';
+      case 'quote': return 'DEVIS';
+      case 'credit_note': return 'AVOIR';
+      default: return 'DOCUMENT';
     }
   };
   
-  doc.setFontSize(24); // text-2xl = 24px
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39); // text-gray-900
-  doc.text(getDocumentLabel(), endX, y, { align: 'right' });
+  doc.setTextColor(37, 99, 235); // primary blue
+  doc.text(getDocumentLabel(), rightX, titleY, { align: 'right' });
+  titleY += 8;
   
-  y += 6;
-  
-  // Numéro et date (text-sm text-gray-600)
-  doc.setFontSize(11);
+  // Numéro et date
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99);
-  doc.text(`N°: ${data.number}`, endX, y, { align: 'right' });
+  doc.setTextColor(71, 85, 105);
+  doc.text(`N°: ${data.number}`, rightX, titleY, { align: 'right' });
+  titleY += 5;
+  doc.text(`Date: ${new Date(data.date).toLocaleDateString('fr-FR')}`, rightX, titleY, { align: 'right' });
+  titleY += 10;
   
-  y += 4;
-  doc.text(`Date: ${new Date(data.date).toLocaleDateString('fr-FR')}`, endX, y, { align: 'right' });
-  
-  y += 8; // mb-6
-  
-  // ============ CLIENT INFO (InvoiceDocument client section) ============
-  // Client label (font-semibold text-gray-900)
-  doc.setFontSize(11);
+  // Client
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39);
-  doc.text('Client', endX, y, { align: 'right' });
+  doc.setTextColor(30, 41, 59);
+  doc.text('Client:', rightX, titleY, { align: 'right' });
+  titleY += 5;
   
-  y += 4; // mb-1
-  
-  // Nom client (text-sm text-gray-700)
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(55, 65, 81);
-  doc.text(data.client.name, endX, y, { align: 'right' });
-  
+  doc.setTextColor(51, 65, 85);
+  doc.text(data.client.name, rightX, titleY, { align: 'right' });
   if (data.client.address) {
-    y += 4; // mt-1
-    doc.setFontSize(9); // text-xs
-    doc.setTextColor(75, 85, 99); // text-gray-600
-    doc.text(data.client.address, endX, y, { align: 'right' });
+    titleY += 4;
+    doc.setFontSize(9);
+    doc.text(data.client.address, rightX, titleY, { align: 'right' });
   }
   
-  y += 12; // space-y-6
-  
-  // ============ ITEMS TABLE (InvoiceDocument table) ============
-  const tableY = y;
-  const rowHeight = 10; // py-3 ≈ 10mm
-  const headerHeight = 10;
-  
-  // Tableau avec bordures arrondies (border border-gray-300 rounded-lg)
-  // En-tête du tableau (bg-gray-100)
-  doc.setFillColor(243, 244, 246); // bg-gray-100
-  doc.setDrawColor(209, 213, 219); // border-gray-300
+  // Ligne de séparation
+  y = Math.max(companyY, titleY) + 10;
+  doc.setDrawColor(226, 232, 240); // slate-200
   doc.setLineWidth(0.5);
-  doc.roundedRect(startX, tableY, contentWidth, headerHeight, 2, 2, 'FD');
+  doc.line(marginLeft, y, rightX, y);
+  y += 10;
   
-  // Colonnes
-  const colDescription = startX + 4; // px-4
-  const colQuantity = startX + 120;
-  const colUnitPrice = startX + 145;
-  const colTotal = startX + 175;
+  // ============ TABLEAU DES LIGNES ============
+  const tableStartY = y;
+  const colWidths = {
+    description: 90,
+    quantity: 25,
+    unitPrice: 35,
+    total: 30
+  };
   
-  // Lignes verticales en-tête
-  doc.line(colQuantity - 2, tableY, colQuantity - 2, tableY + headerHeight);
-  doc.line(colUnitPrice - 2, tableY, colUnitPrice - 2, tableY + headerHeight);
-  doc.line(colTotal - 2, tableY, colTotal - 2, tableY + headerHeight);
+  const col1 = marginLeft;
+  const col2 = col1 + colWidths.description;
+  const col3 = col2 + colWidths.quantity;
+  const col4 = col3 + colWidths.unitPrice;
+  const tableEndX = col4 + colWidths.total;
   
-  // En-têtes (text-sm font-semibold text-gray-700)
-  doc.setFontSize(11);
+  // En-tête du tableau
+  doc.setFillColor(241, 245, 249); // slate-100
+  doc.setDrawColor(203, 213, 225); // slate-300
+  doc.rect(col1, tableStartY, contentWidth, 10, 'FD');
+  
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(55, 65, 81);
-  doc.text('Description', colDescription, tableY + 6);
-  doc.text('Quantité', colQuantity, tableY + 6, { align: 'center' });
-  doc.text('Prix unitaire', colUnitPrice, tableY + 6, { align: 'right' });
-  doc.text('Total HT', colTotal, tableY + 6, { align: 'right' });
+  doc.setTextColor(51, 65, 85);
+  
+  doc.text('Description', col1 + 3, tableStartY + 7);
+  doc.text('Qté', col2 + colWidths.quantity / 2, tableStartY + 7, { align: 'center' });
+  doc.text('Prix Unit.', col3 + colWidths.unitPrice - 3, tableStartY + 7, { align: 'right' });
+  doc.text('Total HT', col4 + colWidths.total - 3, tableStartY + 7, { align: 'right' });
+  
+  // Lignes verticales pour l'en-tête
+  doc.line(col2, tableStartY, col2, tableStartY + 10);
+  doc.line(col3, tableStartY, col3, tableStartY + 10);
+  doc.line(col4, tableStartY, col4, tableStartY + 10);
   
   // Contenu du tableau
-  let currentY = tableY + headerHeight;
-  const tableContentHeight = data.lines.length * rowHeight;
+  let currentY = tableStartY + 10;
+  const rowHeight = 8;
   
-  // Bordures du tableau
-  doc.setLineWidth(0.5);
-  data.lines.forEach((_, index) => {
-    const rowY = currentY + index * rowHeight;
-    // Ligne horizontale
-    doc.line(startX, rowY, endX, rowY);
-    // Lignes verticales
-    doc.line(colQuantity - 2, rowY, colQuantity - 2, rowY + rowHeight);
-    doc.line(colUnitPrice - 2, rowY, colUnitPrice - 2, rowY + rowHeight);
-    doc.line(colTotal - 2, rowY, colTotal - 2, rowY + rowHeight);
-  });
-  
-  // Dernière ligne horizontale
-  doc.line(startX, currentY + tableContentHeight, endX, currentY + tableContentHeight);
-  
-  // Remplir les données (text-sm text-gray-900)
-  doc.setFontSize(11);
-  data.lines.forEach((line, index) => {
-    const lineY = currentY + (index + 1) * rowHeight - 3;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(17, 24, 39); // text-gray-900
-    
-    // Description
-    const description = line.description.length > 50 
-      ? line.description.substring(0, 47) + '...' 
-      : line.description;
-    doc.text(description, colDescription, lineY);
-    
-    // Quantité (text-center)
-    doc.setTextColor(55, 65, 81); // text-gray-700
-    doc.text(line.quantity.toString(), colQuantity, lineY, { align: 'center' });
-    
-    // Prix unitaire (text-right)
-    doc.text(formatAmount(line.unit_price), colUnitPrice, lineY, { align: 'right' });
-    
-    // Total HT (text-right font-medium)
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(17, 24, 39);
-    doc.text(formatAmount(line.total_ht), colTotal, lineY, { align: 'right' });
-  });
-  
-  y = currentY + tableContentHeight + 12; // space-y-6
-  
-  // ============ TOTALS SECTION (InvoiceDocument totals) ============
-  // Aligné à droite (flex justify-end)
-  const totalsX = startX + 100; // w-80 ≈ 100mm
-  const totalsStartY = y;
-  
-  // Total HT (text-sm)
-  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // text-gray-600
+  doc.setFontSize(9);
+  
+  data.lines.forEach((line, index) => {
+    const rowY = currentY + index * rowHeight;
+    
+    // Bordure de la ligne
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(col1, rowY, contentWidth, rowHeight);
+    
+    // Lignes verticales
+    doc.line(col2, rowY, col2, rowY + rowHeight);
+    doc.line(col3, rowY, col3, rowY + rowHeight);
+    doc.line(col4, rowY, col4, rowY + rowHeight);
+    
+    // Contenu
+    doc.setTextColor(30, 41, 59);
+    
+    // Description (tronquer si trop long)
+    const maxDescWidth = colWidths.description - 6;
+    let description = line.description;
+    while (doc.getTextWidth(description) > maxDescWidth && description.length > 3) {
+      description = description.slice(0, -4) + '...';
+    }
+    doc.text(description, col1 + 3, rowY + 5.5);
+    
+    // Quantité
+    doc.text(line.quantity.toString(), col2 + colWidths.quantity / 2, rowY + 5.5, { align: 'center' });
+    
+    // Prix unitaire
+    doc.text(formatAmount(line.unit_price), col3 + colWidths.unitPrice - 3, rowY + 5.5, { align: 'right' });
+    
+    // Total HT
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatAmount(line.total_ht), col4 + colWidths.total - 3, rowY + 5.5, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+  });
+  
+  y = currentY + data.lines.length * rowHeight + 15;
+  
+  // ============ SECTION TOTAUX (à droite) ============
+  const totalsWidth = 80;
+  const totalsX = rightX - totalsWidth;
+  
+  // Total HT
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
   doc.text('Total HT:', totalsX, y);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39); // text-gray-900
-  doc.text(formatAmount(data.total_ht), endX - 2, y, { align: 'right' });
+  doc.setTextColor(30, 41, 59);
+  doc.text(formatAmount(data.total_ht), rightX, y, { align: 'right' });
+  y += 6;
   
-  y += 6; // space-y-2
-  
-  // Taxes appliquées
+  // Taxes
   if (data.applied_taxes.length > 0) {
     data.applied_taxes.forEach((tax) => {
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(75, 85, 99);
+      doc.setTextColor(71, 85, 105);
       const taxLabel = tax.type === 'percentage' 
-        ? `${tax.name} (${tax.rate_or_value}%)`
-        : tax.name;
-      doc.text(`${taxLabel}:`, totalsX, y);
+        ? `${tax.name} (${tax.rate_or_value}%):`
+        : `${tax.name}:`;
+      doc.text(taxLabel, totalsX, y);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(17, 24, 39);
-      doc.text(formatAmount(tax.amount), endX - 2, y, { align: 'right' });
+      doc.setTextColor(30, 41, 59);
+      doc.text(formatAmount(tax.amount), rightX, y, { align: 'right' });
       y += 6;
     });
-    
-    // Ligne de séparation (border-t border-gray-300 my-2)
-    doc.setLineWidth(0.3);
-    doc.setDrawColor(209, 213, 219);
-    doc.line(totalsX, y - 1, endX, y - 1);
-    y += 4;
   }
   
-  // Total TTC (text-lg font-bold pt-2 border-t-2 border-gray-400)
+  // Ligne de séparation
+  y += 2;
+  doc.setDrawColor(148, 163, 184); // slate-400
   doc.setLineWidth(0.8);
-  doc.setDrawColor(156, 163, 175); // border-gray-400
-  doc.line(totalsX, y - 1, endX, y - 1);
-  y += 2; // pt-2
+  doc.line(totalsX, y, rightX, y);
+  y += 6;
   
-  doc.setFontSize(14); // text-lg = 18px
+  // Total TTC
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39);
+  doc.setTextColor(37, 99, 235); // primary blue
   doc.text('Total TTC:', totalsX, y);
-  doc.text(formatAmount(data.total_ttc), endX - 2, y, { align: 'right' });
+  doc.text(formatAmount(data.total_ttc), rightX, y, { align: 'right' });
   
-  y += 12; // space-y-6
+  y += 15;
   
-  // ============ NOTES (InvoiceDocument notes) ============
+  // ============ NOTES ============
   if (data.notes) {
+    doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.setDrawColor(229, 231, 235); // border-gray-200
-    doc.line(startX, y, endX, y);
-    y += 6; // pt-4
+    doc.line(marginLeft, y, rightX, y);
+    y += 8;
     
-    doc.setFontSize(11);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(55, 65, 81); // text-gray-700
-    doc.text('Notes:', startX, y);
-    y += 5; // mb-2
+    doc.setTextColor(51, 65, 85);
+    doc.text('Notes:', marginLeft, y);
+    y += 5;
     
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(75, 85, 99); // text-gray-600
-    // Diviser les notes en plusieurs lignes si nécessaire
+    doc.setTextColor(71, 85, 105);
     const notesLines = doc.splitTextToSize(data.notes, contentWidth);
-    doc.text(notesLines, startX, y);
-    y += notesLines.length * 4;
+    doc.text(notesLines, marginLeft, y);
   }
   
-  // ============ FOOTER (DocumentFooter) ============
-  const footerY = pageHeight - margin - 15;
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(229, 231, 235); // border-gray-200
-  doc.line(startX, footerY, endX, footerY);
+  // ============ FOOTER ============
+  const footerY = pageHeight - 20;
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.3);
+  doc.line(marginLeft, footerY, rightX, footerY);
   
-  y = footerY + 6; // pt-6
-  
-  doc.setFontSize(9); // text-xs = 12px
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139); // slate-500
   
   if (company?.footer) {
-    doc.setTextColor(75, 85, 99); // text-gray-600
     const footerLines = doc.splitTextToSize(company.footer, contentWidth);
-    doc.text(footerLines, startX, y);
+    doc.text(footerLines, pageWidth / 2, footerY + 5, { align: 'center' });
   } else {
-    doc.setTextColor(107, 114, 128); // text-gray-500
-    doc.text('Document généré automatiquement', startX + contentWidth / 2, y, { align: 'center' });
+    doc.text('Document généré automatiquement', pageWidth / 2, footerY + 5, { align: 'center' });
   }
-  // Générer le blob
-  const pdfBlob = doc.output('blob');
-  return pdfBlob;
+  
+  return doc.output('blob');
 }

@@ -190,7 +190,7 @@ export default function Quotes() {
         notes: selectedQuote.notes,
       };
 
-      const pdfBlob = generateDocumentPDF(quoteData, company || null);
+      const pdfBlob = await generateDocumentPDF(quoteData, company || null);
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -537,7 +537,7 @@ export default function Quotes() {
                                     notes: quote.notes,
                                   };
 
-                                  const pdfBlob = generateDocumentPDF(quoteData, company || null);
+                                  const pdfBlob = await generateDocumentPDF(quoteData, company || null);
                                   const url = URL.createObjectURL(pdfBlob);
                                   const link = document.createElement('a');
                                   link.href = url;

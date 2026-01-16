@@ -482,7 +482,7 @@ export default function Invoices() {
                                       notes: invoice.notes,
                                     };
 
-                                    const pdfBlob = generateInvoicePDF(invoiceData, company || null);
+                                    const pdfBlob = await generateInvoicePDF(invoiceData, company || null);
                                     const url = URL.createObjectURL(pdfBlob);
                                     const link = document.createElement('a');
                                     link.href = url;
@@ -534,9 +534,9 @@ export default function Invoices() {
                   variant="outline" 
                   size="sm" 
                   className="gap-2"
-                  onClick={() => {
+                  onClick={async () => {
                     if (invoiceDocumentData) {
-                      const pdfBlob = generateInvoicePDF(invoiceDocumentData, company || null);
+                      const pdfBlob = await generateInvoicePDF(invoiceDocumentData, company || null);
                       const url = URL.createObjectURL(pdfBlob);
                       const link = document.createElement('a');
                       link.href = url;

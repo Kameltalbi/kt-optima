@@ -146,7 +146,7 @@ export default function ClientCredits() {
         notes: selectedCredit.comments || null,
       };
 
-      const pdfBlob = generateDocumentPDF(creditData, company || null);
+      const pdfBlob = await generateDocumentPDF(creditData, company || null);
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -454,7 +454,7 @@ export default function ClientCredits() {
                                     notes: credit.comments || null,
                                   };
 
-                                  const pdfBlob = generateDocumentPDF(creditData, company || null);
+                                  const pdfBlob = await generateDocumentPDF(creditData, company || null);
                                   const url = URL.createObjectURL(pdfBlob);
                                   const link = document.createElement('a');
                                   link.href = url;

@@ -147,7 +147,7 @@ export default function DeliveryNotes() {
         notes: selectedDeliveryNote.notes,
       };
 
-      const pdfBlob = generateDocumentPDF(deliveryNoteData, company || null);
+      const pdfBlob = await generateDocumentPDF(deliveryNoteData, company || null);
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -391,7 +391,7 @@ export default function DeliveryNotes() {
                                       notes: note.notes,
                                     };
 
-                                    const pdfBlob = generateDocumentPDF(deliveryNoteData, company || null);
+                                    const pdfBlob = await generateDocumentPDF(deliveryNoteData, company || null);
                                     const url = URL.createObjectURL(pdfBlob);
                                     const link = document.createElement('a');
                                     link.href = url;
