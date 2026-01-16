@@ -44,7 +44,8 @@ import {
   Loader2,
   Copy,
   Send,
-  Trash2
+  Trash2,
+  Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -525,6 +526,15 @@ export default function Invoices() {
                                   >
                                     <Eye className="w-4 h-4" />
                                     Voir la facture
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      toast.info('Fonctionnalité à venir : Modifier');
+                                    }}
+                                    className="gap-2"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    Modifier
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     onClick={() => {

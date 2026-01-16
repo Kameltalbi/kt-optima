@@ -497,6 +497,13 @@ export default function ClientCredits() {
                                   <Eye className="w-4 h-4" />
                                   Voir l'avoir
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => toast.info('Fonctionnalité à venir : Modifier')}
+                                  className="gap-2"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Modifier
+                                </DropdownMenuItem>
                                 {credit.status !== 'applied' && credit.status !== 'refunded' && (
                                   <DropdownMenuItem 
                                     onClick={() => handleApply(credit.id)}
