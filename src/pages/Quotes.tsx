@@ -89,6 +89,14 @@ export default function Quotes() {
   const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  const [editQuoteData, setEditQuoteData] = useState<{
+    id: string;
+    clientId: string;
+    date: string;
+    notes: string;
+    validityDays: number;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; }[];
+  } | null>(null);
 
   // Créer un map des clients pour accès rapide
   const clientMap = new Map(clients.map(client => [client.id, client]));
@@ -213,7 +221,57 @@ export default function Quotes() {
   };
 
   const handleCreateQuote = () => {
+    setEditQuoteData(null);
     setIsCreateModalOpen(true);
+  };
+
+  const handleEditQuote = async (quote: Quote) => {
+    try {
+      // Charger les lignes du devis
+      const { data: items, error } = await supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quote.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Transformer les lignes pour le formulaire
+      const lines = (items || []).map((item: QuoteItem) => {
+        // Trouver la taxe correspondante
+        const matchingTax = taxes.find(t => 
+          t.type === 'percentage' && Math.abs(t.value - item.tax_rate) < 0.01
+        );
+        return {
+          id: item.id,
+          description: item.description || '',
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          taxRateId: matchingTax?.id || null,
+        };
+      });
+      
+      // Calculer les jours de validité restants
+      let validityDays = 30;
+      if (quote.expires_at) {
+        const expiresDate = new Date(quote.expires_at);
+        const quoteDate = new Date(quote.date);
+        validityDays = Math.max(1, Math.round((expiresDate.getTime() - quoteDate.getTime()) / (24 * 60 * 60 * 1000)));
+      }
+      
+      setEditQuoteData({
+        id: quote.id,
+        clientId: quote.client_id,
+        date: quote.date,
+        notes: quote.notes || '',
+        validityDays,
+        lines,
+      });
+      setIsCreateModalOpen(true);
+    } catch (error) {
+      console.error('Erreur chargement devis:', error);
+      toast.error('Erreur lors du chargement du devis');
+    }
   };
 
   // Handler pour le nouveau modal QuoteCreateModal
@@ -272,17 +330,49 @@ export default function Quotes() {
         };
       });
 
-      await createQuote({
-        client_id: data.clientId,
-        date: data.date,
-        expires_at: data.validityDays ? new Date(new Date(data.date).getTime() + data.validityDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
-        subtotal: totalHTAfterDiscount,
-        tax: totalTax,
-        total: totalTTC,
-        status: 'draft',
-        notes: data.notes || null,
-        items: items,
-      });
+      if (editQuoteData) {
+        // MODE ÉDITION : supprimer les anciennes lignes et mettre à jour
+        await supabase
+          .from('quote_items')
+          .delete()
+          .eq('quote_id', editQuoteData.id);
+        
+        // Insérer les nouvelles lignes
+        if (items.length > 0) {
+          await supabase
+            .from('quote_items')
+            .insert(items.map(item => ({
+              ...item,
+              quote_id: editQuoteData.id,
+            })));
+        }
+        
+        // Mettre à jour le devis
+        await updateQuote(editQuoteData.id, {
+          client_id: data.clientId,
+          date: data.date,
+          expires_at: data.validityDays ? new Date(new Date(data.date).getTime() + data.validityDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
+          subtotal: totalHTAfterDiscount,
+          tax: totalTax,
+          total: totalTTC,
+          notes: data.notes || null,
+        });
+        
+        setEditQuoteData(null);
+      } else {
+        // MODE CRÉATION
+        await createQuote({
+          client_id: data.clientId,
+          date: data.date,
+          expires_at: data.validityDays ? new Date(new Date(data.date).getTime() + data.validityDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
+          subtotal: totalHTAfterDiscount,
+          tax: totalTax,
+          total: totalTTC,
+          status: 'draft',
+          notes: data.notes || null,
+          items: items,
+        });
+      }
 
       setIsCreateModalOpen(false);
     } catch (error) {
@@ -579,7 +669,7 @@ export default function Quotes() {
                                   <Eye className="w-4 h-4" />
                                   Voir le devis
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => toast.info('Fonctionnalité à venir : Modifier')} className="gap-2">
+                                <DropdownMenuItem onClick={() => handleEditQuote(quote)} className="gap-2">
                                   <Edit className="w-4 h-4" />
                                   Modifier
                                 </DropdownMenuItem>
@@ -620,8 +710,12 @@ export default function Quotes() {
       {/* Modal pour créer un nouveau devis */}
       <QuoteCreateModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open);
+          if (!open) setEditQuoteData(null);
+        }}
         onSave={handleSaveQuote}
+        editData={editQuoteData}
       />
 
       {/* Modal pour voir un devis existant */}
