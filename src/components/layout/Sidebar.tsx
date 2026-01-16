@@ -21,14 +21,14 @@ import { useAuth } from "@/contexts/AuthContext";
 // Modules principaux uniquement - navigation simplifiée
 const mainModules = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: ShoppingCart, label: "Achats", path: "/achats" },
   { icon: UserCircle, label: "CRM", path: "/crm" },
   { icon: Users, label: "Ventes", path: "/ventes" },
-  { icon: Package, label: "Stock", path: "/stock" },
-  { icon: Wallet, label: "Finance", path: "/finance" },
+  { icon: Package, label: "Stocks", path: "/stock" },
+  { icon: ShoppingCart, label: "Achats", path: "/achats" },
+  { icon: Wallet, label: "Finances", path: "/finance" },
   { icon: Calculator, label: "Comptabilité", path: "/comptabilite" },
   { icon: UserCheck, label: "Ressources humaines", path: "/rh" },
-  { icon: Car, label: "Gestion de parc", path: "/parc" },
+  { icon: Car, label: "Gestion de Parc", path: "/parc" },
 ];
 
 interface SidebarProps {

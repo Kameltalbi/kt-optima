@@ -6,6 +6,7 @@ import PurchaseRequests from "../PurchaseRequests";
 import PurchaseRequestValidation from "../PurchaseRequestValidation";
 import Receptions from "../Receptions";
 import Suppliers from "../Suppliers";
+import SupplierInvoices from "../SupplierInvoices";
 import SupplierCredits from "../SupplierCredits";
 import ComingSoon from "../ComingSoon";
 
@@ -97,7 +98,7 @@ export default function AchatsModule() {
             moduleTabs={tabs}
             moduleName="Achats"
           >
-            <ComingSoon title="Factures fournisseurs" subtitle="Factures reçues des fournisseurs" />
+            <SupplierInvoices />
           </MainLayout>
         }
       />

@@ -99,11 +99,7 @@ export function usePurchaseRequests() {
       setLoading(true);
       let query = supabase
         .from('demandes_achat')
-        .select(`
-          *,
-          demandeur:profiles!demandes_achat_demandeur_id_fkey(id, full_name),
-          approbateur:profiles!demandes_achat_approbateur_id_fkey(id, full_name)
-        `)
+        .select('*')
         .eq('company_id', companyId);
 
       if (filters?.statut) {
@@ -121,21 +117,55 @@ export function usePurchaseRequests() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching demandes_achat:', error);
+        throw error;
+      }
 
-      // Charger les lignes pour chaque demande
+      console.log('Demandes fetched:', data?.length || 0, 'demandes');
+
+      // Charger les profils et lignes pour chaque demande
       const demandesAvecLignes = await Promise.all(
         (data || []).map(async (demande) => {
+          // Charger le profil du demandeur
+          let demandeur = null;
+          if (demande.demandeur_id) {
+            const { data: profileDemandeur } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('user_id', demande.demandeur_id)
+              .maybeSingle();
+            if (profileDemandeur) {
+              demandeur = profileDemandeur;
+            }
+          }
+
+          // Charger le profil de l'approbateur
+          let approbateur = null;
+          if (demande.approbateur_id) {
+            const { data: profileApprobateur } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('user_id', demande.approbateur_id)
+              .maybeSingle();
+            if (profileApprobateur) {
+              approbateur = profileApprobateur;
+            }
+          }
+
+          // Charger les lignes
           const { data: lignes } = await supabase
             .from('demande_achat_lignes')
-            .select(`
-              *,
-              produit:produits(id, nom, code)
-            `)
+            .select('*')
             .eq('demande_achat_id', demande.id)
             .order('ordre');
 
-          return { ...demande, lignes: lignes || [] };
+          return { 
+            ...demande, 
+            demandeur,
+            approbateur,
+            lignes: lignes || [] 
+          };
         })
       );
 
@@ -195,7 +225,9 @@ export function usePurchaseRequests() {
         if (lignesError) throw lignesError;
       }
 
+      // Recharger les demandes après création
       await fetchDemandes();
+      console.log('Demande créée, rechargement des données...');
       toast.success('Demande d\'achat créée avec succès');
       return demande;
     } catch (error: any) {
@@ -310,6 +342,120 @@ export function usePurchaseRequests() {
   }, [fetchDemandes]);
 
   // ============================================
+  // CONVERSION EN BON DE COMMANDE
+  // ============================================
+
+  const convertToPurchaseOrder = useCallback(async (
+    demandeId: string,
+    supplierId: string,
+    date: string,
+    lignesAjustees: Array<{
+      description: string;
+      quantity: number;
+      unit_price: number;
+      tax_rate?: number;
+    }>
+  ) => {
+    if (!companyId || !user?.id) return;
+
+    try {
+      // Récupérer la demande
+      const { data: demande, error: demandeError } = await supabase
+        .from('demandes_achat')
+        .select('*')
+        .eq('id', demandeId)
+        .single();
+
+      if (demandeError) throw demandeError;
+
+      if (demande.statut !== 'approuvee') {
+        throw new Error('Seules les demandes approuvées peuvent être converties en bon de commande');
+      }
+
+      // Générer un numéro de bon de commande
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const { count } = await supabase
+        .from('purchase_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId);
+      
+      const numero = `BC-${year}-${month}-${String((count || 0) + 1).padStart(3, '0')}`;
+
+      // Calculer les totaux
+      let subtotal = 0;
+      let totalTax = 0;
+      
+      lignesAjustees.forEach(ligne => {
+        const ligneTotal = ligne.quantity * ligne.unit_price;
+        subtotal += ligneTotal;
+        const taxRate = ligne.tax_rate || 0;
+        totalTax += ligneTotal * (taxRate / 100);
+      });
+
+      const total = subtotal + totalTax;
+
+      // Créer le bon de commande
+      const { data: purchaseOrder, error: poError } = await supabase
+        .from('purchase_orders')
+        .insert({
+          number: numero,
+          supplier_id: supplierId,
+          date: date,
+          subtotal: subtotal,
+          tax: totalTax,
+          total: total,
+          status: 'draft',
+          company_id: companyId,
+        })
+        .select()
+        .single();
+
+      if (poError) throw poError;
+
+      // Créer les lignes du bon de commande
+      const itemsToInsert = lignesAjustees.map(ligne => {
+        const ligneTotalHT = ligne.quantity * ligne.unit_price;
+        const ligneTotalTTC = ligneTotalHT * (1 + (ligne.tax_rate || 0) / 100);
+        return {
+          purchase_order_id: purchaseOrder.id,
+          description: ligne.description,
+          quantity: ligne.quantity,
+          unit_price: ligne.unit_price,
+          tax_rate: ligne.tax_rate || 0,
+          total: ligneTotalTTC,
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from('purchase_order_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
+
+      // Mettre à jour la demande : statut "convertie" et lier au bon de commande
+      const { error: updateError } = await supabase
+        .from('demandes_achat')
+        .update({
+          statut: 'convertie',
+          bon_commande_id: purchaseOrder.id,
+        })
+        .eq('id', demandeId);
+
+      if (updateError) throw updateError;
+
+      await fetchDemandes();
+      toast.success('Bon de commande créé avec succès');
+      return purchaseOrder;
+    } catch (error: any) {
+      console.error('Error converting demande to purchase order:', error);
+      toast.error(error.message || 'Erreur lors de la conversion en bon de commande');
+      throw error;
+    }
+  }, [companyId, user?.id, fetchDemandes]);
+
+  // ============================================
   // INITIALISATION
   // ============================================
 
@@ -331,5 +477,6 @@ export function usePurchaseRequests() {
     approveDemande,
     rejectDemande,
     deleteDemande,
+    convertToPurchaseOrder,
   };
 }

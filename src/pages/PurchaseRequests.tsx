@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,7 @@ import {
   Trash2,
   ShoppingCart,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePurchaseRequests, type DemandeAchat } from "@/hooks/use-purchase-requests";
@@ -45,6 +46,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/use-currency";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const statusStyles = {
   approuvee: "bg-success/10 text-success border-0",
@@ -80,7 +83,7 @@ const prioriteLabels = {
 
 export default function PurchaseRequests() {
   const { company, user } = useAuth();
-  const { demandes, loading, createDemande, updateDemande, approveDemande, rejectDemande, deleteDemande } = usePurchaseRequests();
+  const { demandes, loading, createDemande, updateDemande, approveDemande, rejectDemande, deleteDemande, convertToPurchaseOrder } = usePurchaseRequests();
   const { formatCurrency: formatCurrencyAmount } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +92,11 @@ export default function PurchaseRequests() {
   const [selectedDemande, setSelectedDemande] = useState<DemandeAchat | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [convertDate, setConvertDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [adjustedLines, setAdjustedLines] = useState<Array<{ description: string; quantity: number; unit_price: number; tax_rate: number }>>([]);
   const [formData, setFormData] = useState({
     numero: "",
     date_demande: new Date().toISOString().split("T")[0],
@@ -134,13 +142,10 @@ export default function PurchaseRequests() {
         numero = `DA-${year}-${month}-${String(count).padStart(3, '0')}`;
       }
 
-      await createDemande(
-        {
-          ...formData,
-          numero,
-          demandeur_id: user?.id || null,
-        },
-        lignes.map((l, index) => ({
+      // Filtrer les lignes vides (sans description)
+      const lignesValides = lignes
+        .filter(l => l.description.trim() !== "")
+        .map((l, index) => ({
           description: l.description,
           quantite: l.quantite,
           prix_unitaire_estime: l.prix_unitaire_estime || undefined,
@@ -148,7 +153,20 @@ export default function PurchaseRequests() {
           unite: l.unite || undefined,
           notes: l.notes || undefined,
           ordre: index,
-        }))
+        }));
+
+      if (lignesValides.length === 0) {
+        toast.error("Veuillez ajouter au moins une ligne avec une description");
+        return;
+      }
+
+      await createDemande(
+        {
+          ...formData,
+          numero,
+          demandeur_id: user?.id || null,
+        },
+        lignesValides
       );
       
       setIsCreateModalOpen(false);
@@ -202,6 +220,78 @@ export default function PurchaseRequests() {
       // Error handled by hook
     }
   };
+
+  const handleConvertClick = (demande: DemandeAchat) => {
+    setSelectedDemande(demande);
+    // Initialiser les lignes ajustées avec les prix estimés
+    const lignes = demande.lignes?.map(l => ({
+      description: l.description,
+      quantity: l.quantite,
+      unit_price: l.prix_unitaire_estime || 0,
+      tax_rate: 19, // TVA par défaut 19%
+    })) || [];
+    setAdjustedLines(lignes);
+    setIsConvertModalOpen(true);
+  };
+
+  const handleConvert = async () => {
+    if (!selectedDemande || !selectedSupplierId) {
+      toast.error("Veuillez sélectionner un fournisseur");
+      return;
+    }
+
+    if (adjustedLines.length === 0) {
+      toast.error("Aucune ligne à convertir");
+      return;
+    }
+
+    try {
+      await convertToPurchaseOrder(
+        selectedDemande.id,
+        selectedSupplierId,
+        convertDate,
+        adjustedLines
+      );
+      setIsConvertModalOpen(false);
+      setSelectedDemande(null);
+      setSelectedSupplierId("");
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+
+  // Charger les fournisseurs
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      if (!company?.id) return;
+      
+      try {
+        // Essayer d'abord suppliers, puis fournisseurs
+        let data, error;
+        ({ data, error } = await supabase
+          .from('suppliers')
+          .select('id, name')
+          .eq('company_id', company.id)
+          .order('name'));
+        
+        if (error && error.code === '42P01') {
+          // Si suppliers n'existe pas, essayer fournisseurs
+          ({ data, error } = await supabase
+            .from('fournisseurs')
+            .select('id, nom as name')
+            .eq('company_id', company.id)
+            .order('nom'));
+        }
+
+        if (error) throw error;
+        setSuppliers(data || []);
+      } catch (error) {
+        console.error('Error loading suppliers:', error);
+      }
+    };
+
+    loadSuppliers();
+  }, [company?.id]);
 
   return (
     <div className="space-y-6">
@@ -559,6 +649,16 @@ export default function PurchaseRequests() {
                               </Button>
                             </>
                           )}
+                          {demande.statut === "approuvee" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleConvertClick(demande)}
+                              title="Convertir en bon de commande"
+                            >
+                              <ArrowRight className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
                           {demande.statut === "brouillon" && (
                             <Button
                               variant="ghost"
@@ -656,6 +756,147 @@ export default function PurchaseRequests() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert Modal */}
+      <Dialog open={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Convertir en bon de commande</DialogTitle>
+          </DialogHeader>
+          {selectedDemande && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm font-semibold">Demande : {selectedDemande.numero}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Département: {selectedDemande.departement || "-"} | Priorité: {prioriteLabels[selectedDemande.priorite]}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supplier">Fournisseur *</Label>
+                  <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un fournisseur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="convertDate">Date du bon de commande *</Label>
+                  <Input
+                    id="convertDate"
+                    type="date"
+                    value={convertDate}
+                    onChange={(e) => setConvertDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Lignes du bon de commande</Label>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Quantité</TableHead>
+                        <TableHead className="text-right">Prix unitaire</TableHead>
+                        <TableHead className="text-right">TVA %</TableHead>
+                        <TableHead className="text-right">Total TTC</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adjustedLines.map((ligne, index) => {
+                        const totalHT = ligne.quantity * ligne.unit_price;
+                        const totalTTC = totalHT * (1 + ligne.tax_rate / 100);
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>{ligne.description}</TableCell>
+                            <TableCell className="text-right">{ligne.quantity}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ligne.unit_price}
+                                onChange={(e) => {
+                                  const newLines = [...adjustedLines];
+                                  newLines[index].unit_price = parseFloat(e.target.value) || 0;
+                                  setAdjustedLines(newLines);
+                                }}
+                                className="w-24 ml-auto"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={ligne.tax_rate}
+                                onChange={(e) => {
+                                  const newLines = [...adjustedLines];
+                                  newLines[index].tax_rate = parseFloat(e.target.value) || 0;
+                                  setAdjustedLines(newLines);
+                                }}
+                                className="w-20 ml-auto"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrencyAmount(totalTTC)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex justify-end pt-4 border-t">
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">
+                      Total HT: {formatCurrencyAmount(
+                        adjustedLines.reduce((sum, l) => sum + (l.quantity * l.unit_price), 0)
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Total TVA: {formatCurrencyAmount(
+                        adjustedLines.reduce((sum, l) => {
+                          const ht = l.quantity * l.unit_price;
+                          return sum + (ht * l.tax_rate / 100);
+                        }, 0)
+                      )}
+                    </p>
+                    <p className="text-lg font-bold">
+                      Total TTC: {formatCurrencyAmount(
+                        adjustedLines.reduce((sum, l) => {
+                          const ht = l.quantity * l.unit_price;
+                          return sum + (ht * (1 + l.tax_rate / 100));
+                        }, 0)
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConvertModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleConvert} 
+              disabled={!selectedSupplierId || !convertDate || adjustedLines.length === 0}
+            >
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Créer le bon de commande
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
