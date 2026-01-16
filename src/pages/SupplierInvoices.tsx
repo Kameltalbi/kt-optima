@@ -104,21 +104,17 @@ export default function SupplierInvoices() {
       if (!company?.id) return;
       
       try {
-        // Charger les fournisseurs
+        // Charger les fournisseurs depuis la table existante
         const { data: suppliersData } = await supabase
-          .from('suppliers')
-          .select('id, name')
+          .from('fournisseurs')
+          .select('id, nom')
           .eq('company_id', company.id)
-          .order('name');
-        setSuppliers(suppliersData || []);
+          .eq('actif', true)
+          .order('nom');
+        setSuppliers((suppliersData || []).map(f => ({ id: f.id, name: f.nom })));
 
-        // Charger les bons de commande
-        const { data: poData } = await supabase
-          .from('purchase_orders')
-          .select('id, number')
-          .eq('company_id', company.id)
-          .order('number', { ascending: false });
-        setPurchaseOrders(poData || []);
+        // Les bons de commande ne sont pas encore implémentés
+        setPurchaseOrders([]);
       } catch (error) {
         console.error('Error loading data:', error);
       }

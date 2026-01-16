@@ -266,25 +266,16 @@ export default function PurchaseRequests() {
       if (!company?.id) return;
       
       try {
-        // Essayer d'abord suppliers, puis fournisseurs
-        let data, error;
-        ({ data, error } = await supabase
-          .from('suppliers')
-          .select('id, name')
+        // Utiliser la table fournisseurs existante
+        const { data, error } = await supabase
+          .from('fournisseurs')
+          .select('id, nom')
           .eq('company_id', company.id)
-          .order('name'));
-        
-        if (error && error.code === '42P01') {
-          // Si suppliers n'existe pas, essayer fournisseurs
-          ({ data, error } = await supabase
-            .from('fournisseurs')
-            .select('id, nom as name')
-            .eq('company_id', company.id)
-            .order('nom'));
-        }
+          .eq('actif', true)
+          .order('nom');
 
         if (error) throw error;
-        setSuppliers(data || []);
+        setSuppliers((data || []).map(f => ({ id: f.id, name: f.nom })));
       } catch (error) {
         console.error('Error loading suppliers:', error);
       }

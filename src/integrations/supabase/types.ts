@@ -582,6 +582,118 @@ export type Database = {
           },
         ]
       }
+      demande_achat_lignes: {
+        Row: {
+          created_at: string | null
+          demande_achat_id: string
+          description: string
+          id: string
+          montant_estime: number | null
+          notes: string | null
+          ordre: number | null
+          prix_unitaire_estime: number | null
+          produit_id: string | null
+          quantite: number
+          unite: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          demande_achat_id: string
+          description: string
+          id?: string
+          montant_estime?: number | null
+          notes?: string | null
+          ordre?: number | null
+          prix_unitaire_estime?: number | null
+          produit_id?: string | null
+          quantite: number
+          unite?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          demande_achat_id?: string
+          description?: string
+          id?: string
+          montant_estime?: number | null
+          notes?: string | null
+          ordre?: number | null
+          prix_unitaire_estime?: number | null
+          produit_id?: string | null
+          quantite?: number
+          unite?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demande_achat_lignes_demande_achat_id_fkey"
+            columns: ["demande_achat_id"]
+            isOneToOne: false
+            referencedRelation: "demandes_achat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demandes_achat: {
+        Row: {
+          approbateur_id: string | null
+          bon_commande_id: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          date_approbation: string | null
+          date_demande: string
+          demandeur_id: string | null
+          departement: string | null
+          id: string
+          notes: string | null
+          numero: string
+          priorite: string
+          statut: string
+          updated_at: string | null
+        }
+        Insert: {
+          approbateur_id?: string | null
+          bon_commande_id?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date_approbation?: string | null
+          date_demande: string
+          demandeur_id?: string | null
+          departement?: string | null
+          id?: string
+          notes?: string | null
+          numero: string
+          priorite?: string
+          statut?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approbateur_id?: string | null
+          bon_commande_id?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_approbation?: string | null
+          date_demande?: string
+          demandeur_id?: string | null
+          departement?: string | null
+          id?: string
+          notes?: string | null
+          numero?: string
+          priorite?: string
+          statut?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demandes_achat_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ecriture_lignes: {
         Row: {
           compte_comptable: string
@@ -1319,6 +1431,47 @@ export type Database = {
           },
         ]
       }
+      irpp_brackets: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          max_amount: number | null
+          min_amount: number
+          order_index: number
+          rate: number
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number | null
+          min_amount: number
+          order_index?: number
+          rate: number
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number | null
+          min_amount?: number
+          order_index?: number
+          rate?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "irpp_brackets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           active: boolean | null
@@ -1709,6 +1862,307 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_settings: {
+        Row: {
+          archive_path: string | null
+          bonus_subject_cnss: boolean | null
+          bonus_taxable: boolean | null
+          child_deduction: number
+          cnss_active: boolean | null
+          cnss_ceiling: number | null
+          cnss_rate_employee: number
+          company_id: string
+          confidential_label: boolean | null
+          created_at: string | null
+          css_exemption_threshold: number | null
+          css_rate: number
+          currency: string | null
+          default_children_count: number | null
+          default_cnss_active: boolean | null
+          default_contract_type: string | null
+          default_fiscal_status: string | null
+          default_head_family: boolean | null
+          default_payment_method: string | null
+          family_deduction: number
+          id: string
+          irpp_professional_cap: number
+          irpp_professional_rate: number
+          overtime_rate_1: number | null
+          overtime_rate_2: number | null
+          overtime_threshold: number | null
+          pay_frequency: string | null
+          payslip_language: string | null
+          retention_period: number | null
+          secure_access: boolean | null
+          show_signature: boolean | null
+          show_stamp: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          archive_path?: string | null
+          bonus_subject_cnss?: boolean | null
+          bonus_taxable?: boolean | null
+          child_deduction?: number
+          cnss_active?: boolean | null
+          cnss_ceiling?: number | null
+          cnss_rate_employee?: number
+          company_id: string
+          confidential_label?: boolean | null
+          created_at?: string | null
+          css_exemption_threshold?: number | null
+          css_rate?: number
+          currency?: string | null
+          default_children_count?: number | null
+          default_cnss_active?: boolean | null
+          default_contract_type?: string | null
+          default_fiscal_status?: string | null
+          default_head_family?: boolean | null
+          default_payment_method?: string | null
+          family_deduction?: number
+          id?: string
+          irpp_professional_cap?: number
+          irpp_professional_rate?: number
+          overtime_rate_1?: number | null
+          overtime_rate_2?: number | null
+          overtime_threshold?: number | null
+          pay_frequency?: string | null
+          payslip_language?: string | null
+          retention_period?: number | null
+          secure_access?: boolean | null
+          show_signature?: boolean | null
+          show_stamp?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          archive_path?: string | null
+          bonus_subject_cnss?: boolean | null
+          bonus_taxable?: boolean | null
+          child_deduction?: number
+          cnss_active?: boolean | null
+          cnss_ceiling?: number | null
+          cnss_rate_employee?: number
+          company_id?: string
+          confidential_label?: boolean | null
+          created_at?: string | null
+          css_exemption_threshold?: number | null
+          css_rate?: number
+          currency?: string | null
+          default_children_count?: number | null
+          default_cnss_active?: boolean | null
+          default_contract_type?: string | null
+          default_fiscal_status?: string | null
+          default_head_family?: boolean | null
+          default_payment_method?: string | null
+          family_deduction?: number
+          id?: string
+          irpp_professional_cap?: number
+          irpp_professional_rate?: number
+          overtime_rate_1?: number | null
+          overtime_rate_2?: number | null
+          overtime_threshold?: number | null
+          pay_frequency?: string | null
+          payslip_language?: string | null
+          retention_period?: number | null
+          secure_access?: boolean | null
+          show_signature?: boolean | null
+          show_stamp?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          bonuses: number | null
+          cnss: number
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          css: number
+          employee_id: string
+          family_situation: string | null
+          gross_salary: number
+          id: string
+          irpp: number
+          month: number
+          net_salary: number
+          number_of_children: number | null
+          overtime: number | null
+          pdf_file_path: string | null
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          bonuses?: number | null
+          cnss: number
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          css: number
+          employee_id: string
+          family_situation?: string | null
+          gross_salary: number
+          id?: string
+          irpp: number
+          month: number
+          net_salary: number
+          number_of_children?: number | null
+          overtime?: number | null
+          pdf_file_path?: string | null
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          bonuses?: number | null
+          cnss?: number
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          css?: number
+          employee_id?: string
+          family_situation?: string | null
+          gross_salary?: number
+          id?: string
+          irpp?: number
+          month?: number
+          net_salary?: number
+          number_of_children?: number | null
+          overtime?: number | null
+          pdf_file_path?: string | null
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          active: boolean | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          category_id: string | null
+          code: string | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          purchase_price: number | null
+          sale_price: number
+          stockable: boolean | null
+          tax_rate: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category_id?: string | null
+          code?: string | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          purchase_price?: number | null
+          sale_price: number
+          stockable?: boolean | null
+          tax_rate?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category_id?: string | null
+          code?: string | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          purchase_price?: number | null
+          sale_price?: number
+          stockable?: boolean | null
+          tax_rate?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -2133,6 +2587,66 @@ export type Database = {
           },
         ]
       }
+      services: {
+        Row: {
+          active: boolean | null
+          billing_type: string | null
+          category_id: string | null
+          code: string | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          price: number
+          tax_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          billing_type?: string | null
+          category_id?: string | null
+          code?: string | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          price: number
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          billing_type?: string | null
+          category_id?: string | null
+          code?: string | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taxes: {
         Row: {
           company_id: string
@@ -2431,6 +2945,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      init_default_payroll_settings: {
+        Args: { _company_id: string }
+        Returns: undefined
       }
       reset_document_number_sequence: {
         Args: { p_start_value?: number }
