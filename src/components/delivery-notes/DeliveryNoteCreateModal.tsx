@@ -58,12 +58,22 @@ interface DeliveryNoteCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: DeliveryNoteFormData) => void;
+  editData?: {
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    deliveryAddress: string;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; unite?: string; }[];
+  } | null;
 }
 
 export function DeliveryNoteCreateModal({
   open,
   onOpenChange,
   onSave,
+  editData,
 }: DeliveryNoteCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
@@ -82,23 +92,47 @@ export function DeliveryNoteCreateModal({
     notes: "",
   });
 
-  // Réinitialiser le formulaire quand le modal s'ouvre
+  // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
     if (open) {
-      setFormData({
-        clientId: "",
-        date: new Date().toISOString().split("T")[0],
-        reference: "",
-        deliveryAddress: "",
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: [],
-        notes: "",
-      });
+      if (editData) {
+        // Mode édition : pré-remplir avec les données existantes
+        setFormData({
+          clientId: editData.clientId,
+          date: editData.date,
+          reference: editData.reference,
+          deliveryAddress: editData.deliveryAddress,
+          appliedTaxes: enabledTaxes.map(t => t.id),
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: editData.lines.map(l => ({
+            id: l.id,
+            description: l.description,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            taxRateId: l.taxRateId,
+            unite: l.unite || 'unité',
+          })),
+          notes: editData.notes,
+        });
+      } else {
+        // Mode création : réinitialiser
+        setFormData({
+          clientId: "",
+          date: new Date().toISOString().split("T")[0],
+          reference: "",
+          deliveryAddress: "",
+          appliedTaxes: enabledTaxes.map(t => t.id),
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: [],
+          notes: "",
+        });
+      }
     }
-  }, [open, enabledTaxes]);
+  }, [open, enabledTaxes, editData]);
 
   // Initialiser avec les taxes activées par défaut
   useEffect(() => {
@@ -219,10 +253,10 @@ export function DeliveryNoteCreateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="w-5 h-5" />
-            Nouveau bon de livraison
+            {editData ? 'Modifier le bon de livraison' : 'Nouveau bon de livraison'}
           </DialogTitle>
           <DialogDescription>
-            Créez un nouveau bon de livraison avec options fiscales configurables
+            {editData ? 'Modifiez les informations du bon de livraison' : 'Créez un nouveau bon de livraison avec options fiscales configurables'}
           </DialogDescription>
         </DialogHeader>
 

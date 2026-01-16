@@ -60,12 +60,23 @@ interface CreditNoteCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: CreditNoteFormData) => void;
+  editData?: {
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    invoiceId: string | null;
+    linkedToInvoice: boolean;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; }[];
+  } | null;
 }
 
 export function CreditNoteCreateModal({
   open,
   onOpenChange,
   onSave,
+  editData,
 }: CreditNoteCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
@@ -86,25 +97,49 @@ export function CreditNoteCreateModal({
     notes: "",
   });
 
-  // Réinitialiser le formulaire quand le modal s'ouvre
+  // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
     if (open) {
       const initialTaxes = enabledTaxes.length > 0 ? enabledTaxes.map(t => t.id) : [];
-      setFormData({
-        clientId: "",
-        date: new Date().toISOString().split("T")[0],
-        reference: "",
-        invoiceId: null,
-        linkedToInvoice: false,
-        appliedTaxes: initialTaxes,
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: [],
-        notes: "",
-      });
+      if (editData) {
+        // Mode édition : pré-remplir avec les données existantes
+        setFormData({
+          clientId: editData.clientId,
+          date: editData.date,
+          reference: editData.reference,
+          invoiceId: editData.invoiceId,
+          linkedToInvoice: editData.linkedToInvoice,
+          appliedTaxes: initialTaxes,
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: editData.lines.map(l => ({
+            id: l.id,
+            description: l.description,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            taxRateId: l.taxRateId,
+          })),
+          notes: editData.notes,
+        });
+      } else {
+        // Mode création : réinitialiser
+        setFormData({
+          clientId: "",
+          date: new Date().toISOString().split("T")[0],
+          reference: "",
+          invoiceId: null,
+          linkedToInvoice: false,
+          appliedTaxes: initialTaxes,
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: [],
+          notes: "",
+        });
+      }
     }
-  }, [open]);
+  }, [open, editData]);
   
   // Initialiser les taxes si elles changent et que le formulaire est vide
   useEffect(() => {
@@ -229,10 +264,10 @@ export function CreditNoteCreateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Nouvel avoir client
+            {editData ? 'Modifier l\'avoir client' : 'Nouvel avoir client'}
           </DialogTitle>
           <DialogDescription>
-            Créez un avoir client avec options fiscales configurables
+            {editData ? 'Modifiez les informations de l\'avoir client' : 'Créez un avoir client avec options fiscales configurables'}
           </DialogDescription>
         </DialogHeader>
 

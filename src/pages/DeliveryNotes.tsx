@@ -80,7 +80,7 @@ export default function DeliveryNotes() {
     companyId: company?.id, 
     companyCurrency: company?.currency 
   });
-  const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, deleteBonLivraison, getLignes } = useDeliveryNotes();
+  const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, updateBonLivraison, deleteBonLivraison, getLignes } = useDeliveryNotes();
   const { clients } = useClients();
   const { taxes, calculateTax } = useTaxes();
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,6 +88,15 @@ export default function DeliveryNotes() {
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<BonLivraison | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editDeliveryNoteData, setEditDeliveryNoteData] = useState<{
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    deliveryAddress: string;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; unite?: string; }[];
+  } | null>(null);
 
   // Créer un map des clients pour accès rapide
   const clientsMap = useMemo(() => {
@@ -175,7 +184,40 @@ export default function DeliveryNotes() {
   };
 
   const handleCreateDeliveryNote = () => {
+    setEditDeliveryNoteData(null);
     setIsCreateModalOpen(true);
+  };
+
+  // Handler pour modifier un bon de livraison
+  const handleEditDeliveryNote = async (note: BonLivraison) => {
+    try {
+      // Récupérer les lignes du bon de livraison
+      const lignes = await getLignes(note.id);
+      
+      // Convertir les lignes pour le formulaire
+      const formLines = lignes.map(ligne => ({
+        id: ligne.id,
+        description: ligne.description || '',
+        quantity: ligne.quantite,
+        unitPrice: 0, // Bon de livraison n'a pas de prix
+        taxRateId: null,
+        unite: ligne.unite || 'unité',
+      }));
+
+      setEditDeliveryNoteData({
+        id: note.id,
+        clientId: note.client_id,
+        date: note.date_livraison,
+        reference: note.numero,
+        deliveryAddress: note.adresse_livraison || '',
+        notes: note.notes || '',
+        lines: formLines,
+      });
+      setIsCreateModalOpen(true);
+    } catch (error) {
+      console.error('Error loading delivery note for edit:', error);
+      toast.error('Erreur lors du chargement du bon de livraison');
+    }
   };
 
   const handleSaveDeliveryNote = async (data: DeliveryNoteFormData) => {
@@ -188,24 +230,38 @@ export default function DeliveryNotes() {
         ordre: index,
       }));
 
-      // Créer le bon de livraison via le hook
-      const bonLivraisonData = {
-        numero: data.reference || '', // Le numéro sera généré automatiquement avec préfixe "BL"
-        date_livraison: data.date,
-        client_id: data.clientId,
-        adresse_livraison: data.deliveryAddress || null,
-        notes: data.notes || null,
-      };
+      if (editDeliveryNoteData) {
+        // Mode édition
+        await updateBonLivraison(editDeliveryNoteData.id, {
+          date_livraison: data.date,
+          client_id: data.clientId,
+          adresse_livraison: data.deliveryAddress || null,
+          notes: data.notes || null,
+        }, lignes);
+        
+        setIsCreateModalOpen(false);
+        setEditDeliveryNoteData(null);
+        toast.success("Bon de livraison modifié avec succès");
+      } else {
+        // Mode création
+        const bonLivraisonData = {
+          numero: data.reference || '',
+          date_livraison: data.date,
+          client_id: data.clientId,
+          adresse_livraison: data.deliveryAddress || null,
+          notes: data.notes || null,
+        };
 
-      await createBonLivraison(bonLivraisonData, lignes);
+        await createBonLivraison(bonLivraisonData, lignes);
+        
+        setIsCreateModalOpen(false);
+        toast.success("Bon de livraison créé avec succès");
+      }
       
-      setIsCreateModalOpen(false);
-      toast.success("Bon de livraison créé avec succès");
-      // Rafraîchir la liste
       await refreshBonsLivraison();
     } catch (error) {
       console.error("Error saving delivery note:", error);
-      toast.error("Erreur lors de la création du bon de livraison");
+      toast.error(editDeliveryNoteData ? "Erreur lors de la modification" : "Erreur lors de la création du bon de livraison");
     }
   };
 
@@ -436,7 +492,7 @@ export default function DeliveryNotes() {
                                     Voir le bon
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => toast.info('Fonctionnalité à venir : Modifier')}
+                                    onClick={() => handleEditDeliveryNote(note)}
                                     className="gap-2"
                                   >
                                     <Edit className="w-4 h-4" />
@@ -495,11 +551,15 @@ export default function DeliveryNotes() {
         </Card>
       </div>
 
-      {/* Modal pour créer un nouveau bon de livraison */}
+      {/* Modal pour créer/modifier un bon de livraison */}
       <DeliveryNoteCreateModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open);
+          if (!open) setEditDeliveryNoteData(null);
+        }}
         onSave={handleSaveDeliveryNote}
+        editData={editDeliveryNoteData}
       />
 
       {/* Modal pour voir un bon de livraison existant */}

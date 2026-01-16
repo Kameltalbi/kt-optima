@@ -57,12 +57,21 @@ interface InvoiceAcompteCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: InvoiceAcompteFormData) => void;
+  editData?: {
+    id: string;
+    clientId: string;
+    date: string;
+    reference: string;
+    notes: string;
+    lines: { id: string; description: string; quantity: number; unitPrice: number; taxRateId: string | null; }[];
+  } | null;
 }
 
 export function InvoiceAcompteCreateModal({
   open,
   onOpenChange,
   onSave,
+  editData,
 }: InvoiceAcompteCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
@@ -81,23 +90,46 @@ export function InvoiceAcompteCreateModal({
     notes: "",
   });
 
-  // Réinitialiser le formulaire quand le modal s'ouvre
+  // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
     if (open) {
-      setFormData({
-        clientId: "",
-        date: new Date().toISOString().split("T")[0],
-        reference: "",
-        currency: String(defaultCurrency),
-        appliedTaxes: enabledTaxes.map(t => t.id),
-        applyDiscount: false,
-        discountType: 'percentage',
-        discountValue: 0,
-        lines: [],
-        notes: "",
-      });
+      if (editData) {
+        // Mode édition
+        setFormData({
+          clientId: editData.clientId,
+          date: editData.date,
+          reference: editData.reference,
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map(t => t.id),
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: editData.lines.map(l => ({
+            id: l.id,
+            description: l.description,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            taxRateId: l.taxRateId,
+          })),
+          notes: editData.notes,
+        });
+      } else {
+        // Mode création
+        setFormData({
+          clientId: "",
+          date: new Date().toISOString().split("T")[0],
+          reference: "",
+          currency: String(defaultCurrency),
+          appliedTaxes: enabledTaxes.map(t => t.id),
+          applyDiscount: false,
+          discountType: 'percentage',
+          discountValue: 0,
+          lines: [],
+          notes: "",
+        });
+      }
     }
-  }, [open, defaultCurrency, enabledTaxes]);
+  }, [open, defaultCurrency, enabledTaxes, editData]);
 
   // Initialiser avec les taxes activées par défaut
   useEffect(() => {
@@ -224,9 +256,9 @@ export function InvoiceAcompteCreateModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouvelle facture d'acompte</DialogTitle>
+          <DialogTitle>{editData ? "Modifier la facture d'acompte" : "Nouvelle facture d'acompte"}</DialogTitle>
           <DialogDescription>
-            Créez une facture d'acompte (avance client) qui sera déductible sur les factures finales
+            {editData ? "Modifiez les informations de la facture d'acompte" : "Créez une facture d'acompte (avance client) qui sera déductible sur les factures finales"}
           </DialogDescription>
         </DialogHeader>
 
