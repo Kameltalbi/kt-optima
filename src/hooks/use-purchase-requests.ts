@@ -372,82 +372,9 @@ export function usePurchaseRequests() {
         throw new Error('Seules les demandes approuvées peuvent être converties en bon de commande');
       }
 
-      // Générer un numéro de bon de commande
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const { count } = await supabase
-        .from('purchase_orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId);
-      
-      const numero = `BC-${year}-${month}-${String((count || 0) + 1).padStart(3, '0')}`;
-
-      // Calculer les totaux
-      let subtotal = 0;
-      let totalTax = 0;
-      
-      lignesAjustees.forEach(ligne => {
-        const ligneTotal = ligne.quantity * ligne.unit_price;
-        subtotal += ligneTotal;
-        const taxRate = ligne.tax_rate || 0;
-        totalTax += ligneTotal * (taxRate / 100);
-      });
-
-      const total = subtotal + totalTax;
-
-      // Créer le bon de commande
-      const { data: purchaseOrder, error: poError } = await supabase
-        .from('purchase_orders')
-        .insert({
-          number: numero,
-          supplier_id: supplierId,
-          date: date,
-          subtotal: subtotal,
-          tax: totalTax,
-          total: total,
-          status: 'draft',
-          company_id: companyId,
-        })
-        .select()
-        .single();
-
-      if (poError) throw poError;
-
-      // Créer les lignes du bon de commande
-      const itemsToInsert = lignesAjustees.map(ligne => {
-        const ligneTotalHT = ligne.quantity * ligne.unit_price;
-        const ligneTotalTTC = ligneTotalHT * (1 + (ligne.tax_rate || 0) / 100);
-        return {
-          purchase_order_id: purchaseOrder.id,
-          description: ligne.description,
-          quantity: ligne.quantity,
-          unit_price: ligne.unit_price,
-          tax_rate: ligne.tax_rate || 0,
-          total: ligneTotalTTC,
-        };
-      });
-
-      const { error: itemsError } = await supabase
-        .from('purchase_order_items')
-        .insert(itemsToInsert);
-
-      if (itemsError) throw itemsError;
-
-      // Mettre à jour la demande : statut "convertie" et lier au bon de commande
-      const { error: updateError } = await supabase
-        .from('demandes_achat')
-        .update({
-          statut: 'convertie',
-          bon_commande_id: purchaseOrder.id,
-        })
-        .eq('id', demandeId);
-
-      if (updateError) throw updateError;
-
-      await fetchDemandes();
-      toast.success('Bon de commande créé avec succès');
-      return purchaseOrder;
+      // Fonctionnalité non disponible - tables purchase_orders non créées
+      toast.error('Module bons de commande non configuré');
+      throw new Error('Module bons de commande non configuré');
     } catch (error: any) {
       console.error('Error converting demande to purchase order:', error);
       toast.error(error.message || 'Erreur lors de la conversion en bon de commande');
