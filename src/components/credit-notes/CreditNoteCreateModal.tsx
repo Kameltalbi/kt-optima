@@ -366,6 +366,117 @@ export function CreditNoteCreateModal({
             {showSettings ? 'Masquer les réglages' : 'Réglages (taxes & remise)'}
           </Button>
 
+          {/* Options fiscales et Remise - Affichées seulement si showSettings */}
+          {showSettings && (
+            <Card className="border-green-200 bg-green-50/30">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-green-600" />
+                  Options fiscales & Remise
+                </CardTitle>
+                <CardDescription>
+                  Sélectionnez les taxes à appliquer depuis Paramètres → Taxes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {percentageTaxes.length > 0 && (
+                  <div className="space-y-3 p-4 border rounded-lg bg-background">
+                    <Label className="font-semibold">Taxes en pourcentage</Label>
+                    <div className="space-y-2">
+                      {percentageTaxes.map((tax) => (
+                        <div key={tax.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tax-${tax.id}`}
+                            checked={formData.appliedTaxes.includes(tax.id)}
+                            onCheckedChange={() => handleToggleTax(tax.id)}
+                          />
+                          <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
+                            {tax.name} ({tax.value}%)
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {fixedTaxes.length > 0 && (
+                  <div className="space-y-3 p-4 border rounded-lg bg-background">
+                    <Label className="font-semibold">Taxes fixes</Label>
+                    <div className="space-y-2">
+                      {fixedTaxes.map((tax) => (
+                        <div key={tax.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tax-${tax.id}`}
+                            checked={formData.appliedTaxes.includes(tax.id)}
+                            onCheckedChange={() => handleToggleTax(tax.id)}
+                          />
+                          <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
+                            {tax.name} ({formatAmount(tax.value)})
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {taxes.length === 0 && (
+                  <div className="p-4 border rounded-lg text-center text-muted-foreground bg-background">
+                    <p className="text-sm">Aucune taxe configurée</p>
+                    <p className="text-xs mt-1">Configurez vos taxes dans Paramètres → Taxes</p>
+                  </div>
+                )}
+
+                {/* Remise */}
+                <div className="space-y-3 p-4 border rounded-lg bg-background">
+                  <Label className="font-semibold">Remise</Label>
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={formData.discountType}
+                      onValueChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          discountType: value as 'percentage' | 'amount',
+                          applyDiscount: true,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Type de remise" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                        <SelectItem value="amount">Montant fixe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        id="discount-value"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder={formData.discountType === 'percentage' ? 'Ex: 10' : 'Ex: 50'}
+                        value={formData.discountValue || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setFormData(prev => ({
+                            ...prev,
+                            discountValue: value,
+                            applyDiscount: value > 0,
+                          }));
+                        }}
+                        className="w-32"
+                      />
+                      <span className="text-muted-foreground">
+                        {formData.discountType === 'percentage' ? '%' : String(defaultCurrency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* 1. Informations générales */}
           <Card>
             <CardHeader>
@@ -514,117 +625,6 @@ export function CreditNoteCreateModal({
               )}
             </CardContent>
           </Card>
-
-          {/* Options fiscales et Remise - Affichées seulement si showSettings */}
-          {showSettings && (
-            <Card className="border-green-200 bg-green-50/30">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-green-600" />
-                  Options fiscales & Remise
-                </CardTitle>
-                <CardDescription>
-                  Sélectionnez les taxes à appliquer depuis Paramètres → Taxes
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {percentageTaxes.length > 0 && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-background">
-                    <Label className="font-semibold">Taxes en pourcentage</Label>
-                    <div className="space-y-2">
-                      {percentageTaxes.map((tax) => (
-                        <div key={tax.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`tax-${tax.id}`}
-                            checked={formData.appliedTaxes.includes(tax.id)}
-                            onCheckedChange={() => handleToggleTax(tax.id)}
-                          />
-                          <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
-                            {tax.name} ({tax.value}%)
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {fixedTaxes.length > 0 && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-background">
-                    <Label className="font-semibold">Taxes fixes</Label>
-                    <div className="space-y-2">
-                      {fixedTaxes.map((tax) => (
-                        <div key={tax.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`tax-${tax.id}`}
-                            checked={formData.appliedTaxes.includes(tax.id)}
-                            onCheckedChange={() => handleToggleTax(tax.id)}
-                          />
-                          <Label htmlFor={`tax-${tax.id}`} className="cursor-pointer flex-1">
-                            {tax.name} ({formatAmount(tax.value)})
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {taxes.length === 0 && (
-                  <div className="p-4 border rounded-lg text-center text-muted-foreground bg-background">
-                    <p className="text-sm">Aucune taxe configurée</p>
-                    <p className="text-xs mt-1">Configurez vos taxes dans Paramètres → Taxes</p>
-                  </div>
-                )}
-
-                {/* Remise */}
-                <div className="space-y-3 p-4 border rounded-lg bg-background">
-                  <Label className="font-semibold">Remise</Label>
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={formData.discountType}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          discountType: value as 'percentage' | 'amount',
-                          applyDiscount: true,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Type de remise" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                        <SelectItem value="amount">Montant fixe</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex items-center gap-2 flex-1">
-                      <Input
-                        id="discount-value"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder={formData.discountType === 'percentage' ? 'Ex: 10' : 'Ex: 50'}
-                        value={formData.discountValue || ''}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          setFormData(prev => ({
-                            ...prev,
-                            discountValue: value,
-                            applyDiscount: value > 0,
-                          }));
-                        }}
-                        className="w-32"
-                      />
-                      <span className="text-muted-foreground">
-                        {formData.discountType === 'percentage' ? '%' : String(defaultCurrency)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* 4. Lignes d'avoir */}
           <Card>
