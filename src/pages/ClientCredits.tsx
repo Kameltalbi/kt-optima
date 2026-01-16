@@ -138,6 +138,7 @@ export default function ClientCredits() {
         client: {
           name: client.nom,
           address: client.adresse || null,
+          tax_number: client.numero_fiscal || null,
         },
         lines: documentLines,
         total_ht: selectedCredit.subtotal,
@@ -446,6 +447,7 @@ export default function ClientCredits() {
                                     client: {
                                       name: client.nom,
                                       address: client.adresse || null,
+                                      tax_number: client.numero_fiscal || null,
                                     },
                                     lines: documentLines,
                                     total_ht: credit.subtotal,

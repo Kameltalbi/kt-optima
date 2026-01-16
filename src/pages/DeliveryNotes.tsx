@@ -133,12 +133,13 @@ export default function DeliveryNotes() {
       }));
 
       const deliveryNoteData: InvoiceDocumentData = {
-        type: 'quote', // Utiliser 'quote' car il n'y a pas de type 'delivery_note' dans InvoiceDocumentData
+        type: 'quote',
         number: selectedDeliveryNote.numero,
         date: selectedDeliveryNote.date_livraison,
         client: {
           name: client.nom,
           address: selectedDeliveryNote.adresse_livraison || client.adresse || null,
+          tax_number: client.numero_fiscal || null,
         },
         lines: documentLines,
         total_ht: 0,
@@ -383,6 +384,7 @@ export default function DeliveryNotes() {
                                       client: {
                                         name: client.nom,
                                         address: note.adresse_livraison || client.adresse || null,
+                                        tax_number: client.numero_fiscal || null,
                                       },
                                       lines: documentLines,
                                       total_ht: 0,

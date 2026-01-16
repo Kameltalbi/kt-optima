@@ -13,19 +13,104 @@ interface Company {
 
 // Formater un nombre avec espace comme séparateur de milliers et 3 décimales (format TND)
 function formatAmount(num: number): string {
-  // Format: 2 300,000 (espace pour milliers, virgule pour décimales)
   const fixed = num.toFixed(3);
   const [intPart, decPart] = fixed.split('.');
-  // Ajouter des espaces comme séparateurs de milliers
   const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return `${formattedInt},${decPart}`;
 }
 
+// Convertir un nombre en toutes lettres (français tunisien)
+function numberToWords(num: number): string {
+  const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+
+  const convertLessThanThousand = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 20) return units[n];
+    if (n < 100) {
+      const t = Math.floor(n / 10);
+      const u = n % 10;
+    if (t === 7 || t === 9) {
+      const offset = t === 7 ? 10 : 10;
+      return tens[t] + (u === 1 ? '-et-' : '-') + units[offset + u];
+    }
+      if (u === 0) return tens[t] + (t === 8 ? 's' : '');
+      if (u === 1 && t !== 8) return tens[t] + '-et-un';
+      return tens[t] + '-' + units[u];
+    }
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    let result = h === 1 ? 'cent' : units[h] + ' cent';
+    if (rest === 0 && h > 1) result += 's';
+    else if (rest > 0) result += ' ' + convertLessThanThousand(rest);
+    return result;
+  };
+
+  if (num === 0) return 'zéro';
+
+  const intPart = Math.floor(num);
+  const decPart = Math.round((num - intPart) * 1000);
+
+  let result = '';
+
+  if (intPart >= 1000000) {
+    const millions = Math.floor(intPart / 1000000);
+    result += (millions === 1 ? 'un million' : convertLessThanThousand(millions) + ' millions');
+    const rest = intPart % 1000000;
+    if (rest > 0) result += ' ' + numberToWordsInt(rest);
+  } else {
+    result = numberToWordsInt(intPart);
+  }
+
+  result += ' dinars';
+
+  if (decPart > 0) {
+    result += ' et ' + convertLessThanThousand(decPart) + ' millimes';
+  }
+
+  return result.trim();
+}
+
+function numberToWordsInt(n: number): string {
+  const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+
+  const convertLessThanThousand = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 20) return units[n];
+    if (n < 100) {
+      const t = Math.floor(n / 10);
+      const u = n % 10;
+    if (t === 7 || t === 9) {
+      const offset = t === 7 ? 10 : 10;
+      return tens[t] + (u === 1 ? '-et-' : '-') + units[offset + u];
+    }
+      if (u === 0) return tens[t] + (t === 8 ? 's' : '');
+      if (u === 1 && t !== 8) return tens[t] + '-et-un';
+      return tens[t] + '-' + units[u];
+    }
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    let result = h === 1 ? 'cent' : units[h] + ' cent';
+    if (rest === 0 && h > 1) result += 's';
+    else if (rest > 0) result += ' ' + convertLessThanThousand(rest);
+    return result;
+  };
+
+  if (n === 0) return 'zéro';
+  if (n < 1000) return convertLessThanThousand(n);
+
+  const thousands = Math.floor(n / 1000);
+  const rest = n % 1000;
+
+  let result = thousands === 1 ? 'mille' : convertLessThanThousand(thousands) + ' mille';
+  if (rest > 0) result += ' ' + convertLessThanThousand(rest);
+
+  return result;
+}
+
 /**
- * Charger une image (URL) pour jsPDF sans la déformer:
- * - conversion en dataURL
- * - détection du format (PNG/JPEG)
- * - récupération des dimensions pour conserver le ratio
+ * Charger une image (URL) pour jsPDF sans la déformer
  */
 async function loadImageForJsPDF(
   url: string
@@ -47,7 +132,6 @@ async function loadImageForJsPDF(
     const mime = (mimeMatch?.[1] || '').toLowerCase();
     const format: 'PNG' | 'JPEG' = mime.includes('jpeg') || mime.includes('jpg') ? 'JPEG' : 'PNG';
 
-    // Dimensions via Image() (permet de garder le ratio dans addImage)
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
@@ -67,8 +151,7 @@ async function loadImageForJsPDF(
 }
 
 /**
- * Fonction générique pour générer un PDF de document (facture, devis, avoir)
- * Design professionnel A4
+ * Génère un PDF de document (facture, devis, avoir) - Design professionnel A4
  */
 export async function generateDocumentPDF(
   data: InvoiceDocumentData,
@@ -76,12 +159,12 @@ export async function generateDocumentPDF(
 ): Promise<Blob> {
   const doc = new jsPDF('portrait', 'mm', 'a4');
   
-  // Dimensions A4
   const pageWidth = 210;
   const pageHeight = 297;
   const marginLeft = 15;
   const marginRight = 15;
   const contentWidth = pageWidth - marginLeft - marginRight;
+  const rightX = pageWidth - marginRight;
   
   let y = 20;
   
@@ -89,56 +172,45 @@ export async function generateDocumentPDF(
   let logoLoaded = false;
   const logoMaxW = 30;
   const logoMaxH = 20;
-  let logoReservedHeight = 0;
 
   if (company?.logo) {
     try {
       const logo = await loadImageForJsPDF(company.logo);
       if (logo) {
         const ratio = logo.width / logo.height;
-
-        // Fit dans (logoMaxW x logoMaxH) sans déformation
         let drawW = logoMaxW;
         let drawH = drawW / ratio;
         if (drawH > logoMaxH) {
           drawH = logoMaxH;
           drawW = drawH * ratio;
         }
-
-        const x = marginLeft + (logoMaxW - drawW) / 2;
-        const yLogo = y + (logoMaxH - drawH) / 2;
-
-        doc.addImage(logo.dataUrl, logo.format, x, yLogo, drawW, drawH);
+        doc.addImage(logo.dataUrl, logo.format, marginLeft, y, drawW, drawH);
         logoLoaded = true;
-        logoReservedHeight = logoMaxH;
       }
     } catch (error) {
       console.error('Error adding logo:', error);
     }
   }
 
-  // Infos entreprise à gauche (sous le logo ou à la place)
+  // Infos entreprise
   const companyInfoX = marginLeft;
-  let companyY = logoLoaded ? y + logoReservedHeight + 5 : y;
-  
-  // Nom de l'entreprise
-  doc.setFontSize(16);
+  let companyY = logoLoaded ? y + logoMaxH + 5 : y;
+
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 41, 59); // slate-800
+  doc.setTextColor(30, 41, 59);
   doc.text(company?.name?.toUpperCase() || 'ENTREPRISE', companyInfoX, companyY);
-  companyY += 6;
-  
-  // Adresse
-  doc.setFontSize(10);
+  companyY += 5;
+
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(71, 85, 105); // slate-600
+  doc.setTextColor(71, 85, 105);
+  
   if (company?.address) {
     const addressLines = doc.splitTextToSize(company.address, 80);
     doc.text(addressLines, companyInfoX, companyY);
     companyY += addressLines.length * 4;
   }
-  
-  // Contact
   if (company?.phone) {
     doc.text(`Tél: ${company.phone}`, companyInfoX, companyY);
     companyY += 4;
@@ -152,12 +224,10 @@ export async function generateDocumentPDF(
     doc.text(`MF: ${company.tax_number}`, companyInfoX, companyY);
     companyY += 4;
   }
-  
+
   // ============ TITRE DOCUMENT (à droite) ============
-  const rightX = pageWidth - marginRight;
   let titleY = y;
-  
-  // Type de document
+
   const getDocumentLabel = () => {
     switch (data.type) {
       case 'invoice': return 'FACTURE';
@@ -166,137 +236,142 @@ export async function generateDocumentPDF(
       default: return 'DOCUMENT';
     }
   };
-  
-  doc.setFontSize(22);
+
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(37, 99, 235); // primary blue
+  doc.setTextColor(37, 99, 235);
   doc.text(getDocumentLabel(), rightX, titleY, { align: 'right' });
-  titleY += 8;
-  
-  // Numéro et date
+  titleY += 7;
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text(`N°: ${data.number}`, rightX, titleY, { align: 'right' });
-  titleY += 5;
+  titleY += 4;
   doc.text(`Date: ${new Date(data.date).toLocaleDateString('fr-FR')}`, rightX, titleY, { align: 'right' });
-  titleY += 10;
-  
+  titleY += 8;
+
   // Client
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text('Client:', rightX, titleY, { align: 'right' });
-  titleY += 5;
-  
+  titleY += 4;
+
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(51, 65, 85);
   doc.text(data.client.name, rightX, titleY, { align: 'right' });
+  titleY += 4;
+  
   if (data.client.address) {
-    titleY += 4;
     doc.setFontSize(9);
-    doc.text(data.client.address, rightX, titleY, { align: 'right' });
+    const clientAddressLines = doc.splitTextToSize(data.client.address, 70);
+    clientAddressLines.forEach((line: string) => {
+      doc.text(line, rightX, titleY, { align: 'right' });
+      titleY += 3.5;
+    });
   }
   
+  // Numéro fiscal du client
+  if (data.client.tax_number) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`MF: ${data.client.tax_number}`, rightX, titleY, { align: 'right' });
+    titleY += 4;
+  }
+
   // Ligne de séparation
-  y = Math.max(companyY, titleY) + 10;
-  doc.setDrawColor(226, 232, 240); // slate-200
+  y = Math.max(companyY, titleY) + 8;
+  doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
   doc.line(marginLeft, y, rightX, y);
-  y += 10;
-  
+  y += 8;
+
   // ============ TABLEAU DES LIGNES ============
   const tableStartY = y;
-  const colWidths = {
-    description: 90,
-    quantity: 25,
-    unitPrice: 35,
-    total: 30
-  };
-  
+  const colWidths = { description: 90, quantity: 25, unitPrice: 35, total: 30 };
   const col1 = marginLeft;
   const col2 = col1 + colWidths.description;
   const col3 = col2 + colWidths.quantity;
   const col4 = col3 + colWidths.unitPrice;
-  const tableEndX = col4 + colWidths.total;
-  
+
   // En-tête du tableau
-  doc.setFillColor(241, 245, 249); // slate-100
-  doc.setDrawColor(203, 213, 225); // slate-300
-  doc.rect(col1, tableStartY, contentWidth, 10, 'FD');
-  
+  doc.setFillColor(241, 245, 249);
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(col1, tableStartY, contentWidth, 8, 'FD');
+
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(51, 65, 85);
-  
-  doc.text('Description', col1 + 3, tableStartY + 7);
-  doc.text('Qté', col2 + colWidths.quantity / 2, tableStartY + 7, { align: 'center' });
-  doc.text('Prix Unit.', col3 + colWidths.unitPrice - 3, tableStartY + 7, { align: 'right' });
-  doc.text('Total HT', col4 + colWidths.total - 3, tableStartY + 7, { align: 'right' });
-  
-  // Lignes verticales pour l'en-tête
-  doc.line(col2, tableStartY, col2, tableStartY + 10);
-  doc.line(col3, tableStartY, col3, tableStartY + 10);
-  doc.line(col4, tableStartY, col4, tableStartY + 10);
-  
+  doc.text('Description', col1 + 3, tableStartY + 5.5);
+  doc.text('Qté', col2 + colWidths.quantity / 2, tableStartY + 5.5, { align: 'center' });
+  doc.text('Prix Unit.', col3 + colWidths.unitPrice - 3, tableStartY + 5.5, { align: 'right' });
+  doc.text('Total HT', col4 + colWidths.total - 3, tableStartY + 5.5, { align: 'right' });
+
+  doc.line(col2, tableStartY, col2, tableStartY + 8);
+  doc.line(col3, tableStartY, col3, tableStartY + 8);
+  doc.line(col4, tableStartY, col4, tableStartY + 8);
+
   // Contenu du tableau
-  let currentY = tableStartY + 10;
-  const rowHeight = 8;
-  
+  let currentY = tableStartY + 8;
+  const rowHeight = 7;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  
+
   data.lines.forEach((line, index) => {
     const rowY = currentY + index * rowHeight;
-    
-    // Bordure de la ligne
+
     doc.setDrawColor(226, 232, 240);
     doc.rect(col1, rowY, contentWidth, rowHeight);
-    
-    // Lignes verticales
     doc.line(col2, rowY, col2, rowY + rowHeight);
     doc.line(col3, rowY, col3, rowY + rowHeight);
     doc.line(col4, rowY, col4, rowY + rowHeight);
-    
-    // Contenu
+
     doc.setTextColor(30, 41, 59);
-    
-    // Description (tronquer si trop long)
-    const maxDescWidth = colWidths.description - 6;
+
     let description = line.description;
+    const maxDescWidth = colWidths.description - 6;
     while (doc.getTextWidth(description) > maxDescWidth && description.length > 3) {
       description = description.slice(0, -4) + '...';
     }
-    doc.text(description, col1 + 3, rowY + 5.5);
-    
-    // Quantité
-    doc.text(line.quantity.toString(), col2 + colWidths.quantity / 2, rowY + 5.5, { align: 'center' });
-    
-    // Prix unitaire
-    doc.text(formatAmount(line.unit_price), col3 + colWidths.unitPrice - 3, rowY + 5.5, { align: 'right' });
-    
-    // Total HT
+    doc.text(description, col1 + 3, rowY + 5);
+    doc.text(line.quantity.toString(), col2 + colWidths.quantity / 2, rowY + 5, { align: 'center' });
+    doc.text(formatAmount(line.unit_price), col3 + colWidths.unitPrice - 3, rowY + 5, { align: 'right' });
     doc.setFont('helvetica', 'bold');
-    doc.text(formatAmount(line.total_ht), col4 + colWidths.total - 3, rowY + 5.5, { align: 'right' });
+    doc.text(formatAmount(line.total_ht), col4 + colWidths.total - 3, rowY + 5, { align: 'right' });
     doc.setFont('helvetica', 'normal');
   });
-  
-  y = currentY + data.lines.length * rowHeight + 15;
-  
+
+  y = currentY + data.lines.length * rowHeight + 12;
+
   // ============ SECTION TOTAUX (à droite) ============
-  const totalsWidth = 80;
+  const totalsWidth = 85;
   const totalsX = rightX - totalsWidth;
-  
+
+  doc.setFontSize(9);
+
   // Total HT
-  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text('Total HT:', totalsX, y);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(formatAmount(data.total_ht), rightX, y, { align: 'right' });
-  y += 6;
-  
-  // Taxes
+  y += 5;
+
+  // Remise
+  if (data.discount && data.discount > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text('Remise:', totalsX, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(220, 38, 38); // red
+    doc.text('-' + formatAmount(data.discount), rightX, y, { align: 'right' });
+    y += 5;
+  }
+
+  // Taxes (TVA, etc.)
   if (data.applied_taxes.length > 0) {
     data.applied_taxes.forEach((tax) => {
       doc.setFont('helvetica', 'normal');
@@ -308,61 +383,82 @@ export async function generateDocumentPDF(
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 41, 59);
       doc.text(formatAmount(tax.amount), rightX, y, { align: 'right' });
-      y += 6;
+      y += 5;
     });
   }
-  
+
+  // Timbre fiscal
+  if (data.fiscal_stamp && data.fiscal_stamp > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text('Timbre fiscal:', totalsX, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text(formatAmount(data.fiscal_stamp), rightX, y, { align: 'right' });
+    y += 5;
+  }
+
   // Ligne de séparation
   y += 2;
-  doc.setDrawColor(148, 163, 184); // slate-400
+  doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(0.8);
   doc.line(totalsX, y, rightX, y);
-  y += 6;
-  
+  y += 5;
+
   // Total TTC
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(37, 99, 235); // primary blue
+  doc.setTextColor(37, 99, 235);
   doc.text('Total TTC:', totalsX, y);
   doc.text(formatAmount(data.total_ttc), rightX, y, { align: 'right' });
-  
-  y += 15;
-  
+  y += 8;
+
+  // Montant en toutes lettres
+  const amountWords = data.amount_in_words || numberToWords(data.total_ttc);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(71, 85, 105);
+  const wordsText = `Arrêté la présente ${getDocumentLabel().toLowerCase()} à la somme de: ${amountWords}`;
+  const wordsLines = doc.splitTextToSize(wordsText, totalsWidth + 15);
+  doc.text(wordsLines, totalsX - 15, y);
+  y += wordsLines.length * 3.5 + 5;
+
   // ============ NOTES ============
   if (data.notes) {
+    y += 5;
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
     doc.line(marginLeft, y, rightX, y);
-    y += 8;
-    
+    y += 6;
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(51, 65, 85);
     doc.text('Notes:', marginLeft, y);
-    y += 5;
-    
+    y += 4;
+
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
     const notesLines = doc.splitTextToSize(data.notes, contentWidth);
     doc.text(notesLines, marginLeft, y);
   }
-  
+
   // ============ FOOTER ============
   const footerY = pageHeight - 20;
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
   doc.line(marginLeft, footerY, rightX, footerY);
-  
+
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139); // slate-500
-  
+  doc.setTextColor(100, 116, 139);
+
   if (company?.footer) {
     const footerLines = doc.splitTextToSize(company.footer, contentWidth);
     doc.text(footerLines, pageWidth / 2, footerY + 5, { align: 'center' });
   } else {
     doc.text('Document généré automatiquement', pageWidth / 2, footerY + 5, { align: 'center' });
   }
-  
+
   return doc.output('blob');
 }

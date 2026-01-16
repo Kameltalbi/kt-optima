@@ -87,10 +87,12 @@ export default function InvoicePreviewPage() {
           client: {
             name: client.nom,
             address: client.adresse || null,
+            tax_number: client.numero_fiscal || null,
           },
           lines: documentLines,
           total_ht: facture.montant_ht,
           applied_taxes: appliedTaxes,
+          fiscal_stamp: facture.montant_ttc > 0 ? 1 : 0,
           total_ttc: facture.montant_ttc,
           notes: facture.notes,
         };
