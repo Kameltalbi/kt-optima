@@ -354,7 +354,7 @@ export function InvoiceAcompteCreateModal({
             size="sm"
             variant={showSettings ? "default" : "outline"}
             onClick={() => setShowSettings(!showSettings)}
-            className={`gap-2 shrink-0 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
+            className={`gap-2 shrink-0 mr-6 ${showSettings ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-600 text-green-600 hover:bg-green-50'}`}
           >
             <Settings className="w-4 h-4" />
             {showSettings ? 'Masquer' : 'Réglages'}
