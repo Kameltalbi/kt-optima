@@ -471,51 +471,42 @@ export function InvoiceCreateModal({
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
               <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Options fiscales</h3>
               
-              {/* Taxes */}
-              <div className="space-y-2">
-                {percentageTaxes.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {percentageTaxes.map((tax) => (
-                      <label
-                        key={tax.id}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
-                          formData.appliedTaxes.includes(tax.id)
-                            ? 'bg-primary/10 border-primary text-primary'
-                            : 'bg-background hover:bg-muted'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={formData.appliedTaxes.includes(tax.id)}
-                          onCheckedChange={() => handleToggleTax(tax.id)}
-                          className="h-4 w-4"
-                        />
-                        <span className="text-sm font-medium">{tax.name} ({tax.value}%)</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                
-                {fixedTaxes.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {fixedTaxes.map((tax) => (
-                      <label
-                        key={tax.id}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
-                          formData.appliedTaxes.includes(tax.id)
-                            ? 'bg-primary/10 border-primary text-primary'
-                            : 'bg-background hover:bg-muted'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={formData.appliedTaxes.includes(tax.id)}
-                          onCheckedChange={() => handleToggleTax(tax.id)}
-                          className="h-4 w-4"
-                        />
-                        <span className="text-sm font-medium">{tax.name} ({formatAmount(tax.value)})</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+              {/* Taxes - TVA et Timbre fiscal sur la même ligne */}
+              <div className="flex flex-wrap gap-2">
+                {percentageTaxes.map((tax) => (
+                  <label
+                    key={tax.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                      formData.appliedTaxes.includes(tax.id)
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={formData.appliedTaxes.includes(tax.id)}
+                      onCheckedChange={() => handleToggleTax(tax.id)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">{tax.name} ({tax.value}%)</span>
+                  </label>
+                ))}
+                {fixedTaxes.map((tax) => (
+                  <label
+                    key={tax.id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+                      formData.appliedTaxes.includes(tax.id)
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={formData.appliedTaxes.includes(tax.id)}
+                      onCheckedChange={() => handleToggleTax(tax.id)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">{tax.name} ({formatAmount(tax.value)})</span>
+                  </label>
+                ))}
               </div>
 
               {/* Remise */}
