@@ -179,6 +179,7 @@ export function CreditNoteCreateModal({
   // Réinitialiser le formulaire quand le modal s'ouvre ou charger les données d'édition
   useEffect(() => {
     if (open) {
+      setShowSettings(false); // Reset settings visibility
       const initialTaxes = enabledTaxes.length > 0 ? enabledTaxes.map(t => t.id) : [];
       if (editData) {
         // Mode édition : pré-remplir avec les données existantes
