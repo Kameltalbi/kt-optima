@@ -73,6 +73,14 @@ interface QuoteCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: QuoteFormData) => void;
+  editData?: {
+    id: string;
+    clientId: string;
+    date: string;
+    notes: string;
+    validityDays: number;
+    lines: QuoteLine[];
+  } | null;
 }
 
 // Composant de recherche pour produits/services
@@ -224,6 +232,7 @@ export function QuoteCreateModal({
   open,
   onOpenChange,
   onSave,
+  editData,
 }: QuoteCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
@@ -244,15 +253,39 @@ export function QuoteCreateModal({
     validityDays: 30,
   });
 
-  // Initialiser avec les taxes activées par défaut
+  // Pré-remplir le formulaire si on est en mode édition
   useEffect(() => {
-    if (enabledTaxes.length > 0 && formData.appliedTaxes.length === 0) {
-      setFormData(prev => ({
-        ...prev,
+    if (editData && open) {
+      setFormData({
+        clientId: editData.clientId,
+        date: editData.date,
+        reference: "",
+        currency: String(defaultCurrency),
         appliedTaxes: enabledTaxes.map(t => t.id),
-      }));
+        applyDiscount: false,
+        discountType: 'percentage',
+        discountValue: 0,
+        lines: editData.lines,
+        notes: editData.notes || "",
+        validityDays: editData.validityDays || 30,
+      });
+    } else if (!editData && open) {
+      // Reset pour création
+      setFormData({
+        clientId: "",
+        date: new Date().toISOString().split("T")[0],
+        reference: "",
+        currency: String(defaultCurrency),
+        appliedTaxes: enabledTaxes.map(t => t.id),
+        applyDiscount: false,
+        discountType: 'percentage',
+        discountValue: 0,
+        lines: [],
+        notes: "",
+        validityDays: 30,
+      });
     }
-  }, [enabledTaxes]);
+  }, [editData, open, defaultCurrency, enabledTaxes]);
 
   // Calculs dynamiques (identique à InvoiceCreateModal)
   const calculateTotals = () => {
@@ -388,9 +421,9 @@ export function QuoteCreateModal({
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Nouveau devis</DialogTitle>
+          <DialogTitle>{editData ? 'Modifier le devis' : 'Nouveau devis'}</DialogTitle>
           <DialogDescription>
-            Créez un nouveau devis client avec options fiscales configurables
+            {editData ? 'Modifiez les informations du devis' : 'Créez un nouveau devis client avec options fiscales configurables'}
           </DialogDescription>
         </DialogHeader>
 
