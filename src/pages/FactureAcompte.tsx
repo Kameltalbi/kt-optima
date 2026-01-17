@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,40 @@ export default function FactureAcompte() {
   const facturesAcompte = useMemo(() => {
     return factures.filter(f => f.type_facture === 'acompte');
   }, [factures]);
+
+  // Fonction pour vérifier si une facture finale existe déjà pour une facture d'acompte
+  const hasFactureFinale = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    
+    facturesAcompte.forEach(factureAcompte => {
+      // Méthode 1: Vérifier facture_parent_id si disponible
+      if (factureAcompte.facture_parent_id) {
+        const factureFinale = factures.find(f => f.id === factureAcompte.facture_parent_id);
+        if (factureFinale) {
+          map[factureAcompte.id] = true;
+          return;
+        }
+      }
+      
+      // Méthode 2: Chercher dans les notes des factures standard
+      // Le format est: "Facture finale - Acompte: NUMERO"
+      const factureFinaleParNotes = factures.find(f => 
+        f.type_facture === 'standard' && 
+        f.notes && (
+          f.notes.includes(`Facture finale - Acompte: ${factureAcompte.numero}`) ||
+          f.notes.includes(`Acompte: ${factureAcompte.numero}`)
+        )
+      );
+      if (factureFinaleParNotes) {
+        map[factureAcompte.id] = true;
+        return;
+      }
+      
+      map[factureAcompte.id] = false;
+    });
+    
+    return map;
+  }, [factures, facturesAcompte]);
 
   // Créer un map des clients pour accès rapide
   const clientsMap = useMemo(() => {
@@ -478,7 +512,7 @@ export default function FactureAcompte() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {/* Bouton "Générer facture finale" visible pour les factures payées sans facture finale */}
-                            {facture.statut === 'payee' && !facture.facture_parent_id && (
+                            {facture.statut === 'payee' && !hasFactureFinale[facture.id] && (
                               <Button 
                                 variant="default" 
                                 size="sm" 
@@ -544,7 +578,7 @@ export default function FactureAcompte() {
                                     Encaisser
                                   </DropdownMenuItem>
                                 )}
-                                {facture.statut === 'payee' && !facture.facture_parent_id && (
+                                {facture.statut === 'payee' && !hasFactureFinale[facture.id] && (
                                   <DropdownMenuItem 
                                 onClick={async () => {
                                   try {

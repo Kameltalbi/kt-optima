@@ -33,7 +33,10 @@ import {
   MoreHorizontal,
   Edit,
   X,
-  FileText
+  FileText,
+  Download,
+  Trash2,
+  StickyNote
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +56,7 @@ import { useEncaissements, CreateEncaissementData, Encaissement } from "@/hooks/
 import { useClients } from "@/hooks/use-clients";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useApp } from "@/context/AppContext";
 import {
   Select,
   SelectContent,
@@ -91,6 +95,7 @@ export default function Encaissements() {
   const navigate = useNavigate();
   const { encaissements, loading, createEncaissement, updateEncaissement, deleteEncaissement } = useEncaissements();
   const { clients, loading: loadingClients } = useClients();
+  const { isAdmin } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -103,6 +108,9 @@ export default function Encaissements() {
   const [isAllocationsModalOpen, setIsAllocationsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [noteText, setNoteText] = useState("");
   
   // Form state
   const [formData, setFormData] = useState<CreateEncaissementData>({
@@ -243,6 +251,60 @@ export default function Encaissements() {
       setSelectedEncaissement(null);
     } catch (error) {
       console.error('Error cancelling encaissement:', error);
+    }
+  };
+
+  const handleDownloadReceipt = async (encaissement: Encaissement) => {
+    try {
+      // TODO: Générer et télécharger le reçu PDF
+      toast.info('Génération du reçu en cours...');
+      // Pour l'instant, on affiche juste un message
+      // Vous pouvez implémenter la génération PDF ici
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast.error('Erreur lors du téléchargement du reçu');
+    }
+  };
+
+  const handleAddNote = (encaissement: Encaissement) => {
+    setSelectedEncaissement(encaissement);
+    setNoteText(encaissement.notes || "");
+    setIsNoteModalOpen(true);
+  };
+
+  const handleSaveNote = async () => {
+    if (!selectedEncaissement) return;
+    
+    try {
+      await updateEncaissement(selectedEncaissement.id, {
+        notes: noteText,
+      });
+      toast.success('Note ajoutée avec succès');
+      setIsNoteModalOpen(false);
+      setSelectedEncaissement(null);
+      setNoteText("");
+    } catch (error) {
+      console.error('Error saving note:', error);
+      toast.error('Erreur lors de l\'ajout de la note');
+    }
+  };
+
+  const handleDelete = (encaissement: Encaissement) => {
+    setSelectedEncaissement(encaissement);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedEncaissement) return;
+    
+    try {
+      await deleteEncaissement(selectedEncaissement.id);
+      toast.success('Encaissement supprimé avec succès');
+      setIsDeleteModalOpen(false);
+      setSelectedEncaissement(null);
+    } catch (error) {
+      console.error('Error deleting encaissement:', error);
+      toast.error('Erreur lors de la suppression');
     }
   };
 
@@ -494,44 +556,54 @@ export default function Encaissements() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                {/* Action toujours disponible */}
+                                {/* Voir l'avance */}
                                 <DropdownMenuItem onClick={() => handleViewDetails(encaissement)}>
                                   <Eye className="w-4 h-4 mr-2" />
-                                  Voir détails
+                                  Voir l'avance
                                 </DropdownMenuItem>
                                 
-                                {/* Actions liées aux allocations */}
-                                {encaissement.allocated_amount > 0 && (
-                                  <DropdownMenuItem onClick={() => handleViewAllocations(encaissement)}>
-                                    <FileText className="w-4 h-4 mr-2" />
-                                    Voir allocations
-                                  </DropdownMenuItem>
-                                )}
+                                {/* Télécharger reçu */}
+                                <DropdownMenuItem onClick={() => handleDownloadReceipt(encaissement)}>
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Télécharger reçu
+                                </DropdownMenuItem>
                                 
-                                {/* Allouer à une facture (uniquement pour acomptes avec remaining > 0) */}
-                                {isAcompte && hasRemaining && (
-                                  <DropdownMenuItem onClick={() => handleAllocateToInvoice(encaissement)}>
-                                    <ArrowRight className="w-4 h-4 mr-2" />
-                                    Allouer à une facture
-                                  </DropdownMenuItem>
-                                )}
+                                <DropdownMenuSeparator />
                                 
-                                {/* Actions de modification (uniquement si non alloué) */}
+                                {/* Modifier (si non affectée) */}
                                 {encaissement.allocated_amount === 0 && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleEdit(encaissement)}>
-                                      <Edit className="w-4 h-4 mr-2" />
-                                      Modifier
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => handleCancel(encaissement)}
-                                      className="text-destructive focus:text-destructive"
-                                    >
-                                      <X className="w-4 h-4 mr-2" />
-                                      Annuler
-                                    </DropdownMenuItem>
-                                  </>
+                                  <DropdownMenuItem onClick={() => handleEdit(encaissement)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Modifier
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {/* Ajouter note */}
+                                <DropdownMenuItem onClick={() => handleAddNote(encaissement)}>
+                                  <StickyNote className="w-4 h-4 mr-2" />
+                                  Ajouter note
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuSeparator />
+                                
+                                {/* Annuler */}
+                                <DropdownMenuItem 
+                                  onClick={() => handleCancel(encaissement)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <X className="w-4 h-4 mr-2" />
+                                  Annuler
+                                </DropdownMenuItem>
+                                
+                                {/* Supprimer (uniquement admin) */}
+                                {isAdmin && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDelete(encaissement)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Supprimer
+                                  </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -910,6 +982,88 @@ export default function Encaissements() {
                   onClick={confirmCancel}
                 >
                   Oui, annuler
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Ajouter note */}
+      <Dialog open={isNoteModalOpen} onOpenChange={setIsNoteModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter une note</DialogTitle>
+          </DialogHeader>
+          {selectedEncaissement && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveNote();
+            }} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="note">Note</Label>
+                <Textarea
+                  id="note"
+                  placeholder="Ajouter une note à cet encaissement..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsNoteModalOpen(false);
+                    setSelectedEncaissement(null);
+                    setNoteText("");
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button type="submit">
+                  Enregistrer
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Supprimer */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Supprimer l'encaissement</DialogTitle>
+          </DialogHeader>
+          {selectedEncaissement && (
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Êtes-vous sûr de vouloir supprimer définitivement cet encaissement ? Cette action est irréversible.
+              </p>
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="text-sm font-medium">{selectedEncaissement.client?.nom || 'N/A'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(selectedEncaissement.date).toLocaleDateString('fr-FR')} - {formatCurrency(selectedEncaissement.montant)}
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setSelectedEncaissement(null);
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDelete}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer
                 </Button>
               </div>
             </div>
