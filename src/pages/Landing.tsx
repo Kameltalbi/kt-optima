@@ -23,6 +23,10 @@ import {
   Rocket,
   BarChart3,
   Target,
+  Receipt,
+  Store,
+  Briefcase,
+  UserCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -63,12 +67,17 @@ export default function Landing() {
   }, []);
 
   const modules = [
-    { icon: ShoppingCart, title: "Achats", description: "Gestion des bons de commande, réceptions et factures fournisseurs", color: "from-blue-500 to-cyan-500" },
-    { icon: Package, title: "Stock", description: "Inventaire, mouvements, alertes et gestion multi-dépôts", color: "from-purple-500 to-pink-500" },
-    { icon: Wallet, title: "Finance", description: "Trésorerie, banques, échéanciers et rapprochements", color: "from-green-500 to-emerald-500" },
-    { icon: Calculator, title: "Comptabilité", description: "Plan comptable, écritures, grand livre et balance (PCG tunisien)", color: "from-orange-500 to-red-500" },
-    { icon: UserCheck, title: "Ressources Humaines", description: "Employés, contrats, paie, absences, documents et évaluations", color: "from-indigo-500 to-blue-500" },
-    { icon: TrendingUp, title: "Ventes", description: "Devis, factures clients et suivi des ventes", color: "from-teal-500 to-cyan-500" },
+    { icon: Users, title: "CRM", description: "Gestion des clients et prospects", color: "from-blue-500 to-cyan-500" },
+    { icon: TrendingUp, title: "Ventes", description: "Devis, factures et bons de livraison", color: "from-teal-500 to-cyan-500" },
+    { icon: Wallet, title: "Trésorerie", description: "Encaissements et décaissements", color: "from-green-500 to-emerald-500" },
+    { icon: Package, title: "Produits & Services", description: "Catalogue et catégories", color: "from-purple-500 to-pink-500" },
+    { icon: Package, title: "Stock", description: "Inventaire et mouvements", color: "from-indigo-500 to-purple-500" },
+    { icon: ShoppingCart, title: "Achats", description: "Commandes et factures fournisseurs", color: "from-blue-500 to-cyan-500" },
+    { icon: Calculator, title: "Comptabilité", description: "Plan comptable et écritures (PCG tunisien)", color: "from-orange-500 to-red-500" },
+    { icon: UserCheck, title: "Ressources Humaines", description: "Employés, paie et congés", color: "from-indigo-500 to-blue-500" },
+    { icon: Receipt, title: "Notes de frais", description: "Gestion des dépenses et justificatifs", color: "from-rose-500 to-pink-500" },
+    { icon: Building2, title: "Gestion de Parc", description: "Véhicules et maintenance", color: "from-amber-500 to-orange-500" },
+    { icon: ShoppingCart, title: "Point de Vente (POS)", description: "Caisse connectée et synchronisation", color: "from-violet-500 to-purple-500" },
   ];
 
   const stats = [
@@ -211,11 +220,11 @@ export default function Landing() {
                 <span>ERP Moderne & Intuitif</span>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight animate-slide-in-up">
-                Une seule plateforme pour{" "}
+                KT Optima, la plateforme de gestion{" "}
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  piloter l'ensemble
+                  conçue pour faire grandir
                 </span>{" "}
-                de votre entreprise
+                votre entreprise
             </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 animate-slide-in-up delay-200">
               Centralisez vos opérations, maîtrisez votre trésorerie et structurez vos processus avec un ERP pensé pour la croissance.
@@ -290,72 +299,119 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Problème → Solution - Enhanced */}
+      {/* Pour qui est KT OPTIMA - Ultra-court */}
       <section id="fonctionnalites" className="py-20 bg-background relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12" data-animate>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Pour qui est <span className="text-primary">KT OPTIMA</span> ?
               </h2>
-              <p className="text-xl text-muted-foreground mt-4">
-                Pensé pour les entreprises qui veulent garder le contrôle
-              </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Dirigeant */}
+            
+            <div className="grid md:grid-cols-2 gap-6 mb-12">
+              {/* Indépendants & TPE */}
               <Card 
-                className="group hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-primary/30 border-2"
+                className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-primary/30 border-2"
                 data-animate
+                style={{ animationDelay: '0.1s' }}
               >
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                    <Users className="w-8 h-8 text-primary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-300">
+                      <UserCircle className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                      Indépendants & TPE
+                    </h3>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
-                    Dirigeant
-                  </h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    Une vision claire de l'activité, sans dépendre de plusieurs outils.
+                  <p className="text-sm font-semibold text-primary mb-2">
+                    Facturer et gérer simplement.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Devis, factures et clients, sans complexité.
                   </p>
                 </CardContent>
               </Card>
 
-              {/* Finance / Trésorerie */}
+              {/* PME en croissance */}
               <Card 
-                className="group hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-primary/30 border-2"
+                className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-primary/30 border-2 border-primary/20"
                 data-animate
+                style={{ animationDelay: '0.2s' }}
               >
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                    <Wallet className="w-8 h-8 text-primary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 group-hover:rotate-6 transition-all duration-300">
+                      <Briefcase className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                      PME en croissance
+                    </h3>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
-                    Finance / Trésorerie
-                  </h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    Des chiffres fiables, en temps réel, sans Excel ni retraitement.
+                  <p className="text-sm font-semibold text-primary mb-2">
+                    Piloter et structurer l'activité.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Ventes, stock, trésorerie et équipe centralisés.
                   </p>
                 </CardContent>
               </Card>
 
-              {/* Équipes */}
+              {/* Entreprises structurées */}
               <Card 
-                className="group hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-primary/30 border-2"
+                className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-primary/30 border-2"
                 data-animate
+                style={{ animationDelay: '0.3s' }}
               >
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                    <UserCheck className="w-8 h-8 text-primary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-300">
+                      <Building2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                      Entreprises structurées
+                    </h3>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
-                    Équipes
-                  </h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    Des outils simples, adaptés à leur métier, sans complexité inutile.
+                  <p className="text-sm font-semibold text-primary mb-2">
+                    Centraliser et sécuriser la gestion.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    RH, paie, notes de frais et comptabilité intégrées.
                   </p>
                 </CardContent>
               </Card>
+
+              {/* Commerces & points de vente */}
+              <Card 
+                className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-primary/30 border-2"
+                data-animate
+                style={{ animationDelay: '0.4s' }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:rotate-6 transition-all duration-300">
+                      <Store className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                      Commerces & points de vente
+                    </h3>
+                  </div>
+                  <p className="text-sm font-semibold text-primary mb-2">
+                    Unifier caisse et gestion.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    POS connecté à KT OPTIMA, ventes et stock synchronisés.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Phrase de clôture */}
+            <div className="text-center" data-animate>
+              <p className="text-lg font-semibold text-foreground">
+                <span className="text-primary">KT OPTIMA</span> s'adapte à votre taille aujourd'hui et accompagne votre croissance demain.
+              </p>
             </div>
           </div>
         </div>
@@ -364,14 +420,14 @@ export default function Landing() {
       {/* Modules Section - Enhanced with animations */}
       <section id="modules" className="py-20 bg-gradient-to-b from-muted/20 via-background to-muted/20 relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12" data-animate>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Modules <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Complets</span>
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Une suite complète de modules pour gérer tous les aspects de votre entreprise
-            </p>
+                Une suite complète de modules pour gérer tous les aspects de votre entreprise. Chaque module est conçu pour répondre à vos besoins spécifiques.
+              </p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {modules.map((module, index) => {
@@ -381,22 +437,34 @@ export default function Landing() {
                     key={index}
                     className="group hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 border-2 hover:border-primary/30 cursor-pointer overflow-hidden relative"
                     data-animate
+                    style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${module.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                     <CardContent className="p-6 relative z-10">
                       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
                         <Icon className="w-7 h-7 text-white" />
-                  </div>
+                      </div>
                       <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                         {module.title}
                       </h3>
                       <p className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">
                         {module.description}
-                  </p>
-                </CardContent>
-              </Card>
+                      </p>
+                    </CardContent>
+                  </Card>
                 );
               })}
+            </div>
+            <div className="mt-12 text-center" data-animate>
+              <p className="text-muted-foreground mb-6">
+                Tous nos modules sont intégrés et fonctionnent ensemble pour vous offrir une vue complète de votre entreprise.
+              </p>
+              <Button size="lg" asChild className="text-lg px-8">
+                <Link to="/pricing">
+                  Voir les plans et tarifs
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -432,47 +500,6 @@ export default function Landing() {
                     <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Cibles - Enhanced */}
-      <section className="py-20 bg-gradient-to-b from-muted/20 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12" data-animate>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Pour qui ?</h2>
-              <p className="text-muted-foreground text-lg">
-              Adapté à tous les types d'entreprises
-            </p>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-6">
-              {[
-                { icon: Users, title: "PME", desc: "Solutions adaptées aux petites et moyennes entreprises" },
-                { icon: FileCheck, title: "Cabinets comptables", desc: "Gestion multi-clients avec comptabilité complète" },
-                { icon: Zap, title: "Startups", desc: "Démarrage rapide avec modules évolutifs" },
-                { icon: Building2, title: "Entreprises multi-sites", desc: "Gestion centralisée avec multi-dépôts et multi-sociétés" },
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <Card
-                    key={index}
-                    className="group hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-primary/30 cursor-pointer"
-                    data-animate
-                  >
-                <CardContent className="p-6">
-                      <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                        <Icon className="w-7 h-7 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">
-                        {item.desc}
-                  </p>
-                </CardContent>
-              </Card>
                 );
               })}
             </div>
@@ -538,7 +565,7 @@ export default function Landing() {
               ?
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Rejoignez des centaines d'entreprises qui font confiance à BilvoxaERP
+              Rejoignez des centaines d'entreprises qui font confiance à KT OPTIMA
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -613,12 +640,42 @@ export default function Landing() {
         [data-animate] {
           opacity: 0;
           transform: translateY(30px);
-          transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+          transition: opacity 0.8s ease-out, transform 0.8s ease-out;
         }
         
         [data-animate].visible {
           opacity: 1;
           transform: translateY(0);
+        }
+        
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
+        }
+        
+        .animate-scale-in {
+          animation: scale-in 0.6s ease-out forwards;
         }
       `}</style>
     </div>
