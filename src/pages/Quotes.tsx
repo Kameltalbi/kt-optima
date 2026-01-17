@@ -348,7 +348,7 @@ export default function Quotes() {
             })));
         }
         
-        // Mettre à jour le devis
+        // Mettre à jour le devis avec la remise
         await updateQuote(editQuoteData.id, {
           client_id: data.clientId,
           date: data.date,
@@ -356,12 +356,15 @@ export default function Quotes() {
           subtotal: totalHTAfterDiscount,
           tax: totalTax,
           total: totalTTC,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
           notes: data.notes || null,
         });
         
         setEditQuoteData(null);
       } else {
-        // MODE CRÉATION
+        // MODE CRÉATION avec la remise
         await createQuote({
           client_id: data.clientId,
           date: data.date,
@@ -369,6 +372,9 @@ export default function Quotes() {
           subtotal: totalHTAfterDiscount,
           tax: totalTax,
           total: totalTTC,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
           status: 'draft',
           notes: data.notes || null,
           items: items,
@@ -696,7 +702,9 @@ export default function Quotes() {
                                     },
                                     lines: documentLines,
                                     total_ht: totalHTBeforeDiscount,
-                                    discount: discountAmount > 0 ? discountAmount : 0,
+                                    discount: (quote as any).remise_montant || discountAmount || 0,
+                                    discount_type: (quote as any).remise_type || null,
+                                    discount_value: (quote as any).remise_valeur || 0,
                                     applied_taxes: appliedTaxes,
                                     fiscal_stamp: quote.total > 0 ? 1 : 0,
                                     total_ttc: quote.total,

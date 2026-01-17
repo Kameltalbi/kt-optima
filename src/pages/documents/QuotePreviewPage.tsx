@@ -50,7 +50,10 @@ export default function QuotePreviewPage() {
       return;
     }
 
-    // Transformer les données
+    // Calculer le total HT avant remise depuis les lignes
+    const totalHTBeforeDiscount = quote.lines.reduce((sum, l) => sum + l.total_ht, 0);
+
+    // Transformer les données avec remise
     const data: InvoiceDocumentData = {
       type: 'quote',
       number: quote.number,
@@ -58,6 +61,7 @@ export default function QuotePreviewPage() {
       client: {
         name: client.nom,
         address: client.adresse || null,
+        tax_number: client.numero_fiscal || null,
       },
       lines: quote.lines.map(line => ({
         description: line.description,
@@ -65,7 +69,10 @@ export default function QuotePreviewPage() {
         unit_price: line.unit_price,
         total_ht: line.total_ht,
       })),
-      total_ht: quote.total - quote.tax,
+      total_ht: totalHTBeforeDiscount,
+      discount: (quote as any).remise_montant || 0,
+      discount_type: (quote as any).remise_type || null,
+      discount_value: (quote as any).remise_valeur || 0,
       applied_taxes: quote.tax > 0 ? [{
         tax_id: 'tva',
         name: 'TVA',

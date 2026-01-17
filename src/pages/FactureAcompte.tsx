@@ -225,7 +225,7 @@ export default function FactureAcompte() {
         const montant_tva = lignes.reduce((sum, l) => sum + l.montant_tva, 0);
         const montant_ttc = lignes.reduce((sum, l) => sum + l.montant_ttc, 0);
 
-        // Mettre à jour la facture
+        // Mettre à jour la facture avec la remise
         await updateFacture(editAcompteData.id, {
           date_facture: data.date,
           client_id: data.clientId,
@@ -233,19 +233,25 @@ export default function FactureAcompte() {
           montant_ht,
           montant_tva,
           montant_ttc,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         });
 
         setIsDialogOpen(false);
         setEditAcompteData(null);
         toast.success("Facture d'acompte modifiée avec succès");
       } else {
-        // Mode création
+        // Mode création avec remise
         const factureData = {
           numero: data.reference || '',
           date_facture: data.date,
           client_id: data.clientId,
           type_facture: 'acompte' as const,
           notes: data.notes || null,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         };
 
         await createFacture(factureData, lignes, []);

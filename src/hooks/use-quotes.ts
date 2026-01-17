@@ -14,6 +14,9 @@ export interface Quote {
   subtotal: number;
   tax: number;
   total: number;
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
   notes: string | null;
   company_id: string;
@@ -44,6 +47,9 @@ export interface CreateQuoteData {
   subtotal?: number;
   tax?: number;
   total?: number;
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
   notes?: string | null;
   items?: CreateQuoteItemData[];
