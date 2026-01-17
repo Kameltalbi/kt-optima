@@ -566,7 +566,9 @@ export default function Pricing() {
                         ) : (
                           <>
                             {isAnnual ? plan.annualPrice : plan.monthlyPrice} DT
-                            <span className="text-lg text-muted-foreground">/mois</span>
+                            <span className="text-lg text-muted-foreground">
+                              {isAnnual ? "/an" : "/mois"}
+                            </span>
                           </>
                         )}
                       </div>
@@ -630,6 +632,9 @@ export default function Pricing() {
           </div>
         </div>
       </section>
+
+      {/* Section Add-ons */}
+      <AddOnsSection />
 
       {/* Section 4 - Tableau Comparatif */}
       <section id="comparison" className="py-16 bg-muted/20">
@@ -807,9 +812,6 @@ export default function Pricing() {
           </div>
         </div>
       </section>
-
-      {/* Section Add-ons */}
-      <AddOnsSection />
 
       {/* Footer */}
       <Footer />
