@@ -54,7 +54,7 @@ export default function Contact() {
             <Link to="/" className="flex items-center gap-3">
               <img 
                 src="/kt optima (500 x 192 px).png" 
-                alt="KT Optima" 
+                alt="ktoptima" 
                 className="h-12 w-auto object-contain"
               />
             </Link>
@@ -318,7 +318,7 @@ export default function Contact() {
                       </Button>
 
                       <p className="text-xs text-muted-foreground text-center">
-                        En soumettant ce formulaire, vous acceptez d'être contacté par l'équipe KT Optima.
+                        En soumettant ce formulaire, vous acceptez d'être contacté par l'équipe ktoptima.
                       </p>
                     </form>
                   </CardContent>
@@ -334,7 +334,7 @@ export default function Contact() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Prêt à découvrir KT Optima ?
+              Prêt à découvrir ktoptima ?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
               Demandez une démonstration personnalisée adaptée à vos besoins

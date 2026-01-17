@@ -48,7 +48,7 @@ export default function Login() {
         <div className="flex items-center justify-center mb-8">
           <img 
             src="/kt optima (500 x 192 px).png" 
-            alt="KT Optima" 
+            alt="ktoptima" 
             className="h-20 w-auto object-contain"
           />
         </div>

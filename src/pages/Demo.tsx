@@ -77,7 +77,7 @@ export default function Demo() {
             <Link to="/" className="flex items-center gap-3">
               <img 
                 src="/kt optima (500 x 192 px).png" 
-                alt="KT Optima" 
+                alt="ktoptima" 
                 className="h-10 sm:h-12 w-auto object-contain"
               />
             </Link>
@@ -171,11 +171,11 @@ export default function Demo() {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               Découvrez comment{" "}
-              <span className="text-primary">KT Optima s'adapte</span>{" "}
+              <span className="text-primary">ktoptima s'adapte</span>{" "}
               à votre organisation
             </h1>
             <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-              La démonstration de KT Optima vous permet de comprendre concrètement comment la plateforme peut structurer vos opérations, centraliser vos données et simplifier votre pilotage au quotidien.
+              La démonstration de ktoptima vous permet de comprendre concrètement comment la plateforme peut structurer vos opérations, centraliser vos données et simplifier votre pilotage au quotidien.
             </p>
             <p className="text-lg text-foreground font-medium max-w-3xl mx-auto">
               Il ne s'agit pas d'une présentation générique, mais d'un échange ciblé, basé sur vos besoins réels.
@@ -199,7 +199,7 @@ export default function Demo() {
             <Card className="border-2">
               <CardContent className="p-8">
                 <p className="text-foreground mb-6">
-                  Une démonstration KT Optima vous permet de :
+                  Une démonstration ktoptima vous permet de :
                 </p>
                 <ul className="space-y-4">
                   {[
@@ -379,7 +379,7 @@ export default function Demo() {
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                Demander une démonstration de KT Optima
+                Demander une démonstration de ktoptima
               </h2>
               <p className="text-muted-foreground">
                 Formulaire simple et rapide
@@ -511,7 +511,7 @@ export default function Demo() {
                   </div>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    En soumettant ce formulaire, vous acceptez d'être contacté par l'équipe KT Optima.
+                    En soumettant ce formulaire, vous acceptez d'être contacté par l'équipe ktoptima.
                   </p>
                 </form>
               </CardContent>
@@ -575,7 +575,7 @@ export default function Demo() {
               Demander une démonstration personnalisée
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Prenez le temps de découvrir KT Optima dans votre contexte
+              Prenez le temps de découvrir ktoptima dans votre contexte
             </p>
             <Button size="lg" asChild className="text-lg px-8">
               <a href="#formulaire">

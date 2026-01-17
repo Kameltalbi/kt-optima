@@ -103,7 +103,7 @@ export default function Landing() {
             <div className="flex items-center gap-3">
               <img 
                 src="/kt optima (500 x 192 px).png" 
-                alt="KT Optima" 
+                alt="ktoptima" 
                 className="h-12 sm:h-16 lg:h-20 w-auto object-contain transition-transform hover:scale-105"
               />
             </div>

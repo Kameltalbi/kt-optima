@@ -9,7 +9,7 @@ export function Footer() {
           <Link to="/" className="inline-block">
             <img 
               src="/kt optima blanc.png" 
-              alt="KT Optima" 
+              alt="ktoptima" 
               className="h-16 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
             />
           </Link>
@@ -210,7 +210,7 @@ export function Footer() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} KT Optima – Tous droits réservés
+              © {new Date().getFullYear()} ktoptima – Tous droits réservés
             </p>
             <p className="text-xs text-gray-500">
               Plateforme ERP modulaire

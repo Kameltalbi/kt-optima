@@ -185,7 +185,7 @@ export default function Modules() {
             <Link to="/" className="flex items-center gap-3">
               <img 
                 src="/kt optima (500 x 192 px).png" 
-                alt="KT Optima" 
+                alt="ktoptima" 
                 className="h-10 sm:h-12 w-auto object-contain"
               />
             </Link>
@@ -282,7 +282,7 @@ export default function Modules() {
               <span className="text-primary">vos besoins réels</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-              KT Optima est une plateforme modulaire.
+              ktoptima est une plateforme modulaire.
             </p>
             <p className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
               Chaque module répond à un besoin métier précis et s'intègre dans un socle commun, sans rupture ni redondance de données.
@@ -300,7 +300,7 @@ export default function Modules() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                Principes des modules KT Optima
+                Principes des modules ktoptima
               </h2>
               <p className="text-lg text-muted-foreground">
                 Une logique simple et cohérente
@@ -472,7 +472,7 @@ export default function Modules() {
             <Card className="border-2 border-primary/20">
               <CardContent className="p-8">
                 <p className="text-lg text-foreground mb-6">
-                  KT Optima permet :
+                  ktoptima permet :
                 </p>
                 <ul className="space-y-4 mb-6">
                   {[
