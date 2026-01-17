@@ -170,8 +170,8 @@ export async function generateDocumentPDF(
   
   // ============ HEADER - LOGO ET INFOS ENTREPRISE ============
   let logoLoaded = false;
-  const logoMaxW = 40; // Augmenté de 30 à 40
-  const logoMaxH = 28; // Augmenté de 20 à 28
+  const logoMaxW = 50; // Augmenté à 50mm
+  const logoMaxH = 35; // Augmenté à 35mm
 
   if (company?.logo) {
     try {
@@ -194,7 +194,7 @@ export async function generateDocumentPDF(
 
   // Infos entreprise
   const companyInfoX = marginLeft;
-  let companyY = logoLoaded ? y + logoMaxH + 5 : y;
+  let companyY = logoLoaded ? y + 35 + 5 : y; // Utiliser la nouvelle hauteur max (35mm)
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
