@@ -29,6 +29,7 @@ const planDetails: Record<string, {
   fournisseurs: { status: "complete" | "partial" | "none"; features: string[] };
   comptabilite: { status: "complete" | "partial" | "none"; features: string[] };
   rh: { status: "complete" | "partial" | "none"; features: string[] };
+  notesFrais?: { status: "complete" | "partial" | "none"; features: string[] };
 }> = {
   depart: {
     ventes: {
@@ -257,7 +258,6 @@ const planDetails: Record<string, {
       status: "partial",
       features: [
         "Gestion des employés",
-        "Paie",
         "Congés & absences",
       ],
     },
@@ -324,6 +324,18 @@ const planDetails: Record<string, {
         "Documents RH",
       ],
     },
+    notesFrais: {
+      status: "complete",
+      features: [
+        "Création de notes de frais",
+        "Catégories de dépenses",
+        "Justificatifs",
+        "Workflow de validation avancé",
+        "Règles de plafonds",
+        "Intégration comptable",
+        "Historique & audit",
+      ],
+    },
   },
 };
 
@@ -333,7 +345,9 @@ const categoryLabels: Record<string, string> = {
   stock: "Stock",
   tresorerie: "Trésorerie",
   fournisseurs: "Fournisseurs",
-  comptabilite: "Comptabilité & RH",
+  comptabilite: "Comptabilité",
+  rh: "Ressources Humaines",
+  notesFrais: "Notes de frais",
 };
 
 const statusLabels: Record<"complete" | "partial" | "none", { label: string; icon: React.ReactNode; color: string }> = {

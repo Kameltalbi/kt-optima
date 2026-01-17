@@ -2,18 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, ArrowRight, Building2, Shield, Cloud, Download, Users, Building, Info } from "lucide-react";
+import { Check, X, ArrowRight, Building2, Shield, Cloud, Download, Info, Users, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { PlanDetailModal } from "@/components/pricing/PlanDetailModal";
+import { AddOnsSection } from "@/components/pricing/AddOnsSection";
+import { Footer } from "@/components/layout/Footer";
 
 export interface Plan {
   id: string;
@@ -47,7 +43,7 @@ export interface Plan {
   };
 }
 
-const plans: Plan[] = [
+export const plans: Plan[] = [
   {
     id: "depart",
     name: "Départ",
@@ -55,6 +51,7 @@ const plans: Plan[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     color: "blue",
+    maxUsers: 1,
     mainFeatures: [
       "Devis & factures clients",
       "Gestion des clients",
@@ -96,6 +93,7 @@ const plans: Plan[] = [
     monthlyPrice: 45,
     annualPrice: 450,
     color: "purple",
+    maxUsers: 3,
     mainFeatures: [
       "Tout Départ",
       "Encaissements clients",
@@ -145,6 +143,7 @@ const plans: Plan[] = [
     annualPrice: 790,
     color: "green",
     badge: "⭐",
+    maxUsers: 7,
     mainFeatures: [
       "Tout Starter",
       "Gestion avancée du stock",
@@ -198,7 +197,6 @@ const plans: Plan[] = [
       ],
       rh: [
         "Gestion des employés",
-        "Paie",
         "Congés & absences"
       ],
     },
@@ -210,6 +208,7 @@ const plans: Plan[] = [
     monthlyPrice: 139,
     annualPrice: 1390,
     color: "orange",
+    maxUsers: null, // Illimité
     mainFeatures: [
       "Tout Business",
       "Comptabilité & journaux",
@@ -372,46 +371,14 @@ const hasFeature = (plan: Plan, feature: string): boolean => {
   );
 };
 
-const additionalOptions = [
-  { id: "user", name: "Utilisateur supplémentaire", price: 10, icon: Users },
-  { id: "company", name: "Société supplémentaire", price: 30, icon: Building },
-  { id: "reports", name: "Rapports avancés", price: 20, icon: Download },
-  { id: "permissions", name: "Droits & permissions avancés", price: 15, icon: Shield },
-  { id: "storage", name: "Stockage fichiers", price: 10, icon: Cloud },
-];
-
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
-  const [users, setUsers] = useState(1);
-  const [companies, setCompanies] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
   const [selectedPlanDetail, setSelectedPlanDetail] = useState<Plan | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const calculatePrice = (plan: Plan) => {
-    let total = isAnnual ? plan.annualPrice : plan.monthlyPrice * 12;
-    
-    // Add additional users (first user is included)
-    if (users > 1) {
-      const userPrice = additionalOptions[0].price * (isAnnual ? 12 * 0.8 : 12);
-      total += (users - 1) * userPrice;
-    }
-    
-    // Add additional companies (first company is included)
-    if (companies > 1) {
-      const companyPrice = additionalOptions[1].price * (isAnnual ? 12 * 0.8 : 12);
-      total += (companies - 1) * companyPrice;
-    }
-    
-    // Add selected options
-    selectedOptions.forEach((optionId) => {
-      const option = additionalOptions.find((o) => o.id === optionId);
-      if (option) {
-        total += option.price * (isAnnual ? 12 * 0.8 : 12);
-      }
-    });
-    
-    return total;
+    return isAnnual ? plan.annualPrice : plan.monthlyPrice * 12;
   };
 
   const formatPrice = (price: number) => {
@@ -421,46 +388,103 @@ export default function Pricing() {
     return `${Math.round(price / 12)} DT / mois`;
   };
 
-  const toggleOption = (optionId: string) => {
-    const newSelected = new Set(selectedOptions);
-    if (newSelected.has(optionId)) {
-      newSelected.delete(optionId);
-    } else {
-      newSelected.add(optionId);
-    }
-    setSelectedOptions(newSelected);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50 transition-all duration-300 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl text-foreground">BilvoxaERP</span>
+              <img 
+                src="/ktoptima.png" 
+                alt="KTOptima" 
+                className="h-20 w-auto object-contain transition-transform hover:scale-105"
+              />
             </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#plans" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Plans
+
+            {/* Navigation Desktop */}
+            <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
+              <a href="#fonctionnalites" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Produit
               </a>
-              <a href="#comparison" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Comparaison
-              </a>
-              <a href="#options" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Options
+              <Link to="/modules" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Modules
+              </Link>
+              <Link to="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Tarifs
+              </Link>
+              <a href="#entreprise" className="text-sm font-medium text-foreground hover:text-primary transition-colors duration-200">
+                Entreprise
               </a>
             </nav>
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" asChild>
-                <Link to="/login">Se connecter</Link>
+
+            {/* CTA Buttons Desktop */}
+            <div className="hidden md:flex items-center gap-4">
+              <Button variant="ghost" asChild className="transition-all duration-300">
+                <Link to="/login">Connexion</Link>
               </Button>
-              <Button asChild>
-                <Link to="/register">Créer un compte</Link>
+              <Button asChild className="transition-all duration-300 hover:shadow-lg">
+                <Link to="/demo">Demander une démo</Link>
               </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 mt-6">
+                    <a 
+                      href="#fonctionnalites" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Produit
+                    </a>
+                    <Link 
+                      to="/modules" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Modules
+                    </Link>
+                    <Link 
+                      to="/pricing" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Tarifs
+                    </Link>
+                    <a 
+                      href="#entreprise" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Entreprise
+                    </a>
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          Connexion
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                          Demander une démo
+                        </Link>
+                      </Button>
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
@@ -486,7 +510,7 @@ export default function Pricing() {
       <section className="py-8 bg-background border-b border-border/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="flex items-center justify-center">
               {/* Toggle Mensuel/Annuel */}
               <div className="flex items-center gap-3">
                 <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : ""}>
@@ -500,44 +524,10 @@ export default function Pricing() {
                 <Label htmlFor="billing-toggle" className={isAnnual ? "font-semibold" : ""}>
                   Annuel <span className="text-primary">(-20%)</span>
                 </Label>
-                </div>
-
-              {/* Nombre d'utilisateurs */}
-              <div className="flex items-center gap-3">
-                <Label htmlFor="users">Utilisateurs:</Label>
-                <Select value={users.toString()} onValueChange={(v) => setUsers(parseInt(v))}>
-                  <SelectTrigger id="users" className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                  </div>
-
-              {/* Nombre de sociétés */}
-              <div className="flex items-center gap-3">
-                <Label htmlFor="companies">Sociétés:</Label>
-                <Select value={companies.toString()} onValueChange={(v) => setCompanies(parseInt(v))}>
-                  <SelectTrigger id="companies" className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                      </div>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Section 3 - Les Plans */}
@@ -591,6 +581,12 @@ export default function Pricing() {
                     {/* 5 fonctionnalités principales */}
                     <div className="space-y-2">
                       <p className="text-sm font-semibold text-muted-foreground mb-3">Inclus</p>
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border/50">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          {plan.maxUsers === null ? "Utilisateurs illimités" : `${plan.maxUsers} utilisateur${plan.maxUsers > 1 ? "s" : ""}`}
+                        </span>
+                      </div>
                       {plan.mainFeatures.map((feature, idx) => (
                         <div key={idx} className="flex items-start gap-2">
                           <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
@@ -606,7 +602,7 @@ export default function Pricing() {
                         size="lg"
                         variant={plan.id === "business" ? "default" : "outline"}
                       >
-                        <Link to="/register">
+                        <Link to={`/checkout?plan=${plan.id}`}>
                           {plan.id === "depart" && "Commencer gratuitement"}
                           {plan.id === "starter" && "Choisir Starter"}
                           {plan.id === "business" && "Choisir Business"}
@@ -731,52 +727,6 @@ export default function Pricing() {
                   </div>
       </section>
 
-      {/* Section 5 - Options Additionnelles */}
-      <section id="options" className="py-16 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-4">
-              Options à la carte
-            </h2>
-            <p className="text-center text-muted-foreground mb-8">
-              Tu monétises sans complexifier les plans
-            </p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {additionalOptions.map((option) => {
-                const Icon = option.icon;
-                const isSelected = selectedOptions.has(option.id);
-                return (
-                  <Card
-                    key={option.id}
-                    className={`cursor-pointer transition-all ${
-                      isSelected ? "border-primary border-2" : "border-border"
-                    }`}
-                    onClick={() => toggleOption(option.id)}
-                  >
-                <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-semibold">{option.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                              +{option.price} DT / mois
-                            </p>
-                  </div>
-                  </div>
-                        <Switch
-                          checked={isSelected}
-                          onCheckedChange={() => toggleOption(option.id)}
-                        />
-                  </div>
-                </CardContent>
-              </Card>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Section 6 - Rassurance */}
       <section className="py-16 bg-muted/20">
@@ -858,54 +808,11 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/* Section Add-ons */}
+      <AddOnsSection />
+
       {/* Footer */}
-      <footer className="border-t border-border bg-background py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="font-bold text-lg">BilvoxaERP</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                ERP complet pour les entreprises tunisiennes
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Navigation</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Accueil
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Tarifs
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Connexion
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="text-muted-foreground">contact@bilvoxaerp.com</li>
-                <li className="text-muted-foreground">+216 XX XXX XXX</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} BilvoxaERP. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Modal détail plan */}
       {selectedPlanDetail && (

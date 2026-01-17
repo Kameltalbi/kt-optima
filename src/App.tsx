@@ -12,6 +12,7 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import AchatsModule from "./pages/modules/AchatsModule";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout" element={<Checkout />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={

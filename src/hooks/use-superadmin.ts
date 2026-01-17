@@ -17,7 +17,7 @@ export interface Module {
 }
 
 export interface Plan {
-  code: 'core' | 'business' | 'enterprise';
+  code: 'depart' | 'starter' | 'business' | 'enterprise';
   name: string;
   description: string;
   price_monthly: number;
@@ -218,47 +218,65 @@ export function useSuperadmin() {
   const getPlans = (): Plan[] => {
     return [
       {
-        code: 'core',
-        name: 'Plan Core',
-        description: 'CRM + Ventes + Trésorerie',
-        price_monthly: 99,
-        price_yearly: 990,
+        code: 'depart',
+        name: 'Plan Départ',
+        description: 'Pour indépendants et tests',
+        price_monthly: 0,
+        price_yearly: 0,
         currency: 'TND',
         features: [
-          'Gestion des clients (CRM)',
-          'Devis et factures',
-          'Trésorerie et encaissements',
-          'Support email',
+          'Devis & factures clients',
+          'Gestion des clients',
+          'Produits & services',
+          'Bons de livraison',
+          'Historique des ventes',
+        ],
+      },
+      {
+        code: 'starter',
+        name: 'Plan Starter',
+        description: 'Pour petites entreprises',
+        price_monthly: 45,
+        price_yearly: 450,
+        currency: 'TND',
+        features: [
+          'Tout Départ',
+          'Encaissements clients',
+          'Suivi des paiements',
+          'Inventaire simple',
+          'Avoirs clients',
         ],
       },
       {
         code: 'business',
         name: 'Plan Business',
-        description: 'Core + Achats + Produits + Stocks',
-        price_monthly: 199,
-        price_yearly: 1990,
+        description: 'Pour PME en croissance',
+        price_monthly: 79,
+        price_yearly: 790,
         currency: 'TND',
         features: [
-          'Tout du Plan Core',
-          'Gestion des fournisseurs',
-          'Gestion des produits et services',
-          'Gestion des stocks',
-          'Support prioritaire',
+          'Tout Starter',
+          'Gestion avancée du stock',
+          'Multi-entrepôts',
+          'Trésorerie & rapprochement bancaire',
+          'Fournisseurs & commandes',
+          'Ressources humaines',
         ],
       },
       {
         code: 'enterprise',
         name: 'Plan Enterprise',
-        description: 'Business + Comptabilité + RH + Parc',
-        price_monthly: 399,
-        price_yearly: 3990,
+        description: 'Pour entreprises structurées',
+        price_monthly: 139,
+        price_yearly: 1390,
         currency: 'TND',
         features: [
-          'Tout du Plan Business',
-          'Comptabilité complète',
-          'Ressources humaines',
-          'Gestion de parc',
-          'Support dédié 24/7',
+          'Tout Business',
+          'Comptabilité & journaux',
+          'Déclarations TVA',
+          'Paie & congés',
+          'Immobilisations',
+          'Point de vente (POS)',
         ],
       },
     ];

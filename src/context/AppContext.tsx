@@ -23,7 +23,7 @@ export interface Company {
   language: string;
   logo: string | null;
   footer: string | null;
-  plan?: "core" | "business" | "enterprise";
+  plan?: "depart" | "starter" | "business" | "enterprise";
 }
 
 export interface UserCompany {

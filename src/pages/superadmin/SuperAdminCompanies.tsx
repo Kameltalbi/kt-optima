@@ -4,6 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -25,6 +33,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Search,
@@ -44,6 +53,9 @@ import {
   CreditCard,
   PackagePlus,
   UserPlus,
+  ArrowUp,
+  ArrowDown,
+  Clock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -57,8 +69,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, addDays, addMonths, addYears } from "date-fns";
 import { fr } from "date-fns/locale";
+import { plans } from "@/pages/Pricing";
+
+type PlanType = "depart" | "starter" | "business" | "enterprise";
+type SubscriptionStatus = "active" | "suspended" | "cancelled" | "expired";
 
 interface Company {
   id: string;
@@ -69,8 +85,17 @@ interface Company {
   tax_number: string | null;
   currency: string;
   language: string;
+  plan?: PlanType;
   created_at: string | null;
-  status?: "active" | "suspended";
+  subscription?: {
+    id: string;
+    plan: PlanType;
+    status: SubscriptionStatus;
+    start_date: string;
+    end_date: string | null;
+    billing_cycle: "monthly" | "yearly" | null;
+    price: number | null;
+  };
 }
 
 export default function SuperAdminCompanies() {
@@ -82,6 +107,24 @@ export default function SuperAdminCompanies() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  
+  // Modals
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [extendModalOpen, setExtendModalOpen] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  
+  // Form states
+  const [newPlan, setNewPlan] = useState<PlanType>("depart");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [extendDays, setExtendDays] = useState(30);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,21 +146,43 @@ export default function SuperAdminCompanies() {
 
   const loadCompanies = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: companiesData, error: companiesError } = await supabase
         .from("companies")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (companiesError) throw companiesError;
 
-      // Add mock status (all active for now)
-      const companiesWithStatus = (data || []).map((c) => ({
-        ...c,
-        status: "active" as const,
-      }));
+      // Load subscriptions
+      const { data: subscriptionsData } = await supabase
+        .from("subscriptions")
+        .select("*");
 
-      setCompanies(companiesWithStatus);
-      setFilteredCompanies(companiesWithStatus);
+      const subscriptionsMap = new Map(
+        (subscriptionsData || []).map((sub) => [sub.company_id, sub])
+      );
+
+      const companiesWithSubs = (companiesData || []).map((company) => {
+        const subscription = subscriptionsMap.get(company.id);
+        return {
+          ...company,
+          plan: company.plan as PlanType || "depart",
+          subscription: subscription
+            ? {
+                id: subscription.id,
+                plan: subscription.plan as PlanType,
+                status: subscription.status as SubscriptionStatus,
+                start_date: subscription.start_date,
+                end_date: subscription.end_date,
+                billing_cycle: subscription.billing_cycle as "monthly" | "yearly" | null,
+                price: subscription.price,
+              }
+            : undefined,
+        };
+      });
+
+      setCompanies(companiesWithSubs);
+      setFilteredCompanies(companiesWithSubs);
     } catch (error) {
       console.error("Error loading companies:", error);
       toast({
@@ -130,64 +195,265 @@ export default function SuperAdminCompanies() {
     }
   };
 
-  const handleActivate = (company: Company) => {
-    setCompanies((prev) =>
-      prev.map((c) => (c.id === company.id ? { ...c, status: "active" as const } : c))
-    );
-    toast({
-      title: "Entreprise activée",
-      description: `${company.name} a été activée avec succès.`,
-    });
+  const handleChangePlan = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      // Update company plan
+      const { error: companyError } = await supabase
+        .from("companies")
+        .update({ plan: newPlan })
+        .eq("id", selectedCompany.id);
+
+      if (companyError) throw companyError;
+
+      // Update or create subscription
+      if (selectedCompany.subscription) {
+        const { error: subError } = await supabase
+          .from("subscriptions")
+          .update({
+            plan: newPlan,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", selectedCompany.subscription.id);
+
+        if (subError) throw subError;
+      } else {
+        const planData = plans.find((p) => p.id === newPlan);
+        const price = billingCycle === "yearly" ? planData?.annualPrice : planData?.monthlyPrice;
+
+        const { error: subError } = await supabase.from("subscriptions").insert({
+          company_id: selectedCompany.id,
+          plan: newPlan,
+          status: "active",
+          start_date: new Date().toISOString(),
+          end_date: billingCycle === "yearly"
+            ? addYears(new Date(), 1).toISOString()
+            : addMonths(new Date(), 1).toISOString(),
+          billing_cycle: billingCycle,
+          price: price || 0,
+          currency: "TND",
+        });
+
+        if (subError) throw subError;
+      }
+
+      toast({
+        title: "Plan modifié",
+        description: `Le plan de ${selectedCompany.name} a été changé vers ${plans.find((p) => p.id === newPlan)?.name}.`,
+      });
+
+      setPlanModalOpen(false);
+      loadCompanies();
+    } catch (error) {
+      console.error("Error changing plan:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le plan",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSuspend = (company: Company) => {
-    setCompanies((prev) =>
-      prev.map((c) => (c.id === company.id ? { ...c, status: "suspended" as const } : c))
-    );
-    toast({
-      title: "Entreprise suspendue",
-      description: `${company.name} a été suspendue.`,
-    });
+  const handleValidatePayment = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const planData = plans.find((p) => p.id === newPlan);
+      const price = billingCycle === "yearly" ? planData?.annualPrice : planData?.monthlyPrice;
+
+      // Create or update subscription
+      if (selectedCompany.subscription) {
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({
+            status: "active",
+            plan: newPlan,
+            start_date: new Date().toISOString(),
+            end_date: billingCycle === "yearly"
+              ? addYears(new Date(), 1).toISOString()
+              : addMonths(new Date(), 1).toISOString(),
+            billing_cycle: billingCycle,
+            price: price || 0,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", selectedCompany.subscription.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("subscriptions").insert({
+          company_id: selectedCompany.id,
+          plan: newPlan,
+          status: "active",
+          start_date: new Date().toISOString(),
+          end_date: billingCycle === "yearly"
+            ? addYears(new Date(), 1).toISOString()
+            : addMonths(new Date(), 1).toISOString(),
+          billing_cycle: billingCycle,
+          price: price || 0,
+          currency: "TND",
+        });
+
+        if (error) throw error;
+      }
+
+      // Update company plan
+      await supabase
+        .from("companies")
+        .update({ plan: newPlan })
+        .eq("id", selectedCompany.id);
+
+      toast({
+        title: "Paiement validé",
+        description: `L'accès a été accordé à ${selectedCompany.name} pour le plan ${plans.find((p) => p.id === newPlan)?.name}.`,
+      });
+
+      setPaymentModalOpen(false);
+      loadCompanies();
+    } catch (error) {
+      console.error("Error validating payment:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de valider le paiement",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExtendSubscription = async () => {
+    if (!selectedCompany?.subscription) return;
+
+    try {
+      const currentEndDate = selectedCompany.subscription.end_date
+        ? new Date(selectedCompany.subscription.end_date)
+        : new Date();
+      const newEndDate = addDays(currentEndDate, extendDays);
+
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          end_date: newEndDate.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedCompany.subscription.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Abonnement prolongé",
+        description: `L'abonnement de ${selectedCompany.name} a été prolongé de ${extendDays} jours.`,
+      });
+
+      setExtendModalOpen(false);
+      loadCompanies();
+    } catch (error) {
+      console.error("Error extending subscription:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de prolonger l'abonnement",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: newUser.password,
+        email_confirm: true,
+      });
+
+      if (authError) throw authError;
+
+      // Create profile
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: authData.user.id,
+        full_name: newUser.name,
+        email: newUser.email,
+        company_id: selectedCompany.id,
+        role: "user",
+      });
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Utilisateur ajouté",
+        description: `${newUser.name} a été ajouté à ${selectedCompany.name}.`,
+      });
+
+      setUserModalOpen(false);
+      setNewUser({ name: "", email: "", password: "" });
+    } catch (error: any) {
+      console.error("Error adding user:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'ajouter l'utilisateur",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSuspend = async (company: Company) => {
+    try {
+      if (company.subscription) {
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({ status: "suspended", updated_at: new Date().toISOString() })
+          .eq("id", company.subscription.id);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Entreprise suspendue",
+        description: `${company.name} a été suspendue.`,
+      });
+
+      loadCompanies();
+    } catch (error) {
+      console.error("Error suspending company:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de suspendre l'entreprise",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleActivate = async (company: Company) => {
+    try {
+      if (company.subscription) {
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({ status: "active", updated_at: new Date().toISOString() })
+          .eq("id", company.subscription.id);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Entreprise activée",
+        description: `${company.name} a été activée avec succès.`,
+      });
+
+      loadCompanies();
+    } catch (error) {
+      console.error("Error activating company:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'activer l'entreprise",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewDetails = (company: Company) => {
     setSelectedCompany(company);
     setDetailsOpen(true);
-  };
-
-  const handleEdit = (company: Company) => {
-    toast({
-      title: "Modifier l'entreprise",
-      description: `Fonctionnalité en cours de développement pour ${company.name}`,
-    });
-  };
-
-  const handleExtendSubscription = (company: Company) => {
-    toast({
-      title: "Prolonger l'abonnement",
-      description: `Abonnement de ${company.name} prolongé de 30 jours.`,
-    });
-  };
-
-  const handleValidatePayment = (company: Company) => {
-    toast({
-      title: "Paiement validé",
-      description: `Le paiement de ${company.name} a été validé.`,
-    });
-  };
-
-  const handleAddModule = (company: Company) => {
-    toast({
-      title: "Ajouter un module",
-      description: `Sélection de module pour ${company.name} en cours de développement.`,
-    });
-  };
-
-  const handleAddUser = (company: Company) => {
-    toast({
-      title: "Ajouter un utilisateur",
-      description: `Ajout d'utilisateur pour ${company.name} en cours de développement.`,
-    });
   };
 
   const handleDeleteRequest = (company: Company) => {
@@ -197,15 +463,15 @@ export default function SuperAdminCompanies() {
 
   const handleDeleteConfirm = async () => {
     if (!companyToDelete) return;
-    
+
     try {
       const { error } = await supabase
         .from("companies")
         .delete()
         .eq("id", companyToDelete.id);
-      
+
       if (error) throw error;
-      
+
       setCompanies((prev) => prev.filter((c) => c.id !== companyToDelete.id));
       toast({
         title: "Entreprise supprimée",
@@ -224,6 +490,29 @@ export default function SuperAdminCompanies() {
     }
   };
 
+  const getPlanName = (plan?: PlanType) => {
+    if (!plan) return "Non défini";
+    return plans.find((p) => p.id === plan)?.name || plan;
+  };
+
+  const getStatusBadge = (status?: SubscriptionStatus) => {
+    if (!status) return <Badge variant="outline">Sans abonnement</Badge>;
+    
+    const variants: Record<SubscriptionStatus, { variant: "default" | "destructive" | "secondary"; className?: string }> = {
+      active: { variant: "default", className: "bg-green-100 text-green-800 hover:bg-green-100" },
+      suspended: { variant: "destructive" },
+      cancelled: { variant: "secondary" },
+      expired: { variant: "destructive" },
+    };
+
+    const config = variants[status];
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {status === "active" ? "Active" : status === "suspended" ? "Suspendue" : status === "cancelled" ? "Annulée" : "Expirée"}
+      </Badge>
+    );
+  };
+
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
@@ -232,7 +521,7 @@ export default function SuperAdminCompanies() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Entreprises</h1>
             <p className="text-muted-foreground mt-1">
-              Gérer les entreprises de la plateforme
+              Gérer les entreprises, plans et abonnements
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -276,8 +565,9 @@ export default function SuperAdminCompanies() {
                   <TableRow>
                     <TableHead>Entreprise</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Statut</TableHead>
                     <TableHead>Plan</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Abonnement</TableHead>
                     <TableHead>Créée le</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -285,7 +575,7 @@ export default function SuperAdminCompanies() {
                 <TableBody>
                   {filteredCompanies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         Aucune entreprise trouvée
                       </TableCell>
                     </TableRow>
@@ -312,19 +602,24 @@ export default function SuperAdminCompanies() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={company.status === "active" ? "default" : "destructive"}
-                            className={
-                              company.status === "active"
-                                ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                : ""
-                            }
-                          >
-                            {company.status === "active" ? "Active" : "Suspendue"}
-                          </Badge>
+                          <Badge variant="outline">{getPlanName(company.plan)}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">Standard</Badge>
+                          {getStatusBadge(company.subscription?.status)}
+                        </TableCell>
+                        <TableCell>
+                          {company.subscription?.end_date ? (
+                            <div className="text-sm">
+                              <p className="font-medium">
+                                {format(new Date(company.subscription.end_date), "dd MMM yyyy", { locale: fr })}
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                {company.subscription.billing_cycle === "yearly" ? "Annuel" : "Mensuel"}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {company.created_at
@@ -338,34 +633,62 @@ export default function SuperAdminCompanies() {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52 bg-popover">
+                            <DropdownMenuContent align="end" className="w-56">
                               <DropdownMenuItem onClick={() => handleViewDetails(company)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Voir détails
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEdit(company)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Modifier
-                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleExtendSubscription(company)}>
-                                <CalendarPlus className="h-4 w-4 mr-2" />
-                                Prolonger abonnement
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleValidatePayment(company)}>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedCompany(company);
+                                  setNewPlan(company.plan || "depart");
+                                  setPaymentModalOpen(true);
+                                }}
+                              >
                                 <CreditCard className="h-4 w-4 mr-2" />
                                 Valider paiement
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleAddModule(company)}>
-                                <PackagePlus className="h-4 w-4 mr-2" />
-                                Ajouter un module
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedCompany(company);
+                                  setNewPlan(company.plan || "depart");
+                                  setPlanModalOpen(true);
+                                }}
+                              >
+                                {company.plan === "enterprise" ? (
+                                  <>
+                                    <ArrowDown className="h-4 w-4 mr-2" />
+                                    Downgrader plan
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowUp className="h-4 w-4 mr-2" />
+                                    Upgrader plan
+                                  </>
+                                )}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleAddUser(company)}>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedCompany(company);
+                                  setExtendModalOpen(true);
+                                }}
+                              >
+                                <CalendarPlus className="h-4 w-4 mr-2" />
+                                Prolonger abonnement
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedCompany(company);
+                                  setUserModalOpen(true);
+                                }}
+                              >
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Ajouter utilisateur
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              {company.status === "suspended" ? (
+                              {company.subscription?.status === "suspended" ||
+                              company.subscription?.status === "expired" ? (
                                 <DropdownMenuItem onClick={() => handleActivate(company)}>
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Activer
@@ -373,7 +696,7 @@ export default function SuperAdminCompanies() {
                               ) : (
                                 <DropdownMenuItem
                                   onClick={() => handleSuspend(company)}
-                                  className="text-amber-600 focus:text-amber-600"
+                                  className="text-amber-600"
                                 >
                                   <Ban className="h-4 w-4 mr-2" />
                                   Suspendre
@@ -381,7 +704,7 @@ export default function SuperAdminCompanies() {
                               )}
                               <DropdownMenuItem
                                 onClick={() => handleDeleteRequest(company)}
-                                className="text-destructive focus:text-destructive"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Supprimer
@@ -403,7 +726,7 @@ export default function SuperAdminCompanies() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Détails de l'entreprise</DialogTitle>
-              <DialogDescription>Informations techniques</DialogDescription>
+              <DialogDescription>Informations complètes</DialogDescription>
             </DialogHeader>
             {selectedCompany && (
               <div className="space-y-4">
@@ -411,18 +734,12 @@ export default function SuperAdminCompanies() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Building2 className="h-6 w-6 text-primary" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-lg">{selectedCompany.name}</h3>
-                    <Badge
-                      variant={selectedCompany.status === "active" ? "default" : "destructive"}
-                      className={
-                        selectedCompany.status === "active"
-                          ? "bg-green-100 text-green-800 hover:bg-green-100"
-                          : ""
-                      }
-                    >
-                      {selectedCompany.status === "active" ? "Active" : "Suspendue"}
-                    </Badge>
+                    <div className="flex items-center gap-2 mt-1">
+                      {getStatusBadge(selectedCompany.subscription?.status)}
+                      <Badge variant="outline">{getPlanName(selectedCompany.plan)}</Badge>
+                    </div>
                   </div>
                 </div>
 
@@ -447,20 +764,237 @@ export default function SuperAdminCompanies() {
                     <span className="text-muted-foreground">Adresse:</span>
                     <span>{selectedCompany.address || "-"}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Créée le:</span>
-                    <span>
-                      {selectedCompany.created_at
-                        ? format(new Date(selectedCompany.created_at), "dd MMMM yyyy 'à' HH:mm", {
+                  {selectedCompany.subscription && (
+                    <>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Début:</span>
+                        <span>
+                          {format(new Date(selectedCompany.subscription.start_date), "dd MMMM yyyy", {
                             locale: fr,
-                          })
-                        : "-"}
-                    </span>
-                  </div>
+                          })}
+                        </span>
+                      </div>
+                      {selectedCompany.subscription.end_date && (
+                        <div className="flex items-center gap-3 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">Fin:</span>
+                          <span>
+                            {format(new Date(selectedCompany.subscription.end_date), "dd MMMM yyyy", {
+                              locale: fr,
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Plan Dialog */}
+        <Dialog open={planModalOpen} onOpenChange={setPlanModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Changer le plan</DialogTitle>
+              <DialogDescription>
+                Modifier le plan de {selectedCompany?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nouveau plan</Label>
+                <Select value={newPlan} onValueChange={(value) => setNewPlan(value as PlanType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - {plan.monthlyPrice === 0 ? "Gratuit" : `${plan.monthlyPrice} DT/mois`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {newPlan !== "depart" && (
+                <div className="space-y-2">
+                  <Label>Période de facturation</Label>
+                  <Select
+                    value={billingCycle}
+                    onValueChange={(value) => setBillingCycle(value as "monthly" | "yearly")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensuel</SelectItem>
+                      <SelectItem value="yearly">Annuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPlanModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleChangePlan}>
+                {selectedCompany?.plan === "enterprise" || (selectedCompany?.plan && plans.findIndex(p => p.id === selectedCompany.plan) < plans.findIndex(p => p.id === newPlan)) ? "Downgrader" : "Upgrader"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Validate Payment Dialog */}
+        <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Valider le paiement</DialogTitle>
+              <DialogDescription>
+                Accorder l'accès à {selectedCompany?.name} après validation du paiement
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Plan</Label>
+                <Select value={newPlan} onValueChange={(value) => setNewPlan(value as PlanType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - {plan.monthlyPrice === 0 ? "Gratuit" : `${plan.monthlyPrice} DT/mois`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {newPlan !== "depart" && (
+                <div className="space-y-2">
+                  <Label>Période de facturation</Label>
+                  <Select
+                    value={billingCycle}
+                    onValueChange={(value) => setBillingCycle(value as "monthly" | "yearly")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensuel</SelectItem>
+                      <SelectItem value="yearly">Annuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPaymentModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleValidatePayment}>Valider le paiement</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Extend Subscription Dialog */}
+        <Dialog open={extendModalOpen} onOpenChange={setExtendModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Prolonger l'abonnement</DialogTitle>
+              <DialogDescription>
+                Prolonger la période d'utilisation pour {selectedCompany?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nombre de jours</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={extendDays}
+                  onChange={(e) => setExtendDays(parseInt(e.target.value) || 30)}
+                />
+              </div>
+              {selectedCompany?.subscription?.end_date && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Date actuelle de fin:</p>
+                  <p className="font-medium">
+                    {format(new Date(selectedCompany.subscription.end_date), "dd MMMM yyyy", {
+                      locale: fr,
+                    })}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">Nouvelle date de fin:</p>
+                  <p className="font-medium">
+                    {format(
+                      addDays(new Date(selectedCompany.subscription.end_date), extendDays),
+                      "dd MMMM yyyy",
+                      { locale: fr }
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExtendModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleExtendSubscription}>Prolonger</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add User Dialog */}
+        <Dialog open={userModalOpen} onOpenChange={setUserModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Ajouter un utilisateur</DialogTitle>
+              <DialogDescription>
+                Créer un nouvel utilisateur pour {selectedCompany?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nom complet</Label>
+                <Input
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  placeholder="Nom de l'utilisateur"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Mot de passe</Label>
+                <Input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Mot de passe temporaire"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUserModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button
+                onClick={handleAddUser}
+                disabled={!newUser.name || !newUser.email || !newUser.password}
+              >
+                Ajouter
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
