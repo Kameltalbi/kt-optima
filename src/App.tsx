@@ -24,6 +24,7 @@ import RHModule from "./pages/modules/RHModule";
 import SettingsModule from "./pages/modules/SettingsModule";
 import FleetModule from "./pages/modules/FleetModule";
 import CRMModule from "./pages/modules/CRMModule";
+import ExpenseNotes from "./pages/ExpenseNotes";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 import DocumentPreview from "./pages/DocumentPreview";
