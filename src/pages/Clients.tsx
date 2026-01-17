@@ -256,6 +256,7 @@ export default function Clients() {
       
       if (lines.length < 2) {
         toast.error('Le fichier CSV doit contenir au moins une ligne d\'en-tête et une ligne de données');
+        setImportLoading(false);
         return;
       }
 
@@ -285,70 +286,179 @@ export default function Clients() {
         return result;
       };
 
-      const headers = parseCSVLine(lines[0]);
-      const expectedHeaders = [
-        'Code', 'Nom', 'Type', 'Email', 'Téléphone', 'Adresse',
-        'Ville', 'Code postal', 'Pays', 'Numéro fiscal',
-        'N° Registre Commerce', 'Site web', 'Notes'
-      ];
+      const headers = parseCSVLine(lines[0]).map(h => h.trim());
+      
+      // Normaliser les noms de colonnes (insensible à la casse, espaces, accents)
+      const normalizeHeader = (header: string) => {
+        return header.toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
 
-      // Vérifier les en-têtes
-      if (headers.length !== expectedHeaders.length) {
-        toast.error(`Le fichier doit contenir ${expectedHeaders.length} colonnes. Trouvé: ${headers.length}`);
+      // Mapping des colonnes possibles
+      const columnMap: Record<string, string> = {
+        'nom': 'nom',
+        'name': 'nom',
+        'code': 'code',
+        'type': 'type',
+        'email': 'email',
+        'telephone': 'telephone',
+        'phone': 'telephone',
+        'tel': 'telephone',
+        'adresse': 'adresse',
+        'address': 'adresse',
+        'ville': 'ville',
+        'city': 'ville',
+        'code postal': 'code_postal',
+        'codepostal': 'code_postal',
+        'postal': 'code_postal',
+        'pays': 'pays',
+        'country': 'pays',
+        'numero fiscal': 'numero_fiscal',
+        'numerofiscal': 'numero_fiscal',
+        'n° registre commerce': 'numero_registre_commerce',
+        'registrecommerce': 'numero_registre_commerce',
+        'rc': 'numero_registre_commerce',
+        'site web': 'site_web',
+        'website': 'site_web',
+        'url': 'site_web',
+        'notes': 'notes',
+        'note': 'notes',
+        'comment': 'notes',
+        'commentaire': 'notes',
+      };
+
+      // Créer un index des colonnes
+      const columnIndex: Record<string, number> = {};
+      let nomColumnIndex = -1;
+
+      headers.forEach((header, index) => {
+        const normalized = normalizeHeader(header);
+        const mappedKey = columnMap[normalized];
+        if (mappedKey) {
+          columnIndex[mappedKey] = index;
+        }
+        // Vérifier spécifiquement pour "Nom" (obligatoire)
+        if (normalized === 'nom' || normalized === 'name') {
+          nomColumnIndex = index;
+        }
+      });
+
+      // Vérifier que la colonne "Nom" est présente
+      if (nomColumnIndex === -1) {
+        toast.error('La colonne "Nom" est obligatoire mais introuvable dans le fichier. Veuillez vérifier les en-têtes.');
+        setImportLoading(false);
         return;
       }
 
+      // Valider le format email
+      const isValidEmail = (email: string): boolean => {
+        if (!email) return true; // Email optionnel
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      };
+
       let successCount = 0;
       let errorCount = 0;
+      const errors: string[] = [];
 
       // Importer chaque ligne
       for (let i = 1; i < lines.length; i++) {
+        const lineNumber = i + 1; // +1 car on commence à l'index 1 (après l'en-tête)
         const values = parseCSVLine(lines[i]);
-        if (values.length !== headers.length) continue;
+        
+        // Vérifier que le nombre de colonnes correspond
+        if (values.length !== headers.length) {
+          errors.push(`Ligne ${lineNumber}: Nombre de colonnes incorrect (${values.length} au lieu de ${headers.length})`);
+          errorCount++;
+          continue;
+        }
+
+        // Extraire les valeurs selon l'index des colonnes
+        const getValue = (key: string, defaultValue: string = '') => {
+          const index = columnIndex[key];
+          return index !== undefined ? (values[index] || defaultValue) : defaultValue;
+        };
+
+        const nom = values[nomColumnIndex]?.trim() || '';
+        
+        // Vérifier que le nom est présent
+        if (!nom) {
+          errors.push(`Ligne ${lineNumber}: Le nom est obligatoire`);
+          errorCount++;
+          continue;
+        }
+
+        const email = getValue('email');
+        if (email && !isValidEmail(email)) {
+          errors.push(`Ligne ${lineNumber} (${nom}): Format d'email invalide`);
+          errorCount++;
+          continue;
+        }
 
         const clientData = {
-          code: values[0] || '',
-          nom: values[1] || '',
-          type: values[2] || 'prospect',
-          email: values[3] || '',
-          telephone: values[4] || '',
-          adresse: values[5] || '',
-          ville: values[6] || '',
-          code_postal: values[7] || '',
-          pays: values[8] || 'Tunisie',
-          numero_fiscal: values[9] || '',
-          numero_registre_commerce: values[10] || '',
-          site_web: values[11] || '',
-          notes: values[12] || '',
+          code: getValue('code'),
+          nom: nom,
+          type: (getValue('type') || 'prospect').toLowerCase() === 'client' ? 'client' : 'prospect',
+          email: email,
+          telephone: getValue('telephone'),
+          adresse: getValue('adresse'),
+          ville: getValue('ville'),
+          code_postal: getValue('code_postal'),
+          pays: getValue('pays') || 'Tunisie',
+          numero_fiscal: getValue('numero_fiscal'),
+          numero_registre_commerce: getValue('numero_registre_commerce'),
+          site_web: getValue('site_web'),
+          notes: getValue('notes'),
           solde_initial: 0,
           solde_actuel: 0,
           actif: true,
         };
 
-        if (!clientData.nom.trim()) {
-          errorCount++;
-          continue;
-        }
-
         try {
           await createClient(clientData);
           successCount++;
-        } catch (error) {
-          console.error(`Erreur lors de l'import du client ${clientData.nom}:`, error);
+        } catch (error: any) {
+          const errorMsg = error?.message || 'Erreur inconnue';
+          errors.push(`Ligne ${lineNumber} (${nom}): ${errorMsg}`);
+          console.error(`Erreur lors de l'import du client ${nom}:`, error);
           errorCount++;
         }
       }
 
+      // Afficher les résultats
       if (successCount > 0) {
-        toast.success(`${successCount} client(s) importé(s) avec succès${errorCount > 0 ? `. ${errorCount} erreur(s).` : ''}`);
+        if (errorCount > 0) {
+          toast.warning(
+            `${successCount} client(s) importé(s), ${errorCount} erreur(s). Vérifiez la console pour les détails.`,
+            { duration: 5000 }
+          );
+          // Afficher les erreurs dans la console pour le débogage
+          console.group('Erreurs d\'import');
+          errors.forEach(err => console.error(err));
+          console.groupEnd();
+        } else {
+          toast.success(`${successCount} client(s) importé(s) avec succès`);
+        }
       } else {
-        toast.error(`Aucun client importé. ${errorCount} erreur(s).`);
+        toast.error(`Aucun client importé. ${errorCount} erreur(s) détectée(s).`, { duration: 5000 });
+        if (errors.length > 0) {
+          console.group('Erreurs d\'import');
+          errors.slice(0, 10).forEach(err => console.error(err)); // Limiter à 10 erreurs
+          if (errors.length > 10) {
+            console.error(`... et ${errors.length - 10} autre(s) erreur(s)`);
+          }
+          console.groupEnd();
+        }
       }
+      
       setIsImportDialogOpen(false);
       setImportFile(null);
     } catch (error) {
       console.error('Error importing clients:', error);
-      toast.error('Erreur lors de l\'import du fichier');
+      toast.error('Erreur lors de l\'import du fichier. Vérifiez le format du fichier.');
     } finally {
       setImportLoading(false);
     }

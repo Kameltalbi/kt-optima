@@ -46,34 +46,86 @@ interface Plan {
 
 const plans: Plan[] = [
   {
-    id: "essentiel",
-    name: "Essentiel",
-    description: "Pour petites structures qui veulent facturer proprement",
-    monthlyPrice: 49,
-    annualPrice: 490,
+    id: "depart",
+    name: "Départ",
+    description: "Pour démarrer rapidement - Documents illimités",
+    monthlyPrice: 0,
+    annualPrice: 0,
     color: "blue",
     modules: {
       crm: true,
       ventes: true,
       achats: false,
-      stocks: false,
+      stocks: true,
+      comptabilite: false,
+      tresorerie: false,
+      rh: false,
+      parc: false,
+    },
+    moduleDetails: {
+      crm: [
+        "Gestion des contacts",
+        "Fiche client complète",
+        "Historique des interactions"
+      ],
+      ventes: [
+        "Devis",
+        "Factures clients",
+        "Bons de livraison"
+      ],
+      stocks: [
+        "Gestion des produits/services",
+        "Gestion des catégories"
+      ],
+    },
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    description: "Pour petites entreprises",
+    monthlyPrice: 45,
+    annualPrice: 450,
+    color: "purple",
+    modules: {
+      crm: true,
+      ventes: true,
+      achats: false,
+      stocks: true,
       comptabilite: false,
       tresorerie: "basique",
       rh: false,
       parc: false,
     },
     moduleDetails: {
-      crm: ["Clients & prospects", "Fiche client", "Historique des ventes"],
-      ventes: ["Devis", "Factures", "Avoirs clients"],
-      tresorerie: ["Encaissements clients", "Suivi des paiements"],
+      crm: [
+        "Gestion des contacts",
+        "Fiche client complète",
+        "Historique des interactions"
+      ],
+      ventes: [
+        "Devis",
+        "Factures clients",
+        "Bons de livraison"
+      ],
+      stocks: [
+        "Gestion des produits/services",
+        "Gestion des catégories",
+        "Mouvements de stock",
+        "Inventaire"
+      ],
+      tresorerie: [
+        "Encaissements clients",
+        "Suivi des paiements",
+        "Allocation des paiements"
+      ],
     },
   },
   {
     id: "business",
     name: "Business",
-    description: "Pour entreprises structurées (le plus vendu)",
-    monthlyPrice: 99,
-    annualPrice: 990,
+    description: "Pour entreprises structurées",
+    monthlyPrice: 79,
+    annualPrice: 790,
     color: "green",
     badge: "Le plus choisi",
     modules: {
@@ -87,19 +139,47 @@ const plans: Plan[] = [
       parc: false,
     },
     moduleDetails: {
-      crm: ["Clients & prospects", "Opportunités", "Historique complet"],
-      ventes: ["Devis", "Factures", "Avoirs"],
-      achats: ["Fournisseurs", "Factures fournisseurs"],
-      stocks: ["Produits", "Mouvements de stock", "Valorisation simple"],
-      tresorerie: ["Encaissements", "Décaissements", "Soldes"],
+      crm: [
+        "Gestion des contacts",
+        "Fiche client complète",
+        "Historique des interactions"
+      ],
+      ventes: [
+        "Devis",
+        "Factures clients",
+        "Factures d'acompte",
+        "Avoirs clients",
+        "Bons de livraison"
+      ],
+      achats: [
+        "Gestion des fournisseurs",
+        "Factures fournisseurs",
+        "Commandes fournisseurs"
+      ],
+      stocks: [
+        "Gestion des produits/services",
+        "Mouvements de stock",
+        "Inventaire",
+        "Valorisation des stocks",
+        "Alertes de réapprovisionnement",
+        "Multi-entrepôts"
+      ],
+      tresorerie: [
+        "Encaissements clients",
+        "Suivi des paiements",
+        "Allocation des paiements",
+        "Décaissements",
+        "Prévisions de trésorerie",
+        "Rapprochement bancaire"
+      ],
     },
   },
   {
-    id: "complet",
-    name: "ERP Complet",
-    description: "Pour entreprises organisées ou en croissance",
-    monthlyPrice: 149,
-    annualPrice: 1490,
+    id: "enterprise",
+    name: "Enterprise",
+    description: "Pour entreprises organisées",
+    monthlyPrice: 139,
+    annualPrice: 1390,
     color: "orange",
     modules: {
       crm: true,
@@ -112,17 +192,149 @@ const plans: Plan[] = [
       parc: true,
     },
     moduleDetails: {
-      crm: ["Clients & prospects", "Opportunités", "Historique complet"],
-      ventes: ["Devis", "Factures", "Avoirs"],
-      achats: ["Fournisseurs", "Factures fournisseurs"],
-      stocks: ["Produits", "Mouvements de stock", "Valorisation simple"],
-      comptabilite: ["Écritures automatiques", "Journaux", "TVA"],
-      tresorerie: ["Prévision", "Rapprochement"],
-      rh: ["Employés", "Salaires"],
-      parc: ["Véhicules / matériel", "Amortissements"],
+      crm: [
+        "Gestion des contacts",
+        "Fiche client complète",
+        "Historique des interactions"
+      ],
+      ventes: [
+        "Devis",
+        "Factures clients",
+        "Factures d'acompte",
+        "Avoirs clients",
+        "Bons de livraison"
+      ],
+      achats: [
+        "Gestion des fournisseurs",
+        "Factures fournisseurs",
+        "Commandes fournisseurs"
+      ],
+      stocks: [
+        "Gestion des produits/services",
+        "Mouvements de stock",
+        "Inventaire",
+        "Valorisation des stocks",
+        "Alertes de réapprovisionnement",
+        "Multi-entrepôts"
+      ],
+      tresorerie: [
+        "Encaissements clients",
+        "Suivi des paiements",
+        "Allocation des paiements",
+        "Décaissements",
+        "Prévisions de trésorerie",
+        "Rapprochement bancaire"
+      ],
+      comptabilite: [
+        "Écritures automatiques",
+        "Journaux comptables",
+        "Déclarations TVA",
+        "Bilan & Compte de résultat"
+      ],
+      rh: [
+        "Gestion des employés",
+        "Paie",
+        "Congés & absences"
+      ],
+      parc: [
+        "Véhicules & matériel",
+        "Amortissements",
+        "Maintenance"
+      ],
+      pos: [
+        "Point de vente (POS)",
+        "Terminal de caisse",
+        "Gestion des tickets",
+        "Impression des reçus"
+      ],
     },
   },
 ];
+
+// Liste simplifiée des fonctionnalités par module
+const allFeatures = [
+  // CRM
+  "CRM (Clients & Prospects)",
+  // Ventes
+  "Devis",
+  "Factures clients",
+  "Bons de livraison",
+  "Factures d'acompte",
+  "Avoirs clients",
+  // Produits & Stock
+  "Gestion produits/services",
+  "Gestion catégories",
+  "Mouvements de stock",
+  "Inventaire",
+  "Valorisation stocks",
+  "Multi-entrepôts",
+  // Trésorerie
+  "Encaissements clients",
+  "Suivi des paiements",
+  "Décaissements",
+  "Prévisions trésorerie",
+  "Rapprochement bancaire",
+  // Achats
+  "Gestion fournisseurs",
+  "Factures fournisseurs",
+  "Commandes fournisseurs",
+  // Comptabilité
+  "Écritures automatiques",
+  "Journaux comptables",
+  "Déclarations TVA",
+  "Bilan & Compte de résultat",
+  // RH
+  "Gestion employés",
+  "Paie",
+  "Congés & absences",
+  // Parc
+  "Gestion de parc",
+  "Amortissements",
+  // POS
+  "Point de vente (POS)",
+];
+
+// Fonction pour vérifier si une fonctionnalité est incluse dans un plan
+const hasFeature = (plan: Plan, feature: string): boolean => {
+  // Mapping des fonctionnalités simplifiées vers les détails dans moduleDetails
+  const featureMapping: Record<string, string[]> = {
+    "CRM (Clients & Prospects)": ["Gestion des contacts", "Fiche client complète", "Historique des interactions"],
+    "Devis": ["Devis"],
+    "Factures clients": ["Factures clients"],
+    "Bons de livraison": ["Bons de livraison"],
+    "Factures d'acompte": ["Factures d'acompte"],
+    "Avoirs clients": ["Avoirs clients"],
+    "Gestion produits/services": ["Gestion des produits/services"],
+    "Gestion catégories": ["Gestion des catégories"],
+    "Mouvements de stock": ["Mouvements de stock"],
+    "Inventaire": ["Inventaire"],
+    "Valorisation stocks": ["Valorisation des stocks"],
+    "Multi-entrepôts": ["Multi-entrepôts"],
+    "Encaissements clients": ["Encaissements clients"],
+    "Suivi des paiements": ["Suivi des paiements", "Allocation des paiements"],
+    "Décaissements": ["Décaissements"],
+    "Prévisions trésorerie": ["Prévisions de trésorerie"],
+    "Rapprochement bancaire": ["Rapprochement bancaire"],
+    "Gestion fournisseurs": ["Gestion des fournisseurs"],
+    "Factures fournisseurs": ["Factures fournisseurs"],
+    "Commandes fournisseurs": ["Commandes fournisseurs"],
+    "Écritures automatiques": ["Écritures automatiques"],
+    "Journaux comptables": ["Journaux comptables"],
+    "Déclarations TVA": ["Déclarations TVA"],
+    "Bilan & Compte de résultat": ["Bilan & Compte de résultat"],
+    "Gestion employés": ["Gestion des employés"],
+    "Paie": ["Paie"],
+    "Congés & absences": ["Congés & absences"],
+    "Gestion de parc": ["Véhicules & matériel", "Maintenance"],
+    "Amortissements": ["Amortissements"],
+    "Point de vente (POS)": ["Point de vente (POS)", "Terminal de caisse", "Gestion des tickets", "Impression des reçus"],
+  };
+  
+  const relatedFeatures = featureMapping[feature] || [feature];
+  return Object.values(plan.moduleDetails).some(features => 
+    features && relatedFeatures.some(f => features.includes(f))
+  );
+};
 
 const additionalOptions = [
   { id: "user", name: "Utilisateur supplémentaire", price: 10, icon: Users },
@@ -294,7 +506,7 @@ export default function Pricing() {
       <section id="plans" className="py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-4 gap-6">
               {plans.map((plan) => (
                 <Card
                   key={plan.id}
@@ -325,62 +537,33 @@ export default function Pricing() {
                       )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Modules inclus */}
-                    <div className="space-y-4">
-                      {Object.entries(plan.moduleDetails).map(([moduleKey, features]) => {
-                        if (!features || features.length === 0) return null;
-                        return (
-                          <div key={moduleKey} className="space-y-2">
-                            <div className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                              {moduleKey.toUpperCase()}
-                  </div>
-                            <div className="space-y-1.5">
-                              {features.map((feature, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                                  <span className="text-sm">{feature}</span>
-                      </div>
-                              ))}
-                      </div>
-                      </div>
-                        );
-                      })}
+                <CardContent className="space-y-4">
+                    {/* Liste complète des fonctionnalités avec indicateurs */}
+                    <div className="space-y-1.5">
+                      {(() => {
+                        // Séparer les fonctionnalités incluses et non incluses
+                        const includedFeatures = allFeatures.filter(f => hasFeature(plan, f));
+                        const excludedFeatures = allFeatures.filter(f => !hasFeature(plan, f));
+                        
+                        // Afficher d'abord les incluses (vertes), puis les non incluses (rouges)
+                        return [
+                          ...includedFeatures.map((feature, idx) => (
+                            <div key={`included-${idx}`} className="flex items-center gap-2">
+                              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                              <span className="text-sm">{feature}</span>
+                            </div>
+                          )),
+                          ...excludedFeatures.map((feature, idx) => (
+                            <div key={`excluded-${idx}`} className="flex items-center gap-2">
+                              <X className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
+                              <span className="text-sm text-muted-foreground line-through">
+                                {feature}
+                              </span>
+                            </div>
+                          ))
+                        ];
+                      })()}
                     </div>
-
-                    {/* Modules non inclus */}
-                    <div className="pt-4 border-t border-border space-y-2">
-                      {!plan.modules.achats && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">Achats</span>
-                        </div>
-                      )}
-                      {!plan.modules.stocks && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">Stocks</span>
-                        </div>
-                      )}
-                      {!plan.modules.comptabilite && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">Comptabilité</span>
-                        </div>
-                      )}
-                      {!plan.modules.rh && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">RH</span>
-                  </div>
-                      )}
-                      {!plan.modules.parc && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <X className="w-4 h-4" />
-                          <span className="text-sm">Gestion de parc</span>
-                      </div>
-                      )}
-                  </div>
 
                     <Button
                       asChild
@@ -389,9 +572,10 @@ export default function Pricing() {
                       variant={plan.id === "business" ? "default" : "outline"}
                     >
                     <Link to="/register">
-                        {plan.id === "essentiel" && "Commencer avec Essentiel"}
+                        {plan.id === "depart" && "Commencer gratuitement"}
+                        {plan.id === "starter" && "Choisir Starter"}
                         {plan.id === "business" && "Choisir Business"}
-                        {plan.id === "complet" && "Passer à l'ERP complet"}
+                        {plan.id === "enterprise" && "Choisir Enterprise"}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -420,33 +604,50 @@ export default function Pricing() {
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left p-4 font-semibold">Modules</th>
-                        <th className="text-center p-4 font-semibold">Essentiel</th>
+                        <th className="text-center p-4 font-semibold">Départ</th>
+                        <th className="text-center p-4 font-semibold">Starter</th>
                         <th className="text-center p-4 font-semibold">Business</th>
-                        <th className="text-center p-4 font-semibold">ERP Complet</th>
+                        <th className="text-center p-4 font-semibold">Enterprise</th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        { name: "CRM", essentiel: true, business: true, complet: true },
-                        { name: "Ventes", essentiel: true, business: true, complet: true },
-                        { name: "Achats", essentiel: false, business: true, complet: true },
-                        { name: "Stocks", essentiel: false, business: true, complet: true },
-                        { name: "Comptabilité", essentiel: false, business: false, complet: true },
-                        { name: "Trésorerie", essentiel: "Basique", business: "Standard", complet: "Avancée" },
-                        { name: "RH", essentiel: false, business: false, complet: true },
-                        { name: "Gestion de parc", essentiel: false, business: false, complet: true },
+                        { name: "CRM", depart: true, starter: true, business: true, enterprise: true },
+                        { name: "Ventes", depart: true, starter: true, business: true, enterprise: true },
+                        { name: "Produits/Services", depart: true, starter: true, business: true, enterprise: true },
+                        { name: "Stock (mouvements)", depart: false, starter: true, business: true, enterprise: true },
+                        { name: "Trésorerie", depart: false, starter: "Basique", business: "Standard", enterprise: "Avancée" },
+                        { name: "Factures d'acompte", depart: false, starter: false, business: true, enterprise: true },
+                        { name: "Avoirs clients", depart: false, starter: false, business: true, enterprise: true },
+                        { name: "Achats", depart: false, starter: false, business: true, enterprise: true },
+                        { name: "Stocks avancés", depart: false, starter: false, business: true, enterprise: true },
+                        { name: "Comptabilité", depart: false, starter: false, business: false, enterprise: true },
+                        { name: "RH", depart: false, starter: false, business: false, enterprise: true },
+                        { name: "Gestion de parc", depart: false, starter: false, business: false, enterprise: true },
+                        { name: "POS (Point de vente)", depart: false, starter: false, business: false, enterprise: true },
                       ].map((row, idx) => (
                         <tr key={idx} className="border-b border-border/50">
                           <td className="p-4 font-medium">{row.name}</td>
                           <td className="p-4 text-center">
-                            {typeof row.essentiel === "boolean" ? (
-                              row.essentiel ? (
+                            {typeof row.depart === "boolean" ? (
+                              row.depart ? (
                                 <Check className="w-5 h-5 text-primary mx-auto" />
                               ) : (
                                 <X className="w-5 h-5 text-muted-foreground mx-auto" />
                               )
                             ) : (
-                              <span className="text-sm">{row.essentiel}</span>
+                              <span className="text-sm">{row.depart}</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            {typeof row.starter === "boolean" ? (
+                              row.starter ? (
+                                <Check className="w-5 h-5 text-primary mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-muted-foreground mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-sm">{row.starter}</span>
                             )}
                           </td>
                           <td className="p-4 text-center">
@@ -461,14 +662,14 @@ export default function Pricing() {
                             )}
                           </td>
                           <td className="p-4 text-center">
-                            {typeof row.complet === "boolean" ? (
-                              row.complet ? (
+                            {typeof row.enterprise === "boolean" ? (
+                              row.enterprise ? (
                                 <Check className="w-5 h-5 text-primary mx-auto" />
                               ) : (
                                 <X className="w-5 h-5 text-muted-foreground mx-auto" />
                               )
                             ) : (
-                              <span className="text-sm">{row.complet}</span>
+                              <span className="text-sm">{row.enterprise}</span>
                             )}
                           </td>
                         </tr>
