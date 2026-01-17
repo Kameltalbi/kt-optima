@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, ArrowRight, Building2, Shield, Cloud, Download, Users, Building } from "lucide-react";
+import { Check, X, ArrowRight, Building2, Shield, Cloud, Download, Users, Building, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PlanDetailModal } from "@/components/pricing/PlanDetailModal";
 
-interface Plan {
+export interface Plan {
   id: string;
   name: string;
   description: string;
@@ -32,6 +33,7 @@ interface Plan {
     rh: boolean;
     parc: boolean;
   };
+  mainFeatures: string[];
   moduleDetails: {
     crm?: string[];
     ventes?: string[];
@@ -41,6 +43,7 @@ interface Plan {
     tresorerie?: string[];
     rh?: string[];
     parc?: string[];
+    pos?: string[];
   };
 }
 
@@ -48,10 +51,17 @@ const plans: Plan[] = [
   {
     id: "depart",
     name: "Départ",
-    description: "Pour démarrer rapidement - Documents illimités",
+    description: "Pour indépendants et tests",
     monthlyPrice: 0,
     annualPrice: 0,
     color: "blue",
+    mainFeatures: [
+      "Devis & factures clients",
+      "Gestion des clients",
+      "Produits & services",
+      "Bons de livraison",
+      "Historique des ventes"
+    ],
     modules: {
       crm: true,
       ventes: true,
@@ -86,6 +96,13 @@ const plans: Plan[] = [
     monthlyPrice: 45,
     annualPrice: 450,
     color: "purple",
+    mainFeatures: [
+      "Tout Départ",
+      "Encaissements clients",
+      "Suivi des paiements",
+      "Inventaire simple",
+      "Avoirs clients"
+    ],
     modules: {
       crm: true,
       ventes: true,
@@ -123,11 +140,18 @@ const plans: Plan[] = [
   {
     id: "business",
     name: "Business",
-    description: "Pour entreprises structurées",
+    description: "Pour PME en croissance",
     monthlyPrice: 79,
     annualPrice: 790,
     color: "green",
-    badge: "Le plus choisi",
+    badge: "⭐",
+    mainFeatures: [
+      "Tout Starter",
+      "Gestion avancée du stock",
+      "Multi-entrepôts",
+      "Trésorerie & rapprochement bancaire",
+      "Fournisseurs & commandes"
+    ],
     modules: {
       crm: true,
       ventes: true,
@@ -135,7 +159,7 @@ const plans: Plan[] = [
       stocks: true,
       comptabilite: false,
       tresorerie: "standard",
-      rh: false,
+      rh: true,
       parc: false,
     },
     moduleDetails: {
@@ -172,15 +196,27 @@ const plans: Plan[] = [
         "Prévisions de trésorerie",
         "Rapprochement bancaire"
       ],
+      rh: [
+        "Gestion des employés",
+        "Paie",
+        "Congés & absences"
+      ],
     },
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    description: "Pour entreprises organisées",
+    description: "Pour entreprises structurées",
     monthlyPrice: 139,
     annualPrice: 1390,
     color: "orange",
+    mainFeatures: [
+      "Tout Business",
+      "Comptabilité & journaux",
+      "Déclarations TVA",
+      "Paie & congés",
+      "Immobilisations"
+    ],
     modules: {
       crm: true,
       ventes: true,
@@ -349,6 +385,8 @@ export default function Pricing() {
   const [users, setUsers] = useState(1);
   const [companies, setCompanies] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+  const [selectedPlanDetail, setSelectedPlanDetail] = useState<Plan | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const calculatePrice = (plan: Plan) => {
     let total = isAnnual ? plan.annualPrice : plan.monthlyPrice * 12;
@@ -525,60 +563,70 @@ export default function Pricing() {
                   )}
                   <CardHeader className="text-center pb-4 pt-6">
                     <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                    <CardDescription className="mt-2">{plan.description}</CardDescription>
+                    {plan.badge && (
+                      <div className="mt-2">
+                        <Badge variant="outline" className="text-sm">{plan.badge}</Badge>
+                      </div>
+                    )}
+                    <CardDescription className="mt-3">{plan.description}</CardDescription>
                     <div className="mt-6">
                       <div className="text-4xl font-bold">
-                        {formatPrice(calculatePrice(plan))}
+                        {plan.monthlyPrice === 0 ? (
+                          "Gratuit"
+                        ) : (
+                          <>
+                            {isAnnual ? plan.annualPrice : plan.monthlyPrice} DT
+                            <span className="text-lg text-muted-foreground">/mois</span>
+                          </>
+                        )}
                       </div>
-                      {isAnnual && (
+                      {isAnnual && plan.monthlyPrice > 0 && (
                         <p className="text-sm text-muted-foreground mt-2">
                           Économisez {Math.round(plan.monthlyPrice * 12 - plan.annualPrice)} DT/an
                         </p>
                       )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Liste complète des fonctionnalités avec indicateurs */}
-                    <div className="space-y-1.5">
-                      {(() => {
-                        // Séparer les fonctionnalités incluses et non incluses
-                        const includedFeatures = allFeatures.filter(f => hasFeature(plan, f));
-                        const excludedFeatures = allFeatures.filter(f => !hasFeature(plan, f));
-                        
-                        // Afficher d'abord les incluses (vertes), puis les non incluses (rouges)
-                        return [
-                          ...includedFeatures.map((feature, idx) => (
-                            <div key={`included-${idx}`} className="flex items-center gap-2">
-                              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                              <span className="text-sm">{feature}</span>
-                            </div>
-                          )),
-                          ...excludedFeatures.map((feature, idx) => (
-                            <div key={`excluded-${idx}`} className="flex items-center gap-2">
-                              <X className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
-                              <span className="text-sm text-muted-foreground line-through">
-                                {feature}
-                              </span>
-                            </div>
-                          ))
-                        ];
-                      })()}
+                <CardContent className="space-y-6">
+                    {/* 5 fonctionnalités principales */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-muted-foreground mb-3">Inclus</p>
+                      {plan.mainFeatures.map((feature, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">{feature}</span>
+                        </div>
+                      ))}
                     </div>
 
-                    <Button
-                      asChild
-                      className="w-full"
-                      size="lg"
-                      variant={plan.id === "business" ? "default" : "outline"}
-                    >
-                    <Link to="/register">
-                        {plan.id === "depart" && "Commencer gratuitement"}
-                        {plan.id === "starter" && "Choisir Starter"}
-                        {plan.id === "business" && "Choisir Business"}
-                        {plan.id === "enterprise" && "Choisir Enterprise"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
+                    <div className="space-y-2 pt-4 border-t">
+                      <Button
+                        asChild
+                        className="w-full"
+                        size="lg"
+                        variant={plan.id === "business" ? "default" : "outline"}
+                      >
+                        <Link to="/register">
+                          {plan.id === "depart" && "Commencer gratuitement"}
+                          {plan.id === "starter" && "Choisir Starter"}
+                          {plan.id === "business" && "Choisir Business"}
+                          {plan.id === "enterprise" && "Choisir Enterprise"}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPlanDetail(plan);
+                          setIsDetailModalOpen(true);
+                        }}
+                      >
+                        <Info className="w-4 h-4 mr-2" />
+                        Voir le détail
+                      </Button>
+                    </div>
                 </CardContent>
               </Card>
               ))}
@@ -858,6 +906,15 @@ export default function Pricing() {
           </div>
         </div>
       </footer>
+
+      {/* Modal détail plan */}
+      {selectedPlanDetail && (
+        <PlanDetailModal
+          open={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+          plan={selectedPlanDetail}
+        />
+      )}
     </div>
   );
 }
