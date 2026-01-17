@@ -74,6 +74,9 @@ export type Database = {
           id: string
           notes: string | null
           numero: string
+          remise_montant: number | null
+          remise_type: string | null
+          remise_valeur: number | null
           statut: string
           updated_at: string | null
         }
@@ -88,6 +91,9 @@ export type Database = {
           id?: string
           notes?: string | null
           numero: string
+          remise_montant?: number | null
+          remise_type?: string | null
+          remise_valeur?: number | null
           statut?: string
           updated_at?: string | null
         }
@@ -102,6 +108,9 @@ export type Database = {
           id?: string
           notes?: string | null
           numero?: string
+          remise_montant?: number | null
+          remise_type?: string | null
+          remise_valeur?: number | null
           statut?: string
           updated_at?: string | null
         }
