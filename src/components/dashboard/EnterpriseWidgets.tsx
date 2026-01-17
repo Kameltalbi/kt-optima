@@ -1,8 +1,11 @@
-import { Calculator, Users, Car, TrendingUp } from "lucide-react";
+import { Calculator, Users, Car, TrendingUp, FileText } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { useCurrency } from "@/hooks/use-currency";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlan } from "@/hooks/use-plan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 // Mock data - À remplacer par de vraies données
 const mockCompta = {
@@ -28,13 +31,20 @@ const mockTresorerie = {
   echeances: 45000,
 };
 
+const mockNotesFrais = {
+  enAttente: 3,
+  montantAttente: 1250,
+};
+
 export function EnterpriseWidgets() {
   const { company } = useAuth();
+  const { features } = usePlan();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
 
   return (
     <div className="space-y-6">
-      {/* Comptabilité */}
+      {/* Comptabilité — Enterprise uniquement */}
+      {features.comptabilite && (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -65,8 +75,10 @@ export function EnterpriseWidgets() {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* RH */}
+      {/* RH — Business (partiel) ou Enterprise */}
+      {features.rh && (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           title="Effectif"
@@ -93,8 +105,10 @@ export function EnterpriseWidgets() {
           iconColor="sand"
         />
       </div>
+      )}
 
-      {/* Gestion de parc */}
+      {/* Gestion de parc — Enterprise uniquement */}
+      {features.parc && (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -119,8 +133,10 @@ export function EnterpriseWidgets() {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Trésorerie avancée */}
+      {/* Trésorerie avancée — Enterprise (tresorerie === "avancee") */}
+      {features.tresorerie === "avancee" && (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -147,6 +163,42 @@ export function EnterpriseWidgets() {
           </div>
         </CardContent>
       </Card>
+      )}
+
+      {/* Notes de frais — Business (optionnel) ou Enterprise */}
+      {features.notesFrais && (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <CardTitle>Notes de frais</CardTitle>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/rh/notes-de-frais">Voir tout</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">En attente de validation</p>
+              <p className="text-2xl font-bold text-warning">
+                {mockNotesFrais.enAttente} note{mockNotesFrais.enAttente > 1 ? "s" : ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Montant à valider</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(mockNotesFrais.montantAttente)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      )}
     </div>
   );
 }

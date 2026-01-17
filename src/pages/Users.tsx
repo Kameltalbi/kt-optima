@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { can } from "@/permissions/can";
-import { AppLayout } from "@/layouts/AppLayout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -233,16 +233,16 @@ export default function Users() {
 
   if (!canViewUsers || !isAdmin) {
     return (
-      <AppLayout title="Utilisateurs">
+      <MainLayout title="Utilisateurs">
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Vous n'avez pas accès à cette page.</p>
         </div>
-      </AppLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <AppLayout title="Gestion des utilisateurs" subtitle="Gérer les utilisateurs et leurs permissions">
+    <MainLayout title="Gestion des utilisateurs" subtitle="Gérer les utilisateurs et leurs permissions">
       <div className="space-y-6">
         {/* Header avec bouton d'invitation */}
         <div className="flex items-center justify-between">
@@ -429,6 +429,6 @@ export default function Users() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </MainLayout>
   );
 }

@@ -49,9 +49,9 @@ export default function Register() {
       );
       if (result.success) {
         setSuccess(true);
-        // Wait a moment then redirect
+        // Wait a moment then redirect to checkout to choose a plan
         setTimeout(() => {
-          navigate("/dashboard");
+          navigate("/checkout?plan=depart");
         }, 2000);
       } else {
         setError(result.error || "Une erreur est survenue lors de l'inscription");
@@ -73,7 +73,7 @@ export default function Register() {
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                 <h2 className="text-2xl font-bold text-foreground">Compte créé !</h2>
                 <p className="text-muted-foreground">
-                  Votre compte a été créé avec succès. Vous allez être redirigé vers le tableau de bord.
+                  Votre compte a été créé avec succès. Vous allez être redirigé pour choisir votre plan.
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Vérifiez votre email pour confirmer votre compte.
@@ -92,8 +92,8 @@ export default function Register() {
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
           <img 
-            src="/ktoptima.png" 
-            alt="KTOptima" 
+            src="/kt optima (500 x 192 px).png" 
+            alt="KT Optima" 
             className="h-20 w-auto object-contain"
           />
         </div>

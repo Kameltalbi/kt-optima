@@ -7,9 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface CoreKPIsProps {
   period: "month" | "quarter" | "year";
+  /** Si false, n'affiche que le Chiffre d'affaires (plan Départ sans trésorerie) */
+  includeTresorerie?: boolean;
 }
 
-export function CoreKPIs({ period }: CoreKPIsProps) {
+export function CoreKPIs({ period, includeTresorerie = true }: CoreKPIsProps) {
   const { factures, loading } = useFacturesVentes();
   const { company } = useAuth();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
@@ -75,7 +77,7 @@ export function CoreKPIs({ period }: CoreKPIsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className={`grid gap-6 ${includeTresorerie ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 max-w-sm"}`}>
       <StatCard
         title="Chiffre d'affaires"
         value={formatCurrency(stats.ca)}
@@ -84,30 +86,34 @@ export function CoreKPIs({ period }: CoreKPIsProps) {
         icon={TrendingUp}
         iconColor="primary"
       />
-      <StatCard
-        title="Montant encaissé"
-        value={formatCurrency(stats.encaisse)}
-        change={stats.ca > 0 ? `${Math.round((stats.encaisse / stats.ca) * 100)}% du CA` : "Aucun encaissement"}
-        changeType={stats.encaisse > 0 ? "positive" : "neutral"}
-        icon={DollarSign}
-        iconColor="success"
-      />
-      <StatCard
-        title="Factures impayées"
-        value={formatCurrency(stats.impayees)}
-        change={`${factures?.filter((f) => f.statut === "validee").length || 0} factures`}
-        changeType={stats.impayees > 0 ? "negative" : "neutral"}
-        icon={FileText}
-        iconColor="sand"
-      />
-      <StatCard
-        title="Solde trésorerie"
-        value={formatCurrency(stats.solde)}
-        change="Encaissements"
-        changeType={stats.solde > 0 ? "positive" : "neutral"}
-        icon={Wallet}
-        iconColor="primary"
-      />
+      {includeTresorerie && (
+        <>
+          <StatCard
+            title="Montant encaissé"
+            value={formatCurrency(stats.encaisse)}
+            change={stats.ca > 0 ? `${Math.round((stats.encaisse / stats.ca) * 100)}% du CA` : "Aucun encaissement"}
+            changeType={stats.encaisse > 0 ? "positive" : "neutral"}
+            icon={DollarSign}
+            iconColor="success"
+          />
+          <StatCard
+            title="Factures impayées"
+            value={formatCurrency(stats.impayees)}
+            change={`${factures?.filter((f) => f.statut === "validee").length || 0} factures`}
+            changeType={stats.impayees > 0 ? "negative" : "neutral"}
+            icon={FileText}
+            iconColor="sand"
+          />
+          <StatCard
+            title="Solde trésorerie"
+            value={formatCurrency(stats.solde)}
+            change="Encaissements"
+            changeType={stats.solde > 0 ? "positive" : "neutral"}
+            icon={Wallet}
+            iconColor="primary"
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -414,7 +414,7 @@ export function useExpenseNotes() {
           .from("expense_notes")
           .select(`
             *,
-            employee:employes(id, nom, prenom)
+            employes(id, nom, prenom)
           `)
           .eq("id", id)
           .single();
@@ -446,7 +446,7 @@ export function useExpenseNotes() {
               reference_type: "note_de_frais",
               reference_id: id,
               moyen_paiement: moyenPaiement || "virement",
-              beneficiaire: note.employee ? `${note.employee.prenom} ${note.employee.nom}` : null,
+              beneficiaire: note.employes ? `${note.employes.prenom} ${note.employes.nom}` : null,
               notes: `Note de frais ${note.number}`,
               company_id: company.id,
               created_by: userData.user?.id,

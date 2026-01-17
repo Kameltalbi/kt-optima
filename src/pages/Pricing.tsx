@@ -28,6 +28,7 @@ export interface Plan {
     tresorerie: "basique" | "standard" | "avancee" | false;
     rh: boolean;
     parc: boolean;
+    notesFrais: boolean;
   };
   mainFeatures: string[];
   moduleDetails: {
@@ -110,6 +111,7 @@ export const plans: Plan[] = [
       tresorerie: "basique",
       rh: false,
       parc: false,
+      notesFrais: false,
     },
     moduleDetails: {
       crm: [
@@ -160,6 +162,7 @@ export const plans: Plan[] = [
       tresorerie: "standard",
       rh: true,
       parc: false,
+      notesFrais: true, // Optionnel pour Business
     },
     moduleDetails: {
       crm: [
@@ -199,6 +202,12 @@ export const plans: Plan[] = [
         "Gestion des employés",
         "Congés & absences"
       ],
+      notesFrais: [
+        "Création de notes de frais",
+        "Catégories de dépenses",
+        "Justificatifs",
+        "Workflow de validation"
+      ],
     },
   },
   {
@@ -225,6 +234,7 @@ export const plans: Plan[] = [
       tresorerie: "avancee",
       rh: true,
       parc: true,
+      notesFrais: true, // Inclus dans Enterprise
     },
     moduleDetails: {
       crm: [
@@ -282,6 +292,15 @@ export const plans: Plan[] = [
         "Gestion des tickets",
         "Impression des reçus"
       ],
+      notesFrais: [
+        "Création de notes de frais",
+        "Catégories de dépenses",
+        "Justificatifs",
+        "Workflow de validation avancé",
+        "Règles de plafonds",
+        "Intégration comptable",
+        "Historique & audit"
+      ],
     },
   },
 ];
@@ -327,6 +346,8 @@ const allFeatures = [
   "Amortissements",
   // POS
   "Point de vente (POS)",
+  // Notes de frais
+  "Notes de frais",
 ];
 
 // Fonction pour vérifier si une fonctionnalité est incluse dans un plan
@@ -363,6 +384,7 @@ const hasFeature = (plan: Plan, feature: string): boolean => {
     "Gestion de parc": ["Véhicules & matériel", "Maintenance"],
     "Amortissements": ["Amortissements"],
     "Point de vente (POS)": ["Point de vente (POS)", "Terminal de caisse", "Gestion des tickets", "Impression des reçus"],
+    "Notes de frais": ["Création de notes de frais", "Catégories de dépenses", "Justificatifs", "Workflow de validation"],
   };
   
   const relatedFeatures = featureMapping[feature] || [feature];
@@ -397,8 +419,8 @@ export default function Pricing() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img 
-                src="/ktoptima.png" 
-                alt="KTOptima" 
+                src="/kt optima (500 x 192 px).png" 
+                alt="KT Optima" 
                 className="h-20 w-auto object-contain transition-transform hover:scale-105"
               />
             </Link>
@@ -674,6 +696,7 @@ export default function Pricing() {
                         { name: "RH", depart: false, starter: false, business: false, enterprise: true },
                         { name: "Gestion de parc", depart: false, starter: false, business: false, enterprise: true },
                         { name: "POS (Point de vente)", depart: false, starter: false, business: false, enterprise: true },
+                        { name: "Notes de frais", depart: false, starter: false, business: true, enterprise: true },
                       ].map((row, idx) => (
                         <tr key={idx} className="border-b border-border/50">
                           <td className="p-4 font-medium">{row.name}</td>

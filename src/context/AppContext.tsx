@@ -269,7 +269,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     companyName: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // 1. Créer le compte utilisateur
+      // 1. Créer le compte : full_name et company_name sont envoyés dans les metadata.
+      // Le trigger handle_new_user (auth.users) crée la société, le profil et le rôle
+      // côté base, sans dépendre de auth.uid() — évite le 403 quand la confirmation
+      // d’email est activée.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -277,6 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           emailRedirectTo: window.location.origin,
           data: {
             full_name: name,
+            company_name: companyName,
           },
         },
       });
@@ -287,49 +291,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (!authData.user) {
         return { success: false, error: 'Erreur lors de la création du compte' };
-      }
-
-      // 2. Créer la société
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: companyName,
-          email: email,
-          currency: 'TND',
-          language: 'fr',
-        })
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error('Error creating company:', companyError);
-        return { success: false, error: 'Erreur lors de la création de l\'entreprise' };
-      }
-
-      // 3. Mettre à jour le profile avec company_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          company_id: companyData.id,
-          full_name: name,
-        })
-        .eq('user_id', authData.user.id);
-
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-      }
-
-      // 4. Ajouter le rôle admin
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          company_id: companyData.id,
-          role: 'admin',
-        });
-
-      if (roleError) {
-        console.error('Error creating user role:', roleError);
       }
 
       return { success: true };

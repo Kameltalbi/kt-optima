@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -14,21 +14,24 @@ import {
   ChevronRight,
   Car,
   UserCircle,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlan } from "@/hooks/use-plan";
 
-// Modules principaux uniquement - navigation simplifiée
-const mainModules = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: UserCircle, label: "CRM", path: "/crm" },
-  { icon: Users, label: "Ventes", path: "/ventes" },
-  { icon: Package, label: "Stocks", path: "/stock" },
-  { icon: ShoppingCart, label: "Achats", path: "/achats" },
-  { icon: Wallet, label: "Finances", path: "/finance" },
-  { icon: Calculator, label: "Comptabilité", path: "/comptabilite" },
-  { icon: UserCheck, label: "Ressources humaines", path: "/rh" },
-  { icon: Car, label: "Gestion de Parc", path: "/parc" },
+// Modules principaux avec mapping vers les features du plan
+const allModules = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", feature: null }, // Toujours visible
+  { icon: UserCircle, label: "CRM", path: "/crm", feature: "crm" },
+  { icon: Users, label: "Ventes", path: "/ventes", feature: "ventes" },
+  { icon: Package, label: "Stocks", path: "/stock", feature: "stocks" },
+  { icon: ShoppingCart, label: "Achats", path: "/achats", feature: "achats" },
+  { icon: Wallet, label: "Finances", path: "/finance", feature: "tresorerie" },
+  { icon: Calculator, label: "Comptabilité", path: "/comptabilite", feature: "comptabilite" },
+  { icon: UserCheck, label: "Ressources humaines", path: "/rh", feature: "rh" },
+  { icon: Car, label: "Gestion de Parc", path: "/parc", feature: "parc" },
+  { icon: FileText, label: "Notes de frais", path: "/rh/notes-de-frais", feature: "notesFrais" },
 ];
 
 interface SidebarProps {
@@ -40,6 +43,39 @@ export function Sidebar({ onClose }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { company, user } = useAuth();
+  const { features } = usePlan();
+
+  // Filtrer les modules selon le plan acheté
+  const visibleModules = useMemo(() => {
+    return allModules.filter((module) => {
+      // Dashboard toujours visible
+      if (!module.feature) return true;
+
+      // Vérifier si la feature est disponible dans le plan
+      switch (module.feature) {
+        case "crm":
+          return features.crm;
+        case "ventes":
+          return features.ventes;
+        case "stocks":
+          return features.stocks;
+        case "achats":
+          return features.achats;
+        case "tresorerie":
+          return features.tresorerie !== false; // basique, standard, ou avancee
+        case "comptabilite":
+          return features.comptabilite;
+        case "rh":
+          return features.rh;
+        case "parc":
+          return features.parc;
+        case "notesFrais":
+          return features.notesFrais;
+        default:
+          return true;
+      }
+    });
+  }, [features]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -110,10 +146,10 @@ export function Sidebar({ onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* Navigation - Modules principaux uniquement */}
+      {/* Navigation - Modules filtrés selon le plan */}
       <nav className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="space-y-1">
-          {mainModules.map((module) => {
+          {visibleModules.map((module) => {
             // Vérifier si le module est actif (pathname commence par le path du module)
             const isActive = location.pathname === module.path || 
               (module.path !== "/" && location.pathname.startsWith(module.path));
@@ -171,7 +207,9 @@ export function Sidebar({ onClose }: SidebarProps) {
           {!effectiveCollapsed && (
             <div className="animate-fade-in min-w-0">
               <p className="text-sm font-bold truncate text-white">{user?.email?.split('@')[0] || 'Utilisateur'}</p>
-              <p className="text-xs text-white/70 truncate font-medium">{company?.name || 'Entreprise'}</p>
+              <p className="text-xs text-white/70 truncate font-medium">
+                {company?.name || (company ? 'Chargement...' : 'Aucune entreprise')}
+              </p>
             </div>
           )}
         </div>

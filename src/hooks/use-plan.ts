@@ -13,6 +13,7 @@ interface PlanFeatures {
   comptabilite: boolean;
   rh: boolean;
   parc: boolean;
+  notesFrais: boolean;
 }
 
 export function usePlan() {
@@ -36,6 +37,7 @@ export function usePlan() {
           comptabilite: false,
           rh: false,
           parc: false,
+          notesFrais: false,
         };
       case "starter":
         return {
@@ -48,6 +50,7 @@ export function usePlan() {
           comptabilite: false,
           rh: false,
           parc: false,
+          notesFrais: false,
         };
       case "business":
         return {
@@ -60,6 +63,7 @@ export function usePlan() {
           comptabilite: false,
           rh: true, // RH partiel
           parc: false,
+          notesFrais: true, // Notes de frais disponible en Business (optionnel)
         };
       case "enterprise":
         return {
@@ -72,6 +76,7 @@ export function usePlan() {
           comptabilite: true,
           rh: true, // RH complet
           parc: true,
+          notesFrais: true, // Notes de frais inclus dans Enterprise
         };
       default:
         return {
@@ -84,6 +89,7 @@ export function usePlan() {
           comptabilite: false,
           rh: false,
           parc: false,
+          notesFrais: false,
         };
     }
   }, [plan]);

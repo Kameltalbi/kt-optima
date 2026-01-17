@@ -261,6 +261,15 @@ const planDetails: Record<string, {
         "Congés & absences",
       ],
     },
+    notesFrais: {
+      status: "partial",
+      features: [
+        "Création de notes de frais",
+        "Catégories de dépenses",
+        "Justificatifs",
+        "Workflow de validation"
+      ],
+    },
   },
   enterprise: {
     ventes: {

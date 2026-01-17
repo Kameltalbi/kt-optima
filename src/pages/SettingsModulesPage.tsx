@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SettingsInvoicing from "./SettingsInvoicing";
 import { AccountingSettings } from "./SettingsSections";
@@ -6,6 +6,7 @@ import SettingsPayrollComplete from "./SettingsPayrollComplete";
 import SettingsTemplates from "./SettingsTemplates";
 import ComingSoon from "./ComingSoon";
 import { ResponsiveTabs, ResponsiveTabsContent } from "@/components/settings/ResponsiveTabs";
+import { usePlan } from "@/hooks/use-plan";
 import { 
   UserCircle, 
   ShoppingCart, 
@@ -18,19 +19,56 @@ import {
 } from "lucide-react";
 
 export default function SettingsModulesPage() {
+  const { features } = usePlan();
+  
+  // Modules disponibles filtrés selon le plan
+  const modules = useMemo(() => {
+    const allModules = [
+      { id: "crm", label: "CRM", icon: UserCircle, feature: "crm" },
+      { id: "ventes", label: "Ventes", icon: ShoppingCart, feature: "ventes" },
+      { id: "achats", label: "Achats", icon: Building2, feature: "achats" },
+      { id: "stock", label: "Stock", icon: Package, feature: "stocks" },
+      { id: "finance", label: "Finance", icon: Wallet, feature: "tresorerie" },
+      { id: "comptabilite", label: "Comptabilité", icon: Calculator, feature: "comptabilite" },
+      { id: "rh", label: "Ressources humaines", icon: UserCheck, feature: "rh" },
+      { id: "parc", label: "Gestion de parc", icon: Car, feature: "parc" },
+    ];
+
+    return allModules.filter(module => {
+      switch (module.feature) {
+        case "crm":
+          return features.crm;
+        case "ventes":
+          return features.ventes;
+        case "achats":
+          return features.achats;
+        case "stocks":
+          return features.stocks;
+        case "tresorerie":
+          return features.tresorerie !== false;
+        case "comptabilite":
+          return features.comptabilite;
+        case "rh":
+          return features.rh;
+        case "parc":
+          return features.parc;
+        default:
+          return true;
+      }
+    });
+  }, [features]);
+
   const [activeModule, setActiveModule] = useState<string>("ventes");
 
-  // Modules disponibles (peut être filtré selon les modules actifs)
-  const modules = [
-    { id: "crm", label: "CRM", icon: UserCircle, enabled: true },
-    { id: "ventes", label: "Ventes", icon: ShoppingCart, enabled: true },
-    { id: "achats", label: "Achats", icon: Building2, enabled: true },
-    { id: "stock", label: "Stock", icon: Package, enabled: true },
-    { id: "finance", label: "Finance", icon: Wallet, enabled: true },
-    { id: "comptabilite", label: "Comptabilité", icon: Calculator, enabled: true },
-    { id: "rh", label: "Ressources humaines", icon: UserCheck, enabled: true },
-    { id: "parc", label: "Gestion de parc", icon: Car, enabled: true },
-  ];
+  // Mettre à jour le module actif si le module actuel n'est plus disponible
+  useEffect(() => {
+    if (modules.length > 0) {
+      const isCurrentModuleAvailable = modules.some(m => m.id === activeModule);
+      if (!isCurrentModuleAvailable) {
+        setActiveModule(modules[0].id);
+      }
+    }
+  }, [modules, activeModule]);
 
   return (
     <div className="space-y-6">
@@ -41,11 +79,20 @@ export default function SettingsModulesPage() {
         </p>
       </div>
 
-      <ResponsiveTabs
-        value={activeModule}
-        onValueChange={setActiveModule}
-        items={modules.map(m => ({ value: m.id, label: m.label, icon: m.icon }))}
-      >
+      {modules.length === 0 ? (
+        <Card className="border-border/50">
+          <CardContent className="py-8 text-center">
+            <p className="text-muted-foreground">
+              Aucun module disponible dans votre plan actuel.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <ResponsiveTabs
+          value={activeModule}
+          onValueChange={setActiveModule}
+          items={modules.map(m => ({ value: m.id, label: m.label, icon: m.icon }))}
+        >
         <ResponsiveTabsContent value="crm" className="mt-6">
           <ComingSoon 
             title="Paramètres CRM" 
@@ -118,6 +165,7 @@ export default function SettingsModulesPage() {
           />
         </ResponsiveTabsContent>
       </ResponsiveTabs>
+      )}
     </div>
   );
 }

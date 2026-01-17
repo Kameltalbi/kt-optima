@@ -30,27 +30,29 @@ export function BusinessWidgets() {
 
   return (
     <div className="space-y-6">
-      {/* Achats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <StatCard
-          title="Achats du mois"
-          value={formatCurrency(mockAchats.total)}
-          change="Période en cours"
-          changeType="neutral"
-          icon={ShoppingCart}
-          iconColor="accent"
-        />
-        <StatCard
-          title="Factures à payer"
-          value={formatCurrency(mockAchats.aPayer)}
-          change="En attente"
-          changeType={mockAchats.aPayer > 0 ? "negative" : "neutral"}
-          icon={ShoppingCart}
-          iconColor="sand"
-        />
-      </div>
+      {/* Achats — uniquement si module Achats (Business, Enterprise) */}
+      {features.achats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatCard
+            title="Achats du mois"
+            value={formatCurrency(mockAchats.total)}
+            change="Période en cours"
+            changeType="neutral"
+            icon={ShoppingCart}
+            iconColor="accent"
+          />
+          <StatCard
+            title="Factures à payer"
+            value={formatCurrency(mockAchats.aPayer)}
+            change="En attente"
+            changeType={mockAchats.aPayer > 0 ? "negative" : "neutral"}
+            icon={ShoppingCart}
+            iconColor="sand"
+          />
+        </div>
+      )}
 
-      {/* Produits / Services */}
+      {/* Produits / Services — tous les plans qui voient BusinessWidgets (Starter, Business, Enterprise) */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">

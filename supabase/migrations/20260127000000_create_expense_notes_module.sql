@@ -25,7 +25,7 @@ COMMENT ON COLUMN public.expense_categories.plafond_annuel IS 'Plafond annuel au
 CREATE TABLE IF NOT EXISTS public.expense_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     number VARCHAR(100) NOT NULL, -- Numéro séquentiel de la note
-    employee_id UUID REFERENCES public.employes(id) ON DELETE RESTRICT, -- Table "employes" (RH), pas "employees"
+    employee_id UUID REFERENCES public.employes(id) ON DELETE RESTRICT, -- Référence la table employes (module RH)
     date DATE NOT NULL,
     total_amount DECIMAL(15, 2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'brouillon' CHECK (status IN ('brouillon', 'soumis', 'valide', 'rejete', 'paye')),

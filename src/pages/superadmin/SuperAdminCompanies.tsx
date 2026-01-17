@@ -245,11 +245,12 @@ export default function SuperAdminCompanies() {
 
       setPlanModalOpen(false);
       loadCompanies();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error changing plan:", error);
+      const msg = (error as { message?: string })?.message || (error as { error_description?: string })?.error_description || "Impossible de modifier le plan";
       toast({
         title: "Erreur",
-        description: "Impossible de modifier le plan",
+        description: String(msg),
         variant: "destructive",
       });
     }
@@ -298,10 +299,12 @@ export default function SuperAdminCompanies() {
       }
 
       // Update company plan
-      await supabase
+      const { error: companyError } = await supabase
         .from("companies")
         .update({ plan: newPlan })
         .eq("id", selectedCompany.id);
+
+      if (companyError) throw companyError;
 
       toast({
         title: "Paiement validé",
@@ -310,11 +313,12 @@ export default function SuperAdminCompanies() {
 
       setPaymentModalOpen(false);
       loadCompanies();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error validating payment:", error);
+      const msg = (error as { message?: string })?.message || (error as { error_description?: string })?.error_description || "Impossible de valider le paiement";
       toast({
         title: "Erreur",
-        description: "Impossible de valider le paiement",
+        description: String(msg),
         variant: "destructive",
       });
     }

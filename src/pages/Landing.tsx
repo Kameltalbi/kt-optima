@@ -98,12 +98,12 @@ export default function Landing() {
       {/* Header */}
       <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50 transition-all duration-300 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img 
-                src="/ktoptima.png" 
-                alt="KTOptima" 
+                src="/kt optima (500 x 192 px).png" 
+                alt="KT Optima" 
                 className="h-20 w-auto object-contain transition-transform hover:scale-105"
               />
             </div>

@@ -180,7 +180,7 @@ export default function Modules() {
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3">
               <img 
-                src="/ktoptima.png" 
+                src="/kt optima (500 x 192 px).png" 
                 alt="KT Optima" 
                 className="h-12 w-auto object-contain"
               />
