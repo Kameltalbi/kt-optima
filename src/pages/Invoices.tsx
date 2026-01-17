@@ -325,7 +325,7 @@ export default function Invoices() {
         const montant_tva = lignes.reduce((sum, l) => sum + l.montant_tva, 0);
         const montant_ttc = lignes.reduce((sum, l) => sum + l.montant_ttc, 0);
 
-        // Mettre à jour la facture
+        // Mettre à jour la facture avec la remise
         await updateFacture(editInvoiceData.id, {
           date_facture: data.date,
           client_id: data.clientId,
@@ -333,18 +333,24 @@ export default function Invoices() {
           montant_ht,
           montant_tva,
           montant_ttc,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         });
 
         setIsCreateModalOpen(false);
         setEditInvoiceData(null);
         toast.success("Facture modifiée avec succès");
       } else {
-        // Créer la facture via le hook
+        // Créer la facture via le hook avec la remise
         const factureData = {
           numero: data.reference || '', // Le numéro sera généré automatiquement
           date_facture: data.date,
           client_id: data.clientId,
           notes: data.notes || null,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         };
 
         await createFacture(factureData, lignes, []);
@@ -578,6 +584,7 @@ export default function Invoices() {
                                       },
                                       lines: documentLines,
                                       total_ht: invoice.montant_ht,
+                                      discount: (invoice as any).remise_montant || 0,
                                       applied_taxes: appliedTaxes,
                                       fiscal_stamp: invoice.montant_ttc > 0 ? 1 : 0, // Timbre fiscal 1 TND
                                       total_ttc: invoice.montant_ttc,

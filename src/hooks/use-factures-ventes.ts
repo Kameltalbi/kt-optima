@@ -19,6 +19,9 @@ export interface FactureVente {
   montant_ttc: number;
   montant_paye: number;
   montant_restant: number;
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   conditions_paiement: string | null;
   notes: string | null;
   company_id: string;
@@ -56,6 +59,9 @@ export interface CreateFactureVenteData {
   montant_ttc?: number;
   montant_paye?: number;
   montant_restant?: number;
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   conditions_paiement?: string | null;
   notes?: string | null;
 }
