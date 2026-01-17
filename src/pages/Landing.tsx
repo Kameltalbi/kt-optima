@@ -220,7 +220,7 @@ export default function Landing() {
                 <span>ERP Moderne & Intuitif</span>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight animate-slide-in-up">
-                KT Optima, la plateforme de gestion{" "}
+                La plateforme de gestion{" "}
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   conçue pour faire grandir
                 </span>{" "}

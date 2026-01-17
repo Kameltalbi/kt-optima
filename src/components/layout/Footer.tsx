@@ -8,7 +8,7 @@ export function Footer() {
         <div className="mb-8 pb-8 border-b border-gray-800">
           <Link to="/" className="inline-block">
             <img 
-              src="/kt optima (500 x 192 px).png" 
+              src="/kt optima blanc.png" 
               alt="KT Optima" 
               className="h-16 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
             />
