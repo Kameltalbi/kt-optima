@@ -14,7 +14,7 @@ export function Footer() {
             />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Colonne 1 — Produit */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
