@@ -585,6 +585,8 @@ export default function Invoices() {
                                       lines: documentLines,
                                       total_ht: invoice.montant_ht,
                                       discount: (invoice as any).remise_montant || 0,
+                                      discount_type: (invoice as any).remise_type || null,
+                                      discount_value: (invoice as any).remise_valeur || 0,
                                       applied_taxes: appliedTaxes,
                                       fiscal_stamp: invoice.montant_ttc > 0 ? 1 : 0, // Timbre fiscal 1 TND
                                       total_ttc: invoice.montant_ttc,

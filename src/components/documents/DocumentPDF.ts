@@ -364,7 +364,10 @@ export async function generateDocumentPDF(
   if (data.discount && data.discount > 0) {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text('Remise:', totalsX, y);
+    const discountLabel = data.discount_type === 'percentage' && data.discount_value
+      ? `Remise (${data.discount_value}%):`
+      : 'Remise:';
+    doc.text(discountLabel, totalsX, y);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(220, 38, 38); // red
     doc.text('-' + formatAmount(data.discount), rightX, y, { align: 'right' });

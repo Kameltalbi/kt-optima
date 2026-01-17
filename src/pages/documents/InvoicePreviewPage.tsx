@@ -92,6 +92,8 @@ export default function InvoicePreviewPage() {
           lines: documentLines,
           total_ht: facture.montant_ht,
           discount: (facture as any).remise_montant || 0,
+          discount_type: (facture as any).remise_type || null,
+          discount_value: (facture as any).remise_valeur || 0,
           applied_taxes: appliedTaxes,
           fiscal_stamp: facture.montant_ttc > 0 ? 1 : 0,
           total_ttc: facture.montant_ttc,

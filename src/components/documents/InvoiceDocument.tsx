@@ -26,7 +26,9 @@ export interface InvoiceDocumentData {
   };
   lines: DocumentLine[];
   total_ht: number;
-  discount?: number | null; // Remise
+  discount?: number | null; // Montant de la remise calculé
+  discount_type?: 'percentage' | 'amount' | null; // Type de remise
+  discount_value?: number | null; // Valeur saisie (% ou montant)
   applied_taxes: AppliedTax[];
   fiscal_stamp?: number | null; // Timbre fiscal (1,000 TND)
   total_ttc: number;
@@ -137,7 +139,9 @@ export function InvoiceDocument({ data }: InvoiceDocumentProps) {
           {/* Remise */}
           {data.discount && data.discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Remise:</span>
+              <span className="text-gray-600">
+                Remise{data.discount_type === 'percentage' && data.discount_value ? ` (${data.discount_value}%)` : ''}:
+              </span>
               <span className="font-medium text-red-600">-{formatAmount(data.discount)}</span>
             </div>
           )}
