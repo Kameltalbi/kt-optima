@@ -34,6 +34,12 @@ export interface InvoiceDocumentData {
   total_ttc: number;
   amount_in_words?: string | null; // Montant en toutes lettres
   notes?: string | null;
+  // Informations sur les acomptes déduits
+  acomptes_deduits?: Array<{
+    facture_numero: string;
+    montant: number;
+  }>;
+  montant_restant?: number; // Montant restant à payer après déduction des acomptes
 }
 
 interface InvoiceDocumentProps {
@@ -177,6 +183,26 @@ export function InvoiceDocument({ data }: InvoiceDocumentProps) {
             <span className="text-gray-900">Total TTC:</span>
             <span className="text-gray-900">{formatAmount(data.total_ttc)}</span>
           </div>
+
+          {/* Acomptes déduits */}
+          {data.acomptes_deduits && data.acomptes_deduits.length > 0 && (
+            <>
+              {data.acomptes_deduits.map((acompte, index) => (
+                <div key={index} className="flex justify-between text-sm pt-2 border-t border-gray-300">
+                  <span className="text-gray-600">
+                    Facture d'acompte {acompte.facture_numero} déduite:
+                  </span>
+                  <span className="font-medium text-blue-600">-{formatAmount(acompte.montant)}</span>
+                </div>
+              ))}
+              {data.montant_restant !== undefined && (
+                <div className="flex justify-between text-lg font-bold pt-2 border-t-2 border-gray-400">
+                  <span className="text-gray-900">Solde à payer:</span>
+                  <span className="text-gray-900">{formatAmount(data.montant_restant)}</span>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Montant en toutes lettres */}
           {data.amount_in_words && (

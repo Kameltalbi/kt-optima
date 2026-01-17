@@ -29,7 +29,11 @@ import {
   Trash2,
   DollarSign,
   TrendingUp,
-  Loader2
+  Loader2,
+  Download,
+  Send,
+  XCircle,
+  History
 } from "lucide-react";
 import { useFacturesVentes, type FactureVente } from "@/hooks/use-factures-ventes";
 import { InvoiceAcompteCreateModal, InvoiceAcompteFormData } from "@/components/invoices/InvoiceAcompteCreateModal";
@@ -40,6 +44,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
+import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
 
 const statusStyles: Record<string, string> = {
   payee: "bg-success/10 text-success border-0",
@@ -56,7 +62,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function FactureAcompte() {
-  const { factures, loading, createFacture, updateFacture, getLignes, refreshFactures } = useFacturesVentes();
+  const { factures, loading, createFacture, updateFacture, getLignes, refreshFactures, generateFactureFinaleFromAcompte, validerFacture } = useFacturesVentes();
   const { taxes } = useTaxes();
   const { clients } = useClients();
   const { company } = useAuth();
@@ -254,7 +260,7 @@ export default function FactureAcompte() {
           remise_montant: discountAmount,
         };
 
-        await createFacture(factureData, lignes, []);
+        await createFacture(factureData, lignes, { encaissements: [], factures_acompte: [] });
         
         setIsDialogOpen(false);
         toast.success("Facture d'acompte créée avec succès");
@@ -266,6 +272,48 @@ export default function FactureAcompte() {
       console.error("Error saving invoice acompte:", error);
       toast.error(editAcompteData ? "Erreur lors de la modification" : "Erreur lors de la création de la facture d'acompte");
     }
+  };
+
+  // Handler pour valider
+  const handleValider = async (facture: FactureVente) => {
+    try {
+      await validerFacture(facture.id);
+      toast.success('Facture d\'acompte validée avec succès');
+      await refreshFactures();
+    } catch (error) {
+      console.error('Error valider:', error);
+      toast.error('Erreur lors de la validation');
+    }
+  };
+
+  // Handler pour encaisser
+  const handleEncaisser = async (facture: FactureVente) => {
+    try {
+      // Mettre à jour le statut à "payee"
+      await updateFacture(facture.id, { statut: 'payee' });
+      toast.success('Facture d\'acompte encaissée avec succès');
+      await refreshFactures();
+    } catch (error) {
+      console.error('Error encaisser:', error);
+      toast.error('Erreur lors de l\'encaissement');
+    }
+  };
+
+  // Handler pour annuler
+  const handleAnnuler = async (facture: FactureVente) => {
+    try {
+      await updateFacture(facture.id, { statut: 'annulee' });
+      toast.success('Facture d\'acompte annulée');
+      await refreshFactures();
+    } catch (error) {
+      console.error('Error annuler:', error);
+      toast.error('Erreur lors de l\'annulation');
+    }
+  };
+
+  // Handler pour voir l'historique
+  const handleHistorique = async (facture: FactureVente) => {
+    toast.info('Fonctionnalité d\'historique à venir');
   };
 
   return (
@@ -392,7 +440,7 @@ export default function FactureAcompte() {
                     <TableHead className="text-right font-semibold">TVA</TableHead>
                     <TableHead className="text-right font-semibold">TTC</TableHead>
                     <TableHead className="font-semibold">Statut</TableHead>
-                    <TableHead className="w-32 font-semibold">Actions</TableHead>
+                    <TableHead className="w-48 font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -429,35 +477,107 @@ export default function FactureAcompte() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={() => toast.info('Fonctionnalité à venir : Voir le détail')}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                            {/* Bouton "Générer facture finale" visible pour les factures payées sans facture finale */}
+                            {facture.statut === 'payee' && !facture.facture_parent_id && (
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="h-8 gap-1.5 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    await generateFactureFinaleFromAcompte(facture.id);
+                                    await refreshFactures();
+                                  } catch (error) {
+                                    console.error('Error generating facture finale:', error);
+                                    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+                                    toast.error(`Erreur lors de la génération de la facture finale: ${errorMessage}`);
+                                  }
+                                }}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                Facture finale
+                              </Button>
+                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuContent align="end" className="w-56">
                                 <DropdownMenuItem 
-                                  onClick={() => handleEditAcompte(facture)}
+                                  onClick={() => handleView(facture)}
                                   className="gap-2"
                                 >
-                                  <Edit className="w-4 h-4" />
-                                  Modifier
+                                  <Eye className="w-4 h-4" />
+                                  Voir
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDownload(facture)}
+                                  className="gap-2"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  Télécharger
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleSend(facture)}
+                                  className="gap-2"
+                                >
+                                  <Send className="w-4 h-4" />
+                                  Envoyer
+                                </DropdownMenuItem>
+                                {facture.statut === 'brouillon' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleValider(facture)}
+                                    className="gap-2 text-primary"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Valider
+                                  </DropdownMenuItem>
+                                )}
+                                {facture.statut === 'validee' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleEncaisser(facture)}
+                                    className="gap-2"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                    Encaisser
+                                  </DropdownMenuItem>
+                                )}
+                                {facture.statut === 'payee' && !facture.facture_parent_id && (
+                                  <DropdownMenuItem 
+                                onClick={async () => {
+                                  try {
+                                    await generateFactureFinaleFromAcompte(facture.id);
+                                    await refreshFactures();
+                                  } catch (error) {
+                                    console.error('Error generating facture finale:', error);
+                                    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+                                    toast.error(`Erreur: ${errorMessage}`);
+                                  }
+                                }}
+                                    className="gap-2 text-primary"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Générer facture finale
+                                  </DropdownMenuItem>
+                                )}
+                                {facture.statut !== 'annulee' && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleAnnuler(facture)}
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                    Annuler
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
-                                  onClick={() => toast.info('Fonctionnalité à venir : Supprimer')}
-                                  className="gap-2 text-destructive focus:text-destructive"
+                                  onClick={() => handleHistorique(facture)}
+                                  className="gap-2"
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                  Supprimer
+                                  <History className="w-4 h-4" />
+                                  Historique
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

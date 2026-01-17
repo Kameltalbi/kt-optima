@@ -76,6 +76,9 @@ export default function Employees() {
     departement: "",
     date_embauche: new Date().toISOString().split("T")[0],
     salaire_base: 0,
+    type_contrat: "CDI",
+    banque: "",
+    rib: "",
     actif: true,
     notes: "",
   });
@@ -108,6 +111,9 @@ export default function Employees() {
       departement: "",
       date_embauche: new Date().toISOString().split("T")[0],
       salaire_base: 0,
+      type_contrat: "CDI",
+      banque: "",
+      rib: "",
       actif: true,
       notes: "",
     });
@@ -130,7 +136,13 @@ export default function Employees() {
       departement: employee.departement || "",
       date_embauche: employee.date_embauche,
       date_depart: employee.date_depart || undefined,
+      type_contrat: employee.type_contrat || "CDI",
+      banque: employee.banque || "",
+      rib: employee.rib || "",
       salaire_base: employee.salaire_base,
+      type_contrat: employee.type_contrat || "CDI",
+      banque: employee.banque || "",
+      rib: employee.rib || "",
       actif: employee.actif,
       notes: employee.notes || "",
     });
@@ -500,11 +512,45 @@ export default function Employees() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="type_contrat">Type de contrat</Label>
+                    <Select
+                      value={formData.type_contrat || "CDI"}
+                      onValueChange={(value: "CDI" | "CDD" | "Journalier") => setFormData({ ...formData, type_contrat: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CDI">CDI</SelectItem>
+                        <SelectItem value="CDD">CDD</SelectItem>
+                        <SelectItem value="Journalier">Journalier</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="numero_cnss">N° CNSS</Label>
                     <Input
                       id="numero_cnss"
                       value={formData.numero_cnss}
                       onChange={(e) => setFormData({ ...formData, numero_cnss: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="banque">Banque</Label>
+                    <Input
+                      id="banque"
+                      value={formData.banque}
+                      onChange={(e) => setFormData({ ...formData, banque: e.target.value })}
+                      placeholder="Nom de la banque"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rib">RIB</Label>
+                    <Input
+                      id="rib"
+                      value={formData.rib}
+                      onChange={(e) => setFormData({ ...formData, rib: e.target.value })}
+                      placeholder="Relevé d'Identité Bancaire"
                     />
                   </div>
                   <div className="space-y-2">

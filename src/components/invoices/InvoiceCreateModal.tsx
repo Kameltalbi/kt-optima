@@ -32,6 +32,10 @@ import { useClients } from "@/hooks/use-clients";
 import { useTaxes, Tax } from "@/hooks/use-taxes";
 import { useCurrency } from "@/hooks/use-currency";
 import { useProducts } from "@/hooks/use-products";
+import { useEncaissements, type Encaissement } from "@/hooks/use-encaissements";
+import { useFacturesVentes, type FactureVente } from "@/hooks/use-factures-ventes";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info, CheckCircle2, AlertCircle } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -175,12 +179,17 @@ export interface InvoiceFormData {
   discountValue: number;
   lines: InvoiceLine[];
   notes: string;
+  // Nouveaux champs pour workflow acompte
+  hasAcompte: boolean;
+  acompteType: 'amount' | 'percentage';
+  acompteValue: number;
+  devisId?: string | null; // ID du devis source (optionnel)
 }
 
 interface InvoiceCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: InvoiceFormData) => void;
+  onSave: (data: InvoiceFormData, acomptesAllocations?: { encaissements: any[], factures_acompte: any[] }) => void;
   editData?: {
     id: string;
     clientId: string;
@@ -189,6 +198,7 @@ interface InvoiceCreateModalProps {
     notes: string;
     lines: InvoiceLine[];
   } | null;
+  initialData?: InvoiceFormData | null; // Pour pré-remplir depuis un devis
 }
 
 export function InvoiceCreateModal({
@@ -196,11 +206,13 @@ export function InvoiceCreateModal({
   onOpenChange,
   onSave,
   editData,
+  initialData,
 }: InvoiceCreateModalProps) {
   const { clients, loading: clientsLoading } = useClients();
   const { taxes, enabledTaxes, calculateTax } = useTaxes();
   const { defaultCurrency, formatAmount } = useCurrency();
   const { products, services } = useProducts();
+  const { getAcomptesDisponibles } = useEncaissements();
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     clientId: "",
@@ -213,9 +225,22 @@ export function InvoiceCreateModal({
     discountValue: 0,
     lines: [],
     notes: "",
+    // Champs acompte
+    hasAcompte: false,
+    acompteType: 'percentage',
+    acompteValue: 0,
+    devisId: null,
   });
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showAcomptes, setShowAcomptes] = useState(false);
+  
+  // États pour les encaissements disponibles (acomptes clients uniquement)
+  const [encaissementsDisponibles, setEncaissementsDisponibles] = useState<Encaissement[]>([]);
+  const [loadingAcomptes, setLoadingAcomptes] = useState(false);
+  
+  // États pour les allocations sélectionnées
+  const [selectedEncaissements, setSelectedEncaissements] = useState<Record<string, number>>({}); // { encaissement_id: montant_alloue }
 
   // Initialiser avec les taxes activées par défaut
   useEffect(() => {
@@ -244,7 +269,14 @@ export function InvoiceCreateModal({
           discountValue: 0,
           lines: editData.lines,
           notes: editData.notes,
+          hasAcompte: false,
+          acompteType: 'percentage',
+          acompteValue: 0,
+          devisId: null,
         });
+      } else if (initialData) {
+        // Utiliser les données initiales (depuis un devis par exemple)
+        setFormData(initialData);
       } else {
         // Reset form when opening in create mode avec une ligne par défaut
         const firstPercentageTax = enabledTaxes.find((t) => t.type === "percentage");
@@ -267,6 +299,10 @@ export function InvoiceCreateModal({
             },
           ],
           notes: "",
+          hasAcompte: false,
+          acompteType: 'percentage',
+          acompteValue: 0,
+          devisId: null,
         });
       }
     }
@@ -372,11 +408,66 @@ export function InvoiceCreateModal({
     }));
   };
 
+  // Charger les encaissements disponibles (acomptes clients) quand un client est sélectionné
+  useEffect(() => {
+    const loadEncaissements = async () => {
+      if (!formData.clientId || editData) {
+        setEncaissementsDisponibles([]);
+        setSelectedEncaissements({});
+        return;
+      }
+
+      try {
+        setLoadingAcomptes(true);
+        
+        // Réinitialiser les sélections
+        setSelectedEncaissements({});
+        
+        console.log('🔍 Chargement des encaissements (acomptes) pour le client:', formData.clientId);
+        
+        // Charger uniquement les encaissements disponibles (type acompte)
+        const encaissements = await getAcomptesDisponibles(formData.clientId);
+        console.log('💰 Encaissements disponibles:', encaissements);
+        setEncaissementsDisponibles(encaissements);
+        
+        // Afficher automatiquement la section si des encaissements sont trouvés
+        if (encaissements.length > 0) {
+          setShowAcomptes(true);
+        }
+      } catch (error) {
+        console.error('❌ Error loading encaissements:', error);
+      } finally {
+        setLoadingAcomptes(false);
+      }
+    };
+
+    // Délai pour éviter trop de requêtes lors de la saisie
+    const timeoutId = setTimeout(() => {
+      loadEncaissements();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.clientId, editData, getAcomptesDisponibles]);
+
   const handleSave = () => {
     if (!formData.clientId || formData.lines.length === 0) {
       return;
     }
-    onSave(formData);
+
+    // Construire les allocations d'encaissements (acomptes clients)
+    const encaissementsAllocations = Object.entries(selectedEncaissements)
+      .filter(([_, montant]) => montant > 0)
+      .map(([encaissement_id, montant_alloue]) => ({
+        encaissement_id,
+        montant_alloue,
+      }));
+
+    const acomptesAllocations = {
+      encaissements: encaissementsAllocations,
+      factures_acompte: [], // Plus de factures d'acompte dans le modal
+    };
+
+    onSave(formData, acomptesAllocations);
     onOpenChange(false);
   };
 
@@ -501,6 +592,78 @@ export function InvoiceCreateModal({
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Acompte */}
+              <div className="pt-3 border-t">
+                <div className="flex items-center gap-2 mb-2">
+                  <Checkbox
+                    checked={formData.hasAcompte}
+                    onCheckedChange={(checked) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        hasAcompte: checked as boolean,
+                        acompteValue: checked ? prev.acompteValue : 0,
+                      }));
+                    }}
+                  />
+                  <Label className="text-sm font-medium">Acompte demandé</Label>
+                </div>
+                
+                {formData.hasAcompte && (
+                  <div className="flex items-center gap-3 mt-2">
+                    <Select
+                      value={formData.acompteType}
+                      onValueChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          acompteType: value as 'percentage' | 'amount',
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="w-[160px] bg-background">
+                        <SelectValue placeholder="Type d'acompte" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                        <SelectItem value="amount">Montant fixe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.acompteValue || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            acompteValue: value,
+                          }));
+                        }}
+                        placeholder="0"
+                        className="w-24 bg-background"
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        {formData.acompteType === 'percentage' ? '%' : formData.currency}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {formData.hasAcompte && formData.acompteValue > 0 && totals.totalTTC > 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {formData.acompteType === 'percentage' 
+                      ? `Acompte: ${formData.acompteValue}% = ${formatAmount((totals.totalTTC * formData.acompteValue) / 100)} DT`
+                      : `Acompte: ${formatAmount(formData.acompteValue)} DT`
+                    }
+                    <div className="mt-1 text-info">
+                      Une facture d'acompte sera générée automatiquement
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -702,6 +865,164 @@ export function InvoiceCreateModal({
             </div>
           </div>
 
+          {/* Section Acomptes disponibles */}
+          {formData.clientId && !editData && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
+                  Encaissements disponibles (acomptes)
+                  {loadingAcomptes && <span className="ml-2 text-xs text-muted-foreground">(Chargement...)</span>}
+                  {!loadingAcomptes && encaissementsDisponibles.length === 0 && (
+                    <span className="ml-2 text-xs text-muted-foreground">(Aucun encaissement disponible)</span>
+                  )}
+                </h3>
+                {encaissementsDisponibles.length > 0 && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAcomptes(!showAcomptes)}
+                  >
+                    {showAcomptes ? 'Masquer' : 'Afficher'}
+                  </Button>
+                )}
+              </div>
+
+              {(showAcomptes || loadingAcomptes) && (
+                <Card>
+                  <CardContent className="p-4">
+                    {loadingAcomptes ? (
+                      <div className="text-center py-4 text-muted-foreground">Chargement des acomptes...</div>
+                    ) : encaissementsDisponibles.length === 0 ? (
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          Aucun encaissement (acompte) disponible pour ce client.
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Vérifiez que les encaissements sont de type &quot;acompte&quot; avec un montant restant &gt; 0
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Encaissements (avances clients) */}
+                        {encaissementsDisponibles.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-sm mb-2">Encaissements (avances)</h4>
+                            <div className="space-y-2">
+                              {encaissementsDisponibles.map((encaissement) => {
+                                const montantAlloue = selectedEncaissements[encaissement.id] || 0;
+                                const montantMax = encaissement.remaining_amount;
+                                
+                                return (
+                                  <div key={encaissement.id} className="flex items-center gap-3 p-2 border rounded">
+                                    <Checkbox
+                                      checked={montantAlloue > 0}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          setSelectedEncaissements(prev => ({
+                                            ...prev,
+                                            [encaissement.id]: Math.min(montantMax, totals.totalTTC),
+                                          }));
+                                        } else {
+                                          const newSelected = { ...selectedEncaissements };
+                                          delete newSelected[encaissement.id];
+                                          setSelectedEncaissements(newSelected);
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium">
+                                          {new Date(encaissement.date).toLocaleDateString('fr-FR')}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {encaissement.mode_paiement}
+                                        </span>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Disponible: {formatAmount(montantMax)}
+                                      </div>
+                                    </div>
+                                    {montantAlloue > 0 && (
+                                      <div className="w-32">
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          max={montantMax}
+                                          step="0.01"
+                                          value={montantAlloue}
+                                          onChange={(e) => {
+                                            const value = Math.min(
+                                              Math.max(0, parseFloat(e.target.value) || 0),
+                                              montantMax
+                                            );
+                                            setSelectedEncaissements(prev => ({
+                                              ...prev,
+                                              [encaissement.id]: value,
+                                            }));
+                                          }}
+                                          className="h-8 text-sm"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Résumé des encaissements */}
+                        {(() => {
+                          const totalEncaissements = Object.values(selectedEncaissements).reduce((sum, m) => sum + m, 0);
+                          const totalAcomptes = totalEncaissements;
+                          const soldeClient = totalAcomptes - totals.totalTTC;
+                          
+                          return (
+                            <div className="mt-4 p-3 bg-muted/50 rounded border">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Total encaissements alloués:</span>
+                                  <span className="font-medium">{formatAmount(totalAcomptes)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Total facture TTC:</span>
+                                  <span className="font-medium">{formatAmount(totals.totalTTC)}</span>
+                                </div>
+                                {totalAcomptes > 0 && (
+                                  <>
+                                    <div className="flex justify-between pt-2 border-t">
+                                      <span className="font-medium">
+                                        {soldeClient > 0 ? 'Solde client (à garder):' : 'Montant restant à payer:'}
+                                      </span>
+                                      <span className={`font-bold ${soldeClient > 0 ? 'text-success' : 'text-primary'}`}>
+                                        {formatAmount(Math.abs(soldeClient))}
+                                      </span>
+                                    </div>
+                                    {soldeClient > 0 && (
+                                      <Alert>
+                                        <Info className="h-4 w-4" />
+                                        <AlertDescription className="text-xs">
+                                          Le solde de {formatAmount(soldeClient)} sera conservé comme acompte client 
+                                          pour utilisation future ou remboursement.
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
           {/* Section inférieure: Totaux */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div></div>
@@ -739,10 +1060,49 @@ export function InvoiceCreateModal({
                   </div>
                 ))}
 
-                <div className="flex justify-between py-3 border-t mt-2 text-lg font-bold">
-                  <span>Total TTC</span>
-                  <span className="text-primary">{formatAmount(totals.totalTTC)}</span>
+                <div className="flex justify-between py-2 border-t mt-2">
+                  <span className="font-semibold">Total TTC</span>
+                  <span className="font-semibold">{formatAmount(totals.totalTTC)}</span>
                 </div>
+
+                {/* Encaissements alloués */}
+                {(() => {
+                  const totalEncaissements = Object.values(selectedEncaissements).reduce((sum, m) => sum + m, 0);
+                  const totalAcomptes = totalEncaissements;
+                  
+                  if (totalAcomptes > 0) {
+                    const montantRestant = totals.totalTTC - totalAcomptes;
+                    const soldeClient = totalAcomptes > totals.totalTTC ? totalAcomptes - totals.totalTTC : 0;
+                    
+                    return (
+                      <>
+                        <div className="flex justify-between py-1 pt-2 border-t">
+                          <span className="text-muted-foreground">Encaissements alloués</span>
+                          <span className="font-medium text-success">- {formatAmount(totalAcomptes)}</span>
+                        </div>
+                        
+                        {soldeClient > 0 ? (
+                          <>
+                            <div className="flex justify-between py-2 border-t mt-1 text-lg font-bold">
+                              <span className="text-success">Solde client (à garder)</span>
+                              <span className="text-success">{formatAmount(soldeClient)}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground italic">
+                              Le solde de {formatAmount(soldeClient)} sera conservé comme acompte client.
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between py-2 border-t mt-1 text-lg font-bold">
+                            <span>Montant restant à payer</span>
+                            <span className="text-primary">{formatAmount(montantRestant)}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }
+                  
+                  return null;
+                })()}
               </div>
             </div>
           </div>

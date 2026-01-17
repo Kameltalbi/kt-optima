@@ -170,8 +170,8 @@ export async function generateDocumentPDF(
   
   // ============ HEADER - LOGO ET INFOS ENTREPRISE ============
   let logoLoaded = false;
-  const logoMaxW = 30;
-  const logoMaxH = 20;
+  const logoMaxW = 40; // Augmenté de 30 à 40
+  const logoMaxH = 28; // Augmenté de 20 à 28
 
   if (company?.logo) {
     try {
@@ -414,7 +414,38 @@ export async function generateDocumentPDF(
   doc.setTextColor(37, 99, 235);
   doc.text('Total TTC:', totalsX, y);
   doc.text(formatAmount(data.total_ttc), rightX, y, { align: 'right' });
-  y += 8;
+  y += 6;
+
+  // Acomptes déduits
+  if (data.acomptes_deduits && data.acomptes_deduits.length > 0) {
+    data.acomptes_deduits.forEach((acompte) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Facture d'acompte ${acompte.facture_numero} déduite:`, totalsX, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // blue
+      doc.text('-' + formatAmount(acompte.montant), rightX, y, { align: 'right' });
+      y += 5;
+    });
+
+    // Solde à payer
+    if (data.montant_restant !== undefined) {
+      y += 2;
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.5);
+      doc.line(totalsX, y, rightX, y);
+      y += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Solde à payer:', totalsX, y);
+      doc.text(formatAmount(data.montant_restant), rightX, y, { align: 'right' });
+      y += 6;
+    }
+  } else {
+    y += 2;
+  }
 
   // Montant en toutes lettres
   const amountWords = data.amount_in_words || numberToWords(data.total_ttc);

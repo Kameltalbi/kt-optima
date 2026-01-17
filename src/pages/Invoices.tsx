@@ -109,9 +109,19 @@ export default function Invoices() {
     return map;
   }, [clients]);
 
-  // Filtrer les factures
+  // Filtrer les factures (factures standard + factures d'acompte validées uniquement)
   const filteredInvoices = useMemo(() => {
     return factures.filter((invoice) => {
+      // Inclure toutes les factures standard
+      // Inclure uniquement les factures d'acompte validées (statut = 'validee' ou 'payee')
+      const isStandard = !invoice.type_facture || invoice.type_facture === 'standard';
+      const isAcompteValidee = invoice.type_facture === 'acompte' && 
+        (invoice.statut === 'validee' || invoice.statut === 'payee');
+      
+      if (!isStandard && !isAcompteValidee) {
+        return false; // Exclure les factures d'acompte en brouillon
+      }
+      
       const matchesSearch = invoice.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
         clientsMap[invoice.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || invoice.statut === statusFilter;
@@ -119,14 +129,21 @@ export default function Invoices() {
     });
   }, [factures, searchTerm, statusFilter, clientsMap]);
 
-  // Calculer les statistiques
+  // Calculer les statistiques (factures standard + factures d'acompte validées uniquement)
   const stats = useMemo(() => {
-    const totalInvoices = factures.length;
-    const totalAmount = factures.reduce((sum, inv) => sum + inv.montant_ttc, 0);
-    const paidAmount = factures
+    const facturesAInclure = factures.filter(inv => {
+      const isStandard = !inv.type_facture || inv.type_facture === 'standard';
+      const isAcompteValidee = inv.type_facture === 'acompte' && 
+        (inv.statut === 'validee' || inv.statut === 'payee');
+      return isStandard || isAcompteValidee;
+    });
+    
+    const totalInvoices = facturesAInclure.length;
+    const totalAmount = facturesAInclure.reduce((sum, inv) => sum + inv.montant_ttc, 0);
+    const paidAmount = facturesAInclure
       .filter(inv => inv.statut === "payee")
       .reduce((sum, inv) => sum + inv.montant_ttc, 0);
-    const pendingAmount = factures
+    const pendingAmount = facturesAInclure
       .filter(inv => inv.statut === "validee")
       .reduce((sum, inv) => sum + inv.montant_restant, 0);
     
@@ -181,6 +198,40 @@ export default function Invoices() {
         });
       }
 
+      // Récupérer les factures d'acompte déduites (via facture_acompte_allocations)
+      let acomptesDeduits: Array<{ facture_numero: string; montant: number }> = [];
+      if (invoice.facture_parent_id) {
+        // Si cette facture est liée à une facture d'acompte, récupérer l'info
+        const { data: factureAcompte, error: acompteError } = await supabase
+          .from('factures_ventes')
+          .select('numero, montant_ttc')
+          .eq('id', invoice.facture_parent_id)
+          .single();
+
+        if (!acompteError && factureAcompte) {
+          acomptesDeduits.push({
+            facture_numero: factureAcompte.numero,
+            montant: factureAcompte.montant_ttc,
+          });
+        }
+      } else {
+        // Sinon, chercher les allocations d'acomptes
+        const { data: allocations, error: allocError } = await supabase
+          .from('facture_acompte_allocations')
+          .select(`
+            montant_alloue,
+            facture_acompte:factures_ventes!facture_acompte_id(numero)
+          `)
+          .eq('facture_finale_id', invoice.id);
+
+        if (!allocError && allocations) {
+          acomptesDeduits = allocations.map(alloc => ({
+            facture_numero: (alloc.facture_acompte as any)?.numero || '',
+            montant: alloc.montant_alloue,
+          }));
+        }
+      }
+
       // Construire les données du document
       const data: InvoiceDocumentData = {
         type: 'invoice',
@@ -197,6 +248,8 @@ export default function Invoices() {
         fiscal_stamp: invoice.montant_ttc > 0 ? 1 : 0,
         total_ttc: invoice.montant_ttc,
         notes: invoice.notes,
+        acomptes_deduits: acomptesDeduits.length > 0 ? acomptesDeduits : undefined,
+        montant_restant: invoice.montant_restant,
       };
 
       setInvoiceDocumentData(data);
@@ -249,7 +302,7 @@ export default function Invoices() {
   };
 
   // Handler pour le nouveau modal InvoiceCreateModal
-  const handleSaveInvoice = async (data: InvoiceFormData) => {
+  const handleSaveInvoice = async (data: InvoiceFormData, acomptesAllocations?: { encaissements: any[], factures_acompte: any[] }) => {
     try {
       // Calculer les totaux
       let totalHT = 0;
@@ -342,7 +395,7 @@ export default function Invoices() {
         setEditInvoiceData(null);
         toast.success("Facture modifiée avec succès");
       } else {
-        // Créer la facture via le hook avec la remise
+        // Créer la facture via le hook avec la remise et l'acompte
         const factureData = {
           numero: data.reference || '', // Le numéro sera généré automatiquement
           date_facture: data.date,
@@ -351,9 +404,25 @@ export default function Invoices() {
           remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
           remise_valeur: data.discountValue || 0,
           remise_montant: discountAmount,
+          // Champs acompte
+          acompte_valeur: data.hasAcompte && data.acompteValue > 0 ? data.acompteValue : undefined,
+          acompte_type: data.hasAcompte && data.acompteValue > 0 ? data.acompteType : undefined,
+          devis_id: data.devisId || null,
         };
 
-        await createFacture(factureData, lignes, []);
+        // Convertir les allocations au format attendu par le hook
+        const acomptesAlloues = {
+          encaissements: (acomptesAllocations?.encaissements || []).map(alloc => ({
+            encaissement_id: alloc.encaissement_id,
+            montant_alloue: alloc.montant_alloue,
+          })),
+          factures_acompte: (acomptesAllocations?.factures_acompte || []).map(alloc => ({
+            facture_acompte_id: alloc.facture_acompte_id,
+            montant_alloue: alloc.montant_alloue,
+          })),
+        };
+
+        await createFacture(factureData, lignes, acomptesAlloues);
         
         setIsCreateModalOpen(false);
         toast.success("Facture créée avec succès");
@@ -507,6 +576,11 @@ export default function Invoices() {
                             <div className="flex items-center gap-2">
                               <FileText className="w-4 h-4 text-muted-foreground" />
                               <span className="font-semibold">{invoice.numero}</span>
+                              {invoice.type_facture === 'acompte' && (
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-semibold">
+                                  FA
+                                </span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>{clientsMap[invoice.client_id] || "Client inconnu"}</TableCell>

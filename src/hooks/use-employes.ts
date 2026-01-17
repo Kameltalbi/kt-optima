@@ -19,6 +19,9 @@ export interface Employe {
   date_embauche: string;
   date_depart: string | null;
   salaire_base: number;
+  type_contrat: 'CDI' | 'CDD' | 'Journalier' | null;
+  banque: string | null;
+  rib: string | null;
   actif: boolean;
   notes: string | null;
   company_id: string;
@@ -41,6 +44,9 @@ export interface CreateEmployeInput {
   date_embauche: string;
   date_depart?: string;
   salaire_base: number;
+  type_contrat?: 'CDI' | 'CDD' | 'Journalier';
+  banque?: string;
+  rib?: string;
   actif?: boolean;
   notes?: string;
 }

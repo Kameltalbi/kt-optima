@@ -202,6 +202,8 @@ export function useEncaissements() {
   // Obtenir les acomptes disponibles pour un client
   const getAcomptesDisponibles = useCallback(async (clientId: string): Promise<Encaissement[]> => {
     try {
+      console.log('🔍 Recherche encaissements pour client:', clientId, 'company:', companyId);
+      
       const { data: encaissementsData, error: fetchError } = await supabase
         .from('encaissements' as any)
         .select(`
@@ -215,12 +217,14 @@ export function useEncaissements() {
         .order('date', { ascending: false });
 
       if (fetchError) {
+        console.error('❌ Error fetching encaissements:', fetchError);
         throw fetchError;
       }
 
+      console.log('💰 Encaissements trouvés:', encaissementsData?.length || 0, encaissementsData);
       return (encaissementsData || []) as unknown as Encaissement[];
     } catch (err) {
-      console.error('Error fetching acomptes disponibles:', err);
+      console.error('❌ Error fetching acomptes disponibles:', err);
       return [];
     }
   }, [companyId]);

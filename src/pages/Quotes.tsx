@@ -50,6 +50,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { QuoteCreateModal, QuoteFormData } from "@/components/quotes/QuoteCreateModal";
+import { InvoiceCreateModal, InvoiceFormData } from "@/components/invoices/InvoiceCreateModal";
 import { useQuotes, Quote, QuoteItem } from "@/hooks/use-quotes";
 import { useClients } from "@/hooks/use-clients";
 import { useCurrency } from "@/hooks/use-currency";
@@ -59,6 +60,7 @@ import { generateDocumentPDF } from "@/components/documents/DocumentPDF";
 import type { InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
 import { supabase } from "@/integrations/supabase/client";
 import { getNextDocumentNumber } from "@/hooks/use-document-numbering";
+import { useFacturesVentes } from "@/hooks/use-factures-ventes";
 
 const statusStyles = {
   accepted: "bg-success/10 text-success border-0",
@@ -80,6 +82,7 @@ export default function Quotes() {
   const { clients } = useClients();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const { taxes, calculateTax } = useTaxes();
+  const { createFacture } = useFacturesVentes();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -90,6 +93,7 @@ export default function Quotes() {
   const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  const [invoiceFromQuoteData, setInvoiceFromQuoteData] = useState<InvoiceFormData | null>(null);
   const [editQuoteData, setEditQuoteData] = useState<{
     id: string;
     clientId: string;
@@ -401,62 +405,70 @@ export default function Quotes() {
 
       const items = (quoteItemsData || []) as QuoteItem[];
 
-      // Générer le numéro de facture
-      const dateFacture = new Date().toISOString().split('T')[0];
-      const numeroFacture = await getNextDocumentNumber('facture', dateFacture);
+      // Trouver les taxes par défaut
+      const defaultTaxes = taxes.filter(t => t.type === 'percentage' && t.enabled);
+      const defaultTaxId = defaultTaxes.length > 0 ? defaultTaxes[0].id : null;
 
-      // Créer la facture avec les mêmes données que le devis
-      const { data: facture, error: factureError } = await supabase
-        .from('factures_ventes')
-        .insert([{
-          numero: numeroFacture,
-          company_id: company?.id,
-          client_id: quote.client_id,
-          date_facture: dateFacture,
-          date_echeance: quote.expires_at || null,
-          type_facture: 'standard' as const,
-          statut: 'brouillon' as const,
-          montant_ht: quote.subtotal || 0,
-          montant_tva: quote.tax || 0,
-          montant_ttc: quote.total,
-          montant_paye: 0,
-          montant_restant: quote.total,
-          notes: quote.notes,
-        }])
-        .select()
-        .single();
+      // Transformer les lignes pour le formulaire de facture
+      const invoiceLines = items.map((item) => {
+        // Trouver la taxe correspondante
+        const matchingTax = taxes.find(t => 
+          t.type === 'percentage' && Math.abs(t.value - item.tax_rate) < 0.01
+        );
+        return {
+          id: `line_${item.id}`,
+          description: item.description || '',
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          taxRateId: matchingTax?.id || defaultTaxId,
+        };
+      });
 
-      if (factureError) throw factureError;
+      // Pré-remplir les données du formulaire de facture
+      const invoiceData: InvoiceFormData = {
+        clientId: quote.client_id,
+        date: new Date().toISOString().split('T')[0],
+        reference: '',
+        currency: company?.currency || 'TND',
+        appliedTaxes: defaultTaxes.map(t => t.id),
+        applyDiscount: false,
+        discountType: 'percentage',
+        discountValue: 0,
+        lines: invoiceLines.length > 0 ? invoiceLines : [{
+          id: `line_${Date.now()}`,
+          description: '',
+          quantity: 1,
+          unitPrice: 0,
+          taxRateId: defaultTaxId,
+        }],
+        notes: quote.notes || '',
+        hasAcompte: false,
+        acompteType: 'percentage',
+        acompteValue: 0,
+        devisId: quote.id, // Lier au devis source
+      };
 
-      // Créer les lignes de la facture
-      if (items.length > 0 && facture) {
-        const lignesFacture = items.map((item, index) => ({
-          facture_vente_id: facture.id,
-          produit_id: null,
-          description: item.description,
-          quantite: item.quantity,
-          prix_unitaire: item.unit_price,
-          taux_tva: item.tax_rate || 0,
-          montant_ht: item.unit_price * item.quantity,
-          montant_tva: (item.unit_price * item.quantity * (item.tax_rate || 0)) / 100,
-          montant_ttc: item.total,
-          ordre: index,
-        }));
-
-        const { error: lignesError } = await supabase
-          .from('facture_vente_lignes')
-          .insert(lignesFacture);
-
-        if (lignesError) throw lignesError;
-      }
-
-      // Supprimer le devis après conversion
-      await deleteQuote(quote.id);
-
-      toast.success(`Devis ${quote.number} converti en facture avec succès`);
+      setInvoiceFromQuoteData(invoiceData);
+      setIsConvertModalOpen(true);
     } catch (error) {
-      console.error("Error converting quote to invoice:", error);
-      toast.error("Erreur lors de la conversion du devis en facture");
+      console.error("Error loading quote for conversion:", error);
+      toast.error("Erreur lors du chargement du devis");
+    }
+  };
+
+  const handleSaveInvoiceFromQuote = async (data: InvoiceFormData, acomptesAllocations?: { encaissements: any[], factures_acompte: any[] }) => {
+    try {
+      // Cette fonction sera appelée par InvoiceCreateModal
+      // Les données sont déjà dans le bon format
+      // Le devis_id est déjà dans data.devisId
+      // La création de la facture se fera via le hook createFacture dans Invoices.tsx
+      // On ferme juste le modal ici
+      setIsConvertModalOpen(false);
+      setInvoiceFromQuoteData(null);
+      toast.success("Facture créée depuis le devis avec succès");
+    } catch (error) {
+      console.error("Error saving invoice from quote:", error);
+      toast.error("Erreur lors de la création de la facture");
     }
   };
 
@@ -821,17 +833,20 @@ export default function Quotes() {
       </Dialog>
 
       {/* Modal pour convertir en facture */}
-      {/* TODO: Utiliser InvoiceCreateModal avec données pré-remplies depuis le devis */}
-      <Dialog open={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convertir {quoteToConvert?.number} en facture</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-muted-foreground">Modal de conversion à implémenter</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {invoiceFromQuoteData && (
+        <InvoiceCreateModal
+          open={isConvertModalOpen}
+          onOpenChange={(open) => {
+            setIsConvertModalOpen(open);
+            if (!open) {
+              setInvoiceFromQuoteData(null);
+            }
+          }}
+          onSave={handleSaveInvoiceFromQuote}
+          editData={null}
+          initialData={invoiceFromQuoteData}
+        />
+      )}
     </>
   );
 }
