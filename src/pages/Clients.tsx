@@ -608,7 +608,7 @@ export default function Clients() {
 
         {/* Modal Import */}
         <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5" />
@@ -616,118 +616,48 @@ export default function Clients() {
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6 py-4">
-              {/* Structure du fichier */}
-              <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  Structure du fichier CSV à importer
-                </Label>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-semibold">Colonne</TableHead>
-                        <TableHead className="font-semibold">Description</TableHead>
-                        <TableHead className="font-semibold">Obligatoire</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">Code</TableCell>
-                        <TableCell>Code unique du client</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Nom</TableCell>
-                        <TableCell>Nom ou raison sociale</TableCell>
-                        <TableCell className="text-success font-semibold">Oui</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Type</TableCell>
-                        <TableCell>prospect ou client</TableCell>
-                        <TableCell>Non (défaut: prospect)</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Email</TableCell>
-                        <TableCell>Adresse email</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Téléphone</TableCell>
-                        <TableCell>Numéro de téléphone</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Adresse</TableCell>
-                        <TableCell>Adresse postale</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Ville</TableCell>
-                        <TableCell>Ville</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Code postal</TableCell>
-                        <TableCell>Code postal</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Pays</TableCell>
-                        <TableCell>Pays (défaut: Tunisie)</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Numéro fiscal</TableCell>
-                        <TableCell>Numéro d'identification fiscale</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">N° Registre Commerce</TableCell>
-                        <TableCell>Numéro de registre de commerce</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Site web</TableCell>
-                        <TableCell>URL du site web</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Notes</TableCell>
-                        <TableCell>Notes internes</TableCell>
-                        <TableCell>Non</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              {/* Exemple */}
-              <div>
-                <Label className="text-base font-semibold mb-2 block">
-                  Exemple de fichier CSV
-                </Label>
-                <div className="bg-muted/30 p-4 rounded-lg border font-mono text-xs overflow-x-auto">
-                  <pre>{`Code,Nom,Type,Email,Téléphone,Adresse,Ville,Code postal,Pays,Numéro fiscal,N° Registre Commerce,Site web,Notes
-CLI-001,Société Alpha,client,contact@alpha.tn,+216 12 345 678,123 Rue Principale,Tunis,1000,Tunisie,12345678,RC123456,https://alpha.tn,Client important
-CLI-002,Entreprise Beta,prospect,info@beta.tn,+216 98 765 432,456 Avenue Habib Bourguiba,Sfax,3000,Tunisie,87654321,RC654321,https://beta.tn,`}</pre>
-                </div>
-              </div>
-
+            <div className="space-y-4 py-4">
               {/* Upload */}
               <div className="space-y-2">
-                <Label htmlFor="import-file">Sélectionner le fichier CSV</Label>
+                <Label htmlFor="import-file" className="text-sm font-medium">
+                  Sélectionner le fichier CSV
+                </Label>
                 <Input
                   id="import-file"
                   type="file"
                   accept=".csv"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
                 />
                 {importFile && (
-                  <p className="text-sm text-muted-foreground">
-                    Fichier sélectionné: {importFile.name}
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4" />
+                    {importFile.name}
                   </p>
                 )}
+              </div>
+
+              {/* Colonnes supportées - Version compacte */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Colonnes supportées</Label>
+                <div className="bg-muted/30 p-3 rounded-lg border text-xs space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-[10px] px-1.5 py-0">Obligatoire</Badge>
+                    <span className="font-medium">Nom</span>
+                  </div>
+                  <div className="text-muted-foreground pl-6 text-[11px]">
+                    Code, Type (prospect/client), Email, Téléphone, Adresse, Ville, Code postal, Pays, Numéro fiscal, N° Registre Commerce, Site web, Notes
+                  </div>
+                </div>
+              </div>
+
+              {/* Exemple compact */}
+              <div className="bg-muted/30 p-3 rounded-lg border">
+                <Label className="text-xs font-medium mb-2 block">Exemple</Label>
+                <code className="text-[10px] font-mono text-muted-foreground block">
+                  Nom,Email,Téléphone<br/>
+                  Société Alpha,contact@alpha.tn,+216 12 345 678
+                </code>
               </div>
             </div>
 
