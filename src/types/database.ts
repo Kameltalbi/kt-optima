@@ -239,12 +239,42 @@ export interface CRMCompany {
   sector?: string; // Secteur d'activité
   sales_rep_id?: string; // Responsable commercial (colonne: sales_rep_id)
   website?: string;
+  status?: 'prospect' | 'client'; // Statut: prospect ou client
   notes?: string;
   company_id: string;
   created_at: string;
   updated_at: string;
   // Aliases pour compatibilité avec le code existant
   taxNumber?: string;
+  salesRepId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CRMProspect {
+  id: string;
+  first_name: string;
+  last_name: string;
+  company_name?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  sector?: string;
+  source?: string; // Site web, LinkedIn, Recommandation, etc.
+  status: 'new' | 'contacted' | 'qualified' | 'lost';
+  notes?: string;
+  converted_to_company_id?: string; // ID de la société créée lors de la conversion
+  converted_at?: string;
+  sales_rep_id?: string;
+  company_id: string;
+  created_at: string;
+  updated_at: string;
+  // Aliases
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  convertedToCompanyId?: string;
+  convertedAt?: string;
   salesRepId?: string;
   createdAt?: string;
   updatedAt?: string;

@@ -89,6 +89,7 @@ export default function CRMCompanies() {
     sector: "",
     salesRepId: "",
     website: "",
+    status: "prospect" as "prospect" | "client",
     notes: "",
   });
 
@@ -117,6 +118,7 @@ export default function CRMCompanies() {
       sector: "",
       salesRepId: "",
       website: "",
+      status: "prospect",
       notes: "",
     });
     setSelectedCompany(null);
@@ -141,6 +143,7 @@ export default function CRMCompanies() {
           sector: formData.sector || undefined,
           salesRepId: formData.salesRepId || undefined,
           website: formData.website || undefined,
+          status: formData.status,
           notes: formData.notes || undefined,
         });
       } else {
@@ -153,6 +156,7 @@ export default function CRMCompanies() {
           sector: formData.sector || undefined,
           salesRepId: formData.salesRepId || undefined,
           website: formData.website || undefined,
+          status: formData.status,
           notes: formData.notes || undefined,
         });
       }
@@ -175,6 +179,7 @@ export default function CRMCompanies() {
       sector: company.sector || "",
       salesRepId: company.salesRepId || "",
       website: company.website || "",
+      status: company.status || "prospect",
       notes: company.notes || "",
     });
     setIsCreateModalOpen(true);
@@ -315,11 +320,16 @@ export default function CRMCompanies() {
                           {company.taxNumber || <span className="text-muted-foreground">-</span>}
                         </TableCell>
                         <TableCell>
-                          {company.sector ? (
-                            <Badge variant="outline">{company.sector}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {company.status && (
+                              <Badge variant={company.status === 'client' ? 'default' : 'secondary'}>
+                                {company.status === 'client' ? 'Client' : 'Prospect'}
+                              </Badge>
+                            )}
+                            {company.sector && (
+                              <Badge variant="outline">{company.sector}</Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
@@ -417,6 +427,22 @@ export default function CRMCompanies() {
                   placeholder="Ex: Technologie, Commerce..."
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Statut</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value: "prospect" | "client") => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                  <SelectItem value="client">Client</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

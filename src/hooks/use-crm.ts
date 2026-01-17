@@ -19,6 +19,7 @@ const mapCompanyFromDB = (db: any): CRMCompany => ({
   ...db,
   taxNumber: db.tax_number,
   salesRepId: db.sales_rep_id,
+  status: db.status || 'prospect', // Ajouter le statut avec valeur par défaut
   createdAt: db.created_at,
   updatedAt: db.updated_at,
 });
@@ -223,6 +224,7 @@ export function useCRM() {
           sector: companyData.sector || null,
           sales_rep_id: companyData.sales_rep_id || companyData.salesRepId || null,
           website: companyData.website || null,
+          status: companyData.status || 'prospect',
           notes: companyData.notes || null,
           company_id: companyId,
         })
@@ -250,6 +252,7 @@ export function useCRM() {
       if (updates.sector !== undefined) updateData.sector = updates.sector || null;
       if (updates.sales_rep_id !== undefined) updateData.sales_rep_id = updates.sales_rep_id || null;
       if (updates.website !== undefined) updateData.website = updates.website || null;
+      if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.notes !== undefined) updateData.notes = updates.notes || null;
 
       // Handle aliases
