@@ -164,6 +164,9 @@ export default function DeliveryNotes() {
         },
         lines: documentLines,
         total_ht: 0,
+        discount: (selectedDeliveryNote as any).remise_montant || 0,
+        discount_type: (selectedDeliveryNote as any).remise_type || null,
+        discount_value: (selectedDeliveryNote as any).remise_valeur || 0,
         applied_taxes: [],
         total_ttc: 0,
         notes: selectedDeliveryNote.notes,
@@ -231,25 +234,43 @@ export default function DeliveryNotes() {
       }));
 
       if (editDeliveryNoteData) {
-        // Mode édition
+        // Mode édition avec remise
+        // Calculer la remise
+        let discountAmount = 0;
+        if (data.applyDiscount && data.discountValue > 0) {
+          // Les BL n'ont pas de prix, mais on stocke quand même les infos de remise
+          discountAmount = data.discountType === 'percentage' ? 0 : data.discountValue;
+        }
+
         await updateBonLivraison(editDeliveryNoteData.id, {
           date_livraison: data.date,
           client_id: data.clientId,
           adresse_livraison: data.deliveryAddress || null,
           notes: data.notes || null,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         }, lignes);
         
         setIsCreateModalOpen(false);
         setEditDeliveryNoteData(null);
         toast.success("Bon de livraison modifié avec succès");
       } else {
-        // Mode création
+        // Mode création avec remise
+        let discountAmount = 0;
+        if (data.applyDiscount && data.discountValue > 0) {
+          discountAmount = data.discountType === 'percentage' ? 0 : data.discountValue;
+        }
+
         const bonLivraisonData = {
           numero: data.reference || '',
           date_livraison: data.date,
           client_id: data.clientId,
           adresse_livraison: data.deliveryAddress || null,
           notes: data.notes || null,
+          remise_type: data.applyDiscount && data.discountValue > 0 ? data.discountType : null,
+          remise_valeur: data.discountValue || 0,
+          remise_montant: discountAmount,
         };
 
         await createBonLivraison(bonLivraisonData, lignes);

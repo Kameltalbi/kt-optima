@@ -13,6 +13,9 @@ export interface BonLivraison {
   facture_vente_id: string | null;
   adresse_livraison: string | null;
   statut: 'brouillon' | 'valide' | 'livre' | 'annule';
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   notes: string | null;
   company_id: string;
   created_by: string | null;
@@ -40,6 +43,9 @@ export interface CreateBonLivraisonData {
   facture_vente_id?: string | null;
   adresse_livraison?: string | null;
   statut?: 'brouillon' | 'valide' | 'livre' | 'annule';
+  remise_type?: 'percentage' | 'amount' | null;
+  remise_valeur?: number;
+  remise_montant?: number;
   notes?: string | null;
 }
 
