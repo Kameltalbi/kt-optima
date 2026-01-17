@@ -104,7 +104,7 @@ export default function Landing() {
               <img 
                 src="/kt optima (500 x 192 px).png" 
                 alt="KT Optima" 
-                className="h-20 w-auto object-contain transition-transform hover:scale-105"
+                className="h-12 sm:h-16 lg:h-20 w-auto object-contain transition-transform hover:scale-105"
               />
             </div>
 
@@ -264,7 +264,7 @@ export default function Landing() {
                   loop
                   muted
                   playsInline
-                  className="w-full h-[400px] object-cover"
+                  className="w-full h-[250px] sm:h-[350px] lg:h-[400px] object-cover"
                   aria-label="Présentation KTOptima"
                 >
                   <source src="/video-ktoptima.mp4" type="video/mp4" />

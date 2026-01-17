@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Send, ArrowRight } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Mail, Phone, MapPin, Send, ArrowRight, Menu } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 import { toast } from "sonner";
 
 export default function Contact() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -77,6 +79,64 @@ export default function Contact() {
               <Button asChild>
                 <Link to="/demo">Demander une démo</Link>
               </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 mt-6">
+                    <Link 
+                      to="/#fonctionnalites" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Produit
+                    </Link>
+                    <Link 
+                      to="/modules" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Modules
+                    </Link>
+                    <Link 
+                      to="/pricing" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Tarifs
+                    </Link>
+                    <Link 
+                      to="/#entreprise" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Entreprise
+                    </Link>
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          Connexion
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                          Demander une démo
+                        </Link>
+                      </Button>
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>

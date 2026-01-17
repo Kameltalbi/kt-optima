@@ -5,28 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  CheckCircle,
-  ArrowRight,
-  Users,
-  Presentation,
-  MessageSquare,
-  ArrowLeftRight,
-  Phone,
-  Mail,
-  Clock,
-} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle, Calendar, Users, Building2, ArrowRight, Menu, Phone, Mail, Clock, Presentation, MessageSquare, ArrowLeftRight } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 import { toast } from "sonner";
 
 export default function Demo() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -92,7 +78,7 @@ export default function Demo() {
               <img 
                 src="/kt optima (500 x 192 px).png" 
                 alt="KT Optima" 
-                className="h-12 w-auto object-contain"
+                className="h-10 sm:h-12 w-auto object-contain"
               />
             </Link>
             <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
@@ -116,6 +102,64 @@ export default function Demo() {
               <Button asChild>
                 <Link to="/demo">Demander une démo</Link>
               </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 mt-6">
+                    <Link 
+                      to="/#fonctionnalites" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Produit
+                    </Link>
+                    <Link 
+                      to="/modules" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Modules
+                    </Link>
+                    <Link 
+                      to="/pricing" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Tarifs
+                    </Link>
+                    <Link 
+                      to="/#entreprise" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Entreprise
+                    </Link>
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          Connexion
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                          Demander une démo
+                        </Link>
+                      </Button>
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>

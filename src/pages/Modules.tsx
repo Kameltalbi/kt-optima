@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   ShoppingCart,
   Wallet,
@@ -17,10 +19,12 @@ import {
   Calendar,
   CreditCard,
   BarChart3,
+  Menu,
 } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 
 export default function Modules() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const modules = [
     {
       id: 1,
@@ -182,7 +186,7 @@ export default function Modules() {
               <img 
                 src="/kt optima (500 x 192 px).png" 
                 alt="KT Optima" 
-                className="h-12 w-auto object-contain"
+                className="h-10 sm:h-12 w-auto object-contain"
               />
             </Link>
             <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
@@ -206,6 +210,64 @@ export default function Modules() {
               <Button asChild>
                 <Link to="/demo">Demander une démo</Link>
               </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col gap-4 mt-6">
+                    <Link 
+                      to="/#fonctionnalites" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Produit
+                    </Link>
+                    <a 
+                      href="#modules" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Modules
+                    </a>
+                    <Link 
+                      to="/pricing" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Tarifs
+                    </Link>
+                    <Link 
+                      to="/#entreprise" 
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-base font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      Entreprise
+                    </Link>
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                          Connexion
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
+                          Demander une démo
+                        </Link>
+                      </Button>
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
