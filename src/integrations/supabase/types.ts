@@ -1197,6 +1197,9 @@ export type Database = {
           montant_tva: number
           notes: string | null
           numero: string
+          remise_montant: number | null
+          remise_type: string | null
+          remise_valeur: number | null
           statut: Database["public"]["Enums"]["facture_statut"] | null
           type_facture: string | null
           updated_at: string | null
@@ -1217,6 +1220,9 @@ export type Database = {
           montant_tva?: number
           notes?: string | null
           numero: string
+          remise_montant?: number | null
+          remise_type?: string | null
+          remise_valeur?: number | null
           statut?: Database["public"]["Enums"]["facture_statut"] | null
           type_facture?: string | null
           updated_at?: string | null
@@ -1237,6 +1243,9 @@ export type Database = {
           montant_tva?: number
           notes?: string | null
           numero?: string
+          remise_montant?: number | null
+          remise_type?: string | null
+          remise_valeur?: number | null
           statut?: Database["public"]["Enums"]["facture_statut"] | null
           type_facture?: string | null
           updated_at?: string | null
