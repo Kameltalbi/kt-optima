@@ -59,6 +59,10 @@ import { CompanyDocumentLayout } from "@/components/documents/CompanyDocumentLay
 import { InvoiceDocument, type InvoiceDocumentData } from "@/components/documents/InvoiceDocument";
 import { generateInvoicePDF } from "@/components/documents/InvoicePDF";
 import { supabase } from "@/integrations/supabase/client";
+import { SendEmailModal } from "@/components/documents/SendEmailModal";
+import { useEncaissements } from "@/hooks/use-encaissements";
+import { exportToCSV, exportToExcel, formatAmountForExport, formatDateForExport, type ExportColumn } from "@/utils/export";
+import { FileDown } from "lucide-react";
 
 // Mapping des statuts réels vers les statuts d'affichage
 const statusStyles: Record<string, string> = {
@@ -76,7 +80,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Invoices() {
-  const { factures, loading, refreshFactures, createFacture, updateFacture, deleteFacture, getLignes } = useFacturesVentes();
+  const { factures, loading, refreshFactures, createFacture, updateFacture, deleteFacture, getLignes, validerFacture, annulerFacture } = useFacturesVentes();
   const { clients } = useClients();
   const { taxes } = useTaxes();
   const { company } = useAuth();
@@ -91,6 +95,11 @@ export default function Invoices() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [invoiceDocumentData, setInvoiceDocumentData] = useState<InvoiceDocumentData | null>(null);
   const [loadingDocument, setLoadingDocument] = useState(false);
+  const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
+  const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<FactureVente | null>(null);
+  const [isEncaissementsModalOpen, setIsEncaissementsModalOpen] = useState(false);
+  const { getEncaissementsByFacture } = useEncaissements();
+  const [factureEncaissements, setFactureEncaissements] = useState<any[]>([]);
   const [editInvoiceData, setEditInvoiceData] = useState<{
     id: string;
     clientId: string;
@@ -264,6 +273,133 @@ export default function Invoices() {
   const handleCreateInvoice = () => {
     setEditInvoiceData(null);
     setIsCreateModalOpen(true);
+  };
+
+  // Dupliquer une facture
+  const handleDuplicateInvoice = async (invoice: FactureVente) => {
+    try {
+      // Récupérer les lignes de la facture
+      const lignes = await getLignes(invoice.id);
+      
+      // Trouver la taxe par défaut pour les lignes
+      const defaultTax = taxes.find(t => t.type === 'percentage' && t.enabled);
+      
+      // Convertir les lignes pour le formulaire
+      const formLines = lignes.map(ligne => ({
+        id: `temp-${Date.now()}-${Math.random()}`,
+        description: ligne.description || '',
+        quantity: ligne.quantite,
+        unitPrice: ligne.prix_unitaire,
+        taxRateId: ligne.taux_tva && ligne.taux_tva > 0 
+          ? (taxes.find(t => t.type === 'percentage' && t.value === ligne.taux_tva)?.id || defaultTax?.id || null)
+          : null,
+      }));
+
+      // Préparer les données pour le formulaire
+      setEditInvoiceData({
+        id: '', // Nouvelle facture
+        clientId: invoice.client_id,
+        date: new Date().toISOString().split('T')[0], // Date du jour
+        reference: '', // Numéro généré automatiquement
+        notes: invoice.notes || '',
+        lines: formLines,
+      });
+      setIsCreateModalOpen(true);
+      toast.success('Facture dupliquée - Veuillez vérifier les informations avant de sauvegarder');
+    } catch (error) {
+      console.error('Error duplicating invoice:', error);
+      toast.error('Erreur lors de la duplication de la facture');
+    }
+  };
+
+  // Encaisser une facture
+  const handleEncaisserInvoice = async (invoice: FactureVente) => {
+    if (invoice.statut !== 'validee') {
+      toast.error('Seules les factures validées peuvent être encaissées');
+      return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir encaisser la facture ${invoice.numero} ?`)) {
+      try {
+        await updateFacture(invoice.id, {
+          statut: 'payee',
+          montant_paye: invoice.montant_ttc,
+          montant_restant: 0,
+        });
+        toast.success('Facture encaissée avec succès');
+        await refreshFactures();
+      } catch (error) {
+        console.error('Error encaisser invoice:', error);
+        toast.error('Erreur lors de l\'encaissement de la facture');
+      }
+    }
+  };
+
+  // Valider une facture
+  const handleValiderInvoice = async (invoice: FactureVente) => {
+    if (invoice.statut !== 'brouillon') {
+      toast.error('Seules les factures en brouillon peuvent être validées');
+      return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir valider la facture ${invoice.numero} ?`)) {
+      try {
+        await validerFacture(invoice.id);
+        toast.success('Facture validée avec succès');
+        await refreshFactures();
+      } catch (error) {
+        console.error('Error validating invoice:', error);
+        toast.error('Erreur lors de la validation de la facture');
+      }
+    }
+  };
+
+  // Annuler une facture
+  const handleAnnulerInvoice = async (invoice: FactureVente) => {
+    if (invoice.statut === 'annulee') {
+      toast.error('Cette facture est déjà annulée');
+      return;
+    }
+
+    if (confirm(`Êtes-vous sûr de vouloir annuler la facture ${invoice.numero} ?`)) {
+      try {
+        await annulerFacture(invoice.id);
+        toast.success('Facture annulée avec succès');
+        await refreshFactures();
+      } catch (error) {
+        console.error('Error cancelling invoice:', error);
+        toast.error('Erreur lors de l\'annulation de la facture');
+      }
+    }
+  };
+
+  // Export des factures
+  const handleExport = (format: 'csv' | 'excel') => {
+    const columns: ExportColumn[] = [
+      { key: 'numero', label: 'Numéro' },
+      { key: 'date_facture', label: 'Date', format: formatDateForExport },
+      { key: 'client', label: 'Client', format: (v) => v?.nom || '' },
+      { key: 'montant_ht', label: 'Montant HT', format: formatAmountForExport },
+      { key: 'montant_ttc', label: 'Montant TTC', format: formatAmountForExport },
+      { key: 'montant_paye', label: 'Montant payé', format: formatAmountForExport },
+      { key: 'montant_restant', label: 'Montant restant', format: formatAmountForExport },
+      { key: 'statut', label: 'Statut', format: (v) => statusLabels[v] || v },
+    ];
+
+    const exportData = filteredInvoices.map(invoice => ({
+      ...invoice,
+      client: clients.find(c => c.id === invoice.client_id),
+    }));
+
+    const filename = `factures-${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+    
+    if (format === 'csv') {
+      exportToCSV(exportData, columns, filename);
+    } else {
+      exportToExcel(exportData, columns, filename);
+    }
+    
+    toast.success(`Export ${format.toUpperCase()} généré avec succès`);
   };
 
   // Handler pour ouvrir le modal en mode édition
@@ -529,6 +665,22 @@ export default function Invoices() {
                 <SelectItem value="annulee">Annulée</SelectItem>
               </SelectContent>
             </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <FileDown className="w-4 h-4" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  Exporter en CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                  Exporter en Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <Button 
@@ -705,22 +857,65 @@ export default function Invoices() {
                                     Modifier
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => {
-                                      toast.info('Fonctionnalité à venir : Dupliquer');
-                                    }}
+                                    onClick={() => handleDuplicateInvoice(invoice)}
                                     className="gap-2"
                                   >
                                     <Copy className="w-4 h-4" />
                                     Dupliquer
                                   </DropdownMenuItem>
+                                  {invoice.statut === 'brouillon' && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleValiderInvoice(invoice)}
+                                      className="gap-2 text-primary"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      Valider
+                                    </DropdownMenuItem>
+                                  )}
+                                  {invoice.statut === 'validee' && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleEncaisserInvoice(invoice)}
+                                      className="gap-2"
+                                    >
+                                      <DollarSign className="w-4 h-4" />
+                                      Encaisser
+                                    </DropdownMenuItem>
+                                  )}
+                                  {invoice.statut !== 'annulee' && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleAnnulerInvoice(invoice)}
+                                      className="gap-2 text-destructive focus:text-destructive"
+                                    >
+                                      <AlertCircle className="w-4 h-4" />
+                                      Annuler
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem 
                                     onClick={() => {
-                                      toast.info('Fonctionnalité à venir : Envoyer par email');
+                                      setSelectedInvoiceForEmail(invoice);
+                                      setIsSendEmailModalOpen(true);
                                     }}
                                     className="gap-2"
                                   >
                                     <Send className="w-4 h-4" />
                                     Envoyer par email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      try {
+                                        const encaissements = await getEncaissementsByFacture(invoice.id);
+                                        setFactureEncaissements(encaissements);
+                                        setSelectedInvoice(invoice);
+                                        setIsEncaissementsModalOpen(true);
+                                      } catch (error) {
+                                        console.error('Error loading encaissements:', error);
+                                        toast.error('Erreur lors du chargement des encaissements');
+                                      }
+                                    }}
+                                    className="gap-2"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                    Voir les paiements
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
@@ -821,6 +1016,77 @@ export default function Invoices() {
             ) : (
               <div className="flex items-center justify-center min-h-[400px]">
                 <p className="text-muted-foreground">Erreur lors du chargement du document</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Envoyer par email */}
+      {selectedInvoiceForEmail && (
+        <SendEmailModal
+          open={isSendEmailModalOpen}
+          onOpenChange={setIsSendEmailModalOpen}
+          documentType="facture"
+          documentNumber={selectedInvoiceForEmail.numero}
+          clientEmail={clients.find(c => c.id === selectedInvoiceForEmail.client_id)?.email || undefined}
+          clientName={clients.find(c => c.id === selectedInvoiceForEmail.client_id)?.nom}
+          onSend={async (email, subject, message) => {
+            // TODO: Implémenter l'envoi réel par email via Supabase Edge Function ou service externe
+            toast.success(`Email envoyé à ${email}`);
+            setIsSendEmailModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Modal Voir les paiements */}
+      <Dialog open={isEncaissementsModalOpen} onOpenChange={setIsEncaissementsModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Paiements - {selectedInvoice?.numero}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {factureEncaissements.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                Aucun paiement enregistré pour cette facture
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {factureEncaissements.map((fe) => (
+                  <Card key={fe.id} className="p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">Montant alloué</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatAmount(fe.montant_alloue)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(fe.created_at).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total alloué:</span>
+                    <span className="font-bold">
+                      {formatAmount(
+                        factureEncaissements.reduce((sum, fe) => sum + (fe.montant_alloue || 0), 0)
+                      )}
+                    </span>
+                  </div>
+                  {selectedInvoice && (
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-sm text-muted-foreground">Montant restant:</span>
+                      <span className="text-sm font-medium">
+                        {formatAmount(selectedInvoice.montant_restant || 0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

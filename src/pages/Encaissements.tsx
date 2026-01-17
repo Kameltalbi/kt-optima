@@ -256,10 +256,62 @@ export default function Encaissements() {
 
   const handleDownloadReceipt = async (encaissement: Encaissement) => {
     try {
-      // TODO: Générer et télécharger le reçu PDF
-      toast.info('Génération du reçu en cours...');
-      // Pour l'instant, on affiche juste un message
-      // Vous pouvez implémenter la génération PDF ici
+      const { generateDocumentPDF } = await import('@/components/documents/DocumentPDF');
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Récupérer les informations de l'encaissement
+      const client = clients.find(c => c.id === encaissement.client_id);
+      if (!client) {
+        toast.error('Client introuvable');
+        return;
+      }
+
+      // Récupérer les informations de la société
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', encaissement.company_id)
+        .single();
+
+      if (!companyData) {
+        toast.error('Informations de la société introuvables');
+        return;
+      }
+
+      // Générer le PDF du reçu (utilise le même format que les factures)
+      const receiptData = {
+        type: 'invoice' as const, // Utiliser 'invoice' car le type 'receipt' n'existe pas dans InvoiceDocumentData
+        number: encaissement.reference || `REC-${encaissement.id.slice(0, 8).toUpperCase()}`,
+        date: encaissement.date,
+        client: {
+          name: client.nom,
+          address: client.adresse || null,
+          tax_number: client.numero_fiscal || null,
+        },
+        lines: [
+          {
+            description: `Reçu de paiement - ${typeLabels[encaissement.type_encaissement]}`,
+            quantity: 1,
+            unit_price: encaissement.montant,
+            total_ht: encaissement.montant,
+          },
+        ],
+        total_ht: encaissement.montant,
+        applied_taxes: [],
+        fiscal_stamp: 0,
+        total_ttc: encaissement.montant,
+        notes: `Mode de paiement: ${modePaiementOptions.find(m => m.value === encaissement.mode_paiement)?.label || encaissement.mode_paiement}${encaissement.notes ? `\n\nNotes: ${encaissement.notes}` : ''}`,
+        montant_restant: 0,
+      };
+
+      const pdfBlob = await generateDocumentPDF(receiptData, companyData);
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `recu-${receiptData.number}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Reçu téléchargé avec succès');
     } catch (error) {
       console.error('Error downloading receipt:', error);
       toast.error('Erreur lors du téléchargement du reçu');

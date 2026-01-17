@@ -472,8 +472,48 @@ export default function Quotes() {
     }
   };
 
-  const handleDuplicateQuote = (quote: Quote) => {
-    toast.success(`Devis ${quote.number} dupliqué`);
+  const handleDuplicateQuote = async (quote: Quote) => {
+    try {
+      // Récupérer les items du devis
+      const items = await supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quote.id)
+        .order('order_index', { ascending: true });
+
+      if (items.error) {
+        throw items.error;
+      }
+
+      // Trouver la taxe par défaut
+      const defaultTax = taxes.find(t => t.type === 'percentage' && t.enabled);
+      
+      // Convertir les items pour le formulaire
+      const formLines = (items.data || []).map((item: any) => ({
+        id: `temp-${Date.now()}-${Math.random()}`,
+        description: item.description || '',
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        taxRateId: item.tax_rate && item.tax_rate > 0 
+          ? (taxes.find(t => t.type === 'percentage' && t.value === item.tax_rate)?.id || defaultTax?.id || null)
+          : null,
+      }));
+
+      // Préparer les données pour le formulaire
+      setEditQuoteData({
+        id: '', // Nouveau devis
+        clientId: quote.client_id,
+        date: new Date().toISOString().split('T')[0], // Date du jour
+        notes: quote.notes || '',
+        validityDays: quote.validity_days || 30,
+        lines: formLines,
+      });
+      setIsCreateModalOpen(true);
+      toast.success('Devis dupliqué - Veuillez vérifier les informations avant de sauvegarder');
+    } catch (error) {
+      console.error('Error duplicating quote:', error);
+      toast.error('Erreur lors de la duplication du devis');
+    }
   };
 
   const handleSendQuote = (quote: Quote) => {

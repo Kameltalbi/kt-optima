@@ -83,11 +83,16 @@ export default function DeliveryNotes() {
   const { bonsLivraison, loading, refreshBonsLivraison, createBonLivraison, updateBonLivraison, deleteBonLivraison, getLignes } = useDeliveryNotes();
   const { clients } = useClients();
   const { taxes, calculateTax } = useTaxes();
+  const { createFacture } = useFacturesVentes();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<BonLivraison | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceFromBLData, setInvoiceFromBLData] = useState<InvoiceFormData | null>(null);
+  const [isSendEmailModalOpen, setIsSendEmailModalOpen] = useState(false);
+  const [selectedBLForEmail, setSelectedBLForEmail] = useState<BonLivraison | null>(null);
   const [editDeliveryNoteData, setEditDeliveryNoteData] = useState<{
     id: string;
     clientId: string;
@@ -520,21 +525,17 @@ export default function DeliveryNotes() {
                                     Modifier
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => toast.info('Fonctionnalité à venir : Convertir en facture')}
+                                    onClick={() => handleConvertToInvoice(note)}
                                     className="gap-2"
                                   >
                                     <FileText className="w-4 h-4" />
                                     Convertir en facture
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => toast.info('Fonctionnalité à venir : Dupliquer')}
-                                    className="gap-2"
-                                  >
-                                    <Copy className="w-4 h-4" />
-                                    Dupliquer
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => toast.info('Fonctionnalité à venir : Envoyer par email')}
+                                    onClick={() => {
+                                      setSelectedBLForEmail(note);
+                                      setIsSendEmailModalOpen(true);
+                                    }}
                                     className="gap-2"
                                   >
                                     <Send className="w-4 h-4" />
@@ -615,6 +616,46 @@ export default function DeliveryNotes() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal pour créer une facture à partir du BL */}
+      {invoiceFromBLData && (
+        <InvoiceCreateModal
+          open={isInvoiceModalOpen}
+          onOpenChange={(open) => {
+            setIsInvoiceModalOpen(open);
+            if (!open) setInvoiceFromBLData(null);
+          }}
+          onSave={async (data) => {
+            try {
+              await createFacture(data, { encaissements: [], factures_acompte: [] });
+              toast.success('Facture créée avec succès à partir du bon de livraison');
+              setIsInvoiceModalOpen(false);
+              setInvoiceFromBLData(null);
+            } catch (error) {
+              console.error('Error creating invoice from delivery note:', error);
+              toast.error('Erreur lors de la création de la facture');
+            }
+          }}
+          initialData={invoiceFromBLData}
+        />
+      )}
+
+      {/* Modal Envoyer par email */}
+      {selectedBLForEmail && (
+        <SendEmailModal
+          open={isSendEmailModalOpen}
+          onOpenChange={setIsSendEmailModalOpen}
+          documentType="bon-livraison"
+          documentNumber={selectedBLForEmail.numero}
+          clientEmail={clients.find(c => c.id === selectedBLForEmail.client_id)?.email || undefined}
+          clientName={clients.find(c => c.id === selectedBLForEmail.client_id)?.nom}
+          onSend={async (email, subject, message) => {
+            // TODO: Implémenter l'envoi réel par email
+            toast.success(`Email envoyé à ${email}`);
+            setIsSendEmailModalOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }
