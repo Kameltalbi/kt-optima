@@ -50,53 +50,9 @@ interface StockByWarehouse {
   items: StockItem[];
 }
 
-// Mock data
-const mockProducts = [
-  { id: "P001", nom: "Ordinateur portable HP", reference: "HP-001", categorie: "Informatique", prix: 8500 },
-  { id: "P002", nom: "Imprimante Canon", reference: "CAN-002", categorie: "Informatique", prix: 2200 },
-  { id: "P003", nom: "Bureau moderne", reference: "BUR-003", categorie: "Mobilier", prix: 3500 },
-  { id: "P004", nom: "Chaise ergonomique", reference: "CH-004", categorie: "Mobilier", prix: 1800 },
-  { id: "P005", nom: "Fournitures bureau", reference: "FOU-005", categorie: "Consommables", prix: 250 },
-  { id: "P006", nom: "Écran LED 24 pouces", reference: "ECR-006", categorie: "Informatique", prix: 3200 },
-  { id: "P007", nom: "Clavier mécanique", reference: "CL-007", categorie: "Informatique", prix: 850 },
-];
-
-const mockWarehouses = [
-  { id: "1", nom: "Entrepôt Principal" },
-  { id: "2", nom: "Entrepôt Secondaire" },
-  { id: "3", nom: "Dépôt Casablanca" },
-];
-
-const mockStock: StockByWarehouse[] = [
-  {
-    entrepotId: "1",
-    entrepotNom: "Entrepôt Principal",
-    items: [
-      { id: "1", produitId: "P001", produitNom: "Ordinateur portable HP", produitReference: "HP-001", categorie: "Informatique", quantite: 45, unite: "Unité", seuilMinimum: 20, prixUnitaire: 8500, valeurStock: 382500 },
-      { id: "2", produitId: "P002", produitNom: "Imprimante Canon", produitReference: "CAN-002", categorie: "Informatique", quantite: 12, unite: "Unité", seuilMinimum: 10, prixUnitaire: 2200, valeurStock: 26400 },
-      { id: "3", produitId: "P003", produitNom: "Bureau moderne", produitReference: "BUR-003", categorie: "Mobilier", quantite: 30, unite: "Unité", seuilMinimum: 15, prixUnitaire: 3500, valeurStock: 105000 },
-      { id: "4", produitId: "P004", produitNom: "Chaise ergonomique", produitReference: "CH-004", categorie: "Mobilier", quantite: 8, unite: "Unité", seuilMinimum: 10, prixUnitaire: 1800, valeurStock: 14400 },
-      { id: "5", produitId: "P005", produitNom: "Fournitures bureau", produitReference: "FOU-005", categorie: "Consommables", quantite: 250, unite: "Unité", seuilMinimum: 100, prixUnitaire: 250, valeurStock: 62500 },
-    ],
-  },
-  {
-    entrepotId: "2",
-    entrepotNom: "Entrepôt Secondaire",
-    items: [
-      { id: "6", produitId: "P001", produitNom: "Ordinateur portable HP", produitReference: "HP-001", categorie: "Informatique", quantite: 15, unite: "Unité", seuilMinimum: 20, prixUnitaire: 8500, valeurStock: 127500 },
-      { id: "7", produitId: "P006", produitNom: "Écran LED 24 pouces", produitReference: "ECR-006", categorie: "Informatique", quantite: 25, unite: "Unité", seuilMinimum: 15, prixUnitaire: 3200, valeurStock: 80000 },
-      { id: "8", produitId: "P007", produitNom: "Clavier mécanique", produitReference: "CL-007", categorie: "Informatique", quantite: 50, unite: "Unité", seuilMinimum: 30, prixUnitaire: 850, valeurStock: 42500 },
-    ],
-  },
-  {
-    entrepotId: "3",
-    entrepotNom: "Dépôt Casablanca",
-    items: [
-      { id: "9", produitId: "P002", produitNom: "Imprimante Canon", produitReference: "CAN-002", categorie: "Informatique", quantite: 5, unite: "Unité", seuilMinimum: 10, prixUnitaire: 2200, valeurStock: 11000 },
-      { id: "10", produitId: "P003", produitNom: "Bureau moderne", produitReference: "BUR-003", categorie: "Mobilier", quantite: 12, unite: "Unité", seuilMinimum: 15, prixUnitaire: 3500, valeurStock: 42000 },
-    ],
-  },
-];
+// TODO: Load stock data from database
+const mockStock: StockByWarehouse[] = [];
+const mockWarehouses: { id: string; nom: string }[] = [];
 
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,7 +63,7 @@ export default function Inventory() {
   // Flatten stock for by-product view
   const allStockItems: (StockItem & { entrepotId: string; entrepotNom: string })[] = [];
   mockStock.forEach(warehouse => {
-    warehouse.items.forEach(item => {
+    warehouse.items?.forEach(item => {
       allStockItems.push({ ...item, entrepotId: warehouse.entrepotId, entrepotNom: warehouse.entrepotNom });
     });
   });
@@ -202,7 +158,7 @@ export default function Inventory() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Dépôts</p>
-                  <p className="text-2xl font-bold mt-1">{mockWarehouses.length}</p>
+                  <p className="text-2xl font-bold mt-1">{mockStock.length}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-info/10">
                   <Warehouse className="w-5 h-5 text-info" />
