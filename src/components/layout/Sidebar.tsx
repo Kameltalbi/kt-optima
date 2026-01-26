@@ -99,8 +99,9 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   return (
     <aside
+      style={{ backgroundColor: '#0f172a' }}
       className={cn(
-        "h-screen bg-sidebar text-white flex flex-col transition-all duration-300 border-r border-sidebar-border/50 shadow-xl",
+        "h-screen text-white flex flex-col transition-all duration-300 border-r shadow-xl",
         effectiveCollapsed ? "w-20" : "w-72",
         "lg:sticky lg:top-0"
       )}
