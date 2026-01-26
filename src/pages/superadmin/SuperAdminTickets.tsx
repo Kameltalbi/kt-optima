@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Search, Filter, AlertCircle, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { useAllTickets } from "@/hooks/use-tickets";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Ticket } from "@/types/database";
@@ -77,6 +78,29 @@ export default function SuperAdminTickets() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isInternal, setIsInternal] = useState(false);
+  const [companies, setCompanies] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    loadCompanies();
+  }, [tickets]);
+
+  const loadCompanies = async () => {
+    if (tickets.length === 0) return;
+    
+    const companyIds = [...new Set(tickets.map(t => t.company_id))];
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name')
+      .in('id', companyIds);
+
+    if (!error && data) {
+      const companyMap: Record<string, string> = {};
+      data.forEach(company => {
+        companyMap[company.id] = company.name;
+      });
+      setCompanies(companyMap);
+    }
+  };
 
   const handleViewTicket = async (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -265,8 +289,8 @@ export default function SuperAdminTickets() {
                     return (
                       <TableRow key={ticket.id}>
                         <TableCell className="font-medium">{ticket.title}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {ticket.company_id.substring(0, 8)}...
+                        <TableCell className="text-sm font-medium">
+                          {companies[ticket.company_id] || 'Chargement...'}
                         </TableCell>
                         <TableCell>{categoryLabels[ticket.category]}</TableCell>
                         <TableCell>
