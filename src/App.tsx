@@ -36,6 +36,7 @@ import {
   SuperAdminDashboard,
   SuperAdminCompanies,
   SuperAdminUsers,
+  SuperAdminTickets,
   SuperAdminSettings,
   SuperAdminLogs,
 } from "./pages/superadmin";
@@ -97,6 +98,11 @@ const App = () => (
             <Route path="/superadmin/users" element={
               <ProtectedRoute>
                 <SuperAdminUsers />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/tickets" element={
+              <ProtectedRoute>
+                <SuperAdminTickets />
               </ProtectedRoute>
             } />
             <Route path="/superadmin/settings" element={
