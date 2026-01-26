@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { SuperAdminLayout } from "@/layouts/SuperAdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, FileText, Activity, TrendingUp, TrendingDown } from "lucide-react";
+import { Building2, Users, FileText, Activity, TrendingUp, TrendingDown, MessageSquare, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import type { Ticket } from "@/types/database";
 
 interface PlatformStats {
   totalCompanies: number;
@@ -20,16 +24,19 @@ interface ActivityItem {
 }
 
 export default function SuperAdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<PlatformStats>({
     totalCompanies: 0,
     totalUsers: 0,
     totalDocuments: 0,
     activeCompanies: 0,
   });
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
+    loadTickets();
   }, []);
 
   const loadStats = async () => {
@@ -63,6 +70,21 @@ export default function SuperAdminDashboard() {
       console.error("Error loading stats:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTickets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setTickets(data || []);
+    } catch (error) {
+      console.error("Error loading tickets:", error);
     }
   };
 
@@ -251,6 +273,81 @@ export default function SuperAdminDashboard() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Support Tickets Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Tickets de Support</CardTitle>
+                <CardDescription>Dernières demandes des clients</CardDescription>
+              </div>
+              <MessageSquare className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {tickets.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucun ticket pour le moment
+                </p>
+              ) : (
+                tickets.map((ticket) => {
+                  const statusIcons = {
+                    new: AlertCircle,
+                    in_progress: Clock,
+                    resolved: CheckCircle2,
+                    closed: CheckCircle2,
+                  };
+                  const StatusIcon = statusIcons[ticket.status];
+                  const priorityColors = {
+                    low: "bg-blue-100 text-blue-800",
+                    medium: "bg-yellow-100 text-yellow-800",
+                    high: "bg-orange-100 text-orange-800",
+                    urgent: "bg-red-100 text-red-800",
+                  };
+
+                  return (
+                    <div
+                      key={ticket.id}
+                      className="flex items-start justify-between py-3 border-b last:border-0 hover:bg-muted/50 rounded-lg px-2 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/superadmin/companies`)}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <StatusIcon className="w-4 h-4 mt-1 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{ticket.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {ticket.description.substring(0, 60)}...
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`${priorityColors[ticket.priority]} text-xs`}>
+                              {ticket.priority}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(ticket.created_at).toLocaleDateString('fr-FR')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            {tickets.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/superadmin/companies')}
+                >
+                  Voir tous les tickets
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
