@@ -25,6 +25,7 @@ import SettingsModule from "./pages/modules/SettingsModule";
 import FleetModule from "./pages/modules/FleetModule";
 import CRMModule from "./pages/modules/CRMModule";
 import ExpenseNotes from "./pages/ExpenseNotes";
+import Tickets from "./pages/Tickets";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 import DocumentPreview from "./pages/DocumentPreview";
@@ -156,6 +157,13 @@ const App = () => (
             <Route path="/crm/*" element={
               <ProtectedRoute>
                 <CRMModule />
+              </ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <MainLayout title="Support" subtitle="Gérez vos tickets de support">
+                  <Tickets />
+                </MainLayout>
               </ProtectedRoute>
             } />
           

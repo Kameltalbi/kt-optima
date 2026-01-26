@@ -665,3 +665,38 @@ export interface FleetAlert {
   company_id: string;
   createdAt: string;
 }
+
+// SUPPORT TICKETS MODULE
+export interface Ticket {
+  id: string;
+  company_id: string;
+  created_by: string;
+  title: string;
+  description: string;
+  category: 'technique' | 'facturation' | 'fonctionnalite' | 'autre';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'new' | 'in_progress' | 'resolved' | 'closed';
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  is_internal: boolean;
+  created_at: string;
+}
+
+export interface TicketAttachment {
+  id: string;
+  ticket_id: string;
+  file_name: string;
+  file_url: string;
+  file_size?: number;
+  uploaded_by: string;
+  created_at: string;
+}

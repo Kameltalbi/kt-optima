@@ -181,6 +181,23 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border/50 backdrop-blur-sm space-y-3">
+        {/* Support */}
+        <NavLink
+          to="/support"
+          onClick={handleItemClick}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all duration-150",
+            location.pathname.startsWith("/support")
+              ? "bg-white/20 text-white font-bold shadow-lg backdrop-blur-sm"
+              : "text-white/90 hover:bg-white/10 hover:text-white font-semibold"
+          )}
+        >
+          <FileText className={cn("w-5 h-5 flex-shrink-0", location.pathname.startsWith("/support") && "text-white")} />
+          {!effectiveCollapsed && (
+            <span className="truncate animate-fade-in">Support</span>
+          )}
+        </NavLink>
+
         {/* Paramètres */}
         <NavLink
           to="/parametres"
