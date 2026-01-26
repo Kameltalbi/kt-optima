@@ -148,8 +148,8 @@ export default function DefaultValidatorsConfig() {
 
             return (
               <div key={niveau} className="space-y-3 p-4 border rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline">Niveau {niveau}</Badge>
                   {validator.validator_type && (
                     <Badge variant="secondary">
@@ -230,11 +230,13 @@ export default function DefaultValidatorsConfig() {
                       </SelectTrigger>
                       <SelectContent>
                         {users.length > 0 ? (
-                          users.map((user) => (
-                            <SelectItem key={user.userId} value={user.userId}>
-                              {user.fullName} ({user.role})
-                            </SelectItem>
-                          ))
+                          users
+                            .filter((user) => user.userId && user.userId.trim() !== '')
+                            .map((user) => (
+                              <SelectItem key={user.userId} value={user.userId}>
+                                {user.fullName} ({user.role})
+                              </SelectItem>
+                            ))
                         ) : (
                           <div className="px-2 py-1.5 text-sm text-muted-foreground">
                             Aucun utilisateur disponible (créez des utilisateurs dans le module RH)
@@ -251,7 +253,7 @@ export default function DefaultValidatorsConfig() {
         </div>
 
         <div className="flex justify-end pt-4 mt-6">
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
             <Save className="w-4 h-4 mr-2" />
             {loading ? 'Enregistrement...' : 'Enregistrer les validateurs par défaut'}
           </Button>

@@ -86,9 +86,15 @@ export default function SettingsPurchaseValidation() {
             .select('*')
             .eq('tier_id', tier.id)
             .order('niveau_validation', { ascending: true })
-            .order('ordre', { ascending: true });
+            .order('ordre', { ascending: true })
+            .limit(1000); // Limite pour éviter les problèmes
 
           if (validatorsError) {
+            // Si la table n'existe pas encore (PGRST116) ou erreur RLS, ignorer silencieusement
+            if (validatorsError.code === 'PGRST116' || validatorsError.code === 'PGRST301') {
+              console.warn(`Table purchase_request_tier_validators non accessible pour le palier ${tier.id}`);
+              return { ...tier, validators: [] };
+            }
             console.error(`Erreur lors du chargement des validateurs pour le palier ${tier.id}:`, validatorsError);
             return { ...tier, validators: [] };
           }
@@ -100,7 +106,7 @@ export default function SettingsPurchaseValidation() {
                 // Récupérer les infos utilisateur depuis profiles
                 const { data: profileData } = await supabase
                   .from('profiles')
-                  .select('id, full_name, email')
+                  .select('id, full_name')
                   .eq('user_id', validator.user_id)
                   .single();
                 
@@ -109,7 +115,7 @@ export default function SettingsPurchaseValidation() {
                   user: profileData ? {
                     id: profileData.id,
                     full_name: profileData.full_name,
-                    email: profileData.email || ''
+                    email: '' // Email n'est pas disponible dans profiles
                   } : null
                 };
               }
@@ -211,8 +217,8 @@ export default function SettingsPurchaseValidation() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-0.5 flex-1">
               <Label htmlFor="enabled">Activer la validation par paliers</Label>
               <p className="text-sm text-muted-foreground">
                 Active le système de validation automatique basé sur le montant
@@ -222,11 +228,12 @@ export default function SettingsPurchaseValidation() {
               id="enabled"
               checked={settings?.enabled || false}
               onCheckedChange={(checked) => updateSettings({ enabled: checked })}
+              className="shrink-0"
             />
           </div>
           {settings?.enabled && (
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-0.5 flex-1">
                 <Label htmlFor="exception">Validation exceptionnelle requise</Label>
                 <p className="text-sm text-muted-foreground">
                   Exiger une validation exceptionnelle si le montant dépasse le palier maximum
@@ -236,6 +243,7 @@ export default function SettingsPurchaseValidation() {
                 id="exception"
                 checked={settings?.require_exception_approval || false}
                 onCheckedChange={(checked) => updateSettings({ require_exception_approval: checked })}
+                className="shrink-0"
               />
             </div>
           )}
@@ -273,8 +281,8 @@ export default function SettingsPurchaseValidation() {
                 {tiers.map((tier) => (
                   <Card key={tier.id} className="border-2">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline">Palier {tier.ordre}</Badge>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <Badge variant="outline" className="w-fit">Palier {tier.ordre}</Badge>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon" onClick={() => {
                             setEditingTier(tier);
@@ -294,7 +302,7 @@ export default function SettingsPurchaseValidation() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                         <div>
                           <Label className="text-sm text-muted-foreground">Montant minimum</Label>
                           <p className="font-semibold">{formatCurrency(tier.montant_min)}</p>
@@ -311,19 +319,20 @@ export default function SettingsPurchaseValidation() {
                         </div>
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                           <Label>Validateurs ({tier.validators?.length || 0})</Label>
                           <Button variant="outline" size="sm" onClick={() => {
                             setSelectedTier(tier);
                             setEditingValidator({ validator_type: 'role', niveau_validation: (tier.validators?.length || 0) + 1 });
                             setIsValidatorDialogOpen(true);
-                          }}>
+                          }} className="w-full sm:w-auto">
                             <Plus className="w-4 h-4 mr-2" />
                             Ajouter
                           </Button>
                         </div>
                         {tier.validators && tier.validators.length > 0 && (
-                          <Table>
+                          <div className="overflow-x-auto">
+                            <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Niveau</TableHead>
@@ -350,6 +359,7 @@ export default function SettingsPurchaseValidation() {
                               ))}
                             </TableBody>
                           </Table>
+                          </div>
                         )}
                       </div>
                     </CardContent>

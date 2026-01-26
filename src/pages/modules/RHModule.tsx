@@ -104,32 +104,6 @@ export default function RHModule() {
           </MainLayout>
         }
       />
-      <Route
-        path="notes-de-frais"
-        element={
-          <MainLayout
-            title="Ressources humaines – Avancé"
-            subtitle="Gestion complète des ressources humaines"
-            moduleTabs={tabs}
-            moduleName="Ressources humaines"
-          >
-            <ExpenseNotes />
-          </MainLayout>
-        }
-      />
-      <Route
-        path="categories-depenses"
-        element={
-          <MainLayout
-            title="Ressources humaines – Avancé"
-            subtitle="Gestion complète des ressources humaines"
-            moduleTabs={tabs}
-            moduleName="Ressources humaines"
-          >
-            <ExpenseCategories />
-          </MainLayout>
-        }
-      />
     </Routes>
   );
 }

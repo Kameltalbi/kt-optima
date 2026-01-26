@@ -98,7 +98,7 @@ export async function getBudgetPalier(
 
     // Récupérer les détails du palier
     const { data: palierData, error: palierError } = await supabase
-      .from("budget_paliers")
+      .from("purchase_request_budget_tiers")
       .select("*")
       .eq("id", data)
       .single();
@@ -270,7 +270,7 @@ export function usePurchaseRequestValidation() {
 
     try {
       const { data, error } = await supabase
-        .from("purchase_request_settings")
+        .from("purchase_request_validation_settings")
         .select("*")
         .eq("company_id", company.id)
         .maybeSingle();
@@ -288,7 +288,7 @@ export function usePurchaseRequestValidation() {
 
     try {
       const { data, error } = await supabase
-        .from("budget_paliers")
+        .from("purchase_request_budget_tiers")
         .select("*")
         .eq("company_id", company.id)
         .order("ordre", { ascending: true });

@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -72,7 +71,7 @@ export default function Previsions() {
       await createPrevision(formData);
       setIsCreateModalOpen(false);
       setFormData({
-        account_id: "",
+        account_id: undefined,
         type: "entree",
         date_prevue: new Date().toISOString().split("T")[0],
         montant: 0,
@@ -108,7 +107,7 @@ export default function Previsions() {
   const openEditModal = (prevision: Prevision) => {
     setSelectedPrevision(prevision);
     setFormData({
-      account_id: prevision.account_id || "",
+      account_id: prevision.account_id || undefined,
       type: prevision.type,
       date_prevue: prevision.date_prevue,
       montant: prevision.montant,
@@ -169,13 +168,11 @@ export default function Previsions() {
             Planifiez et suivez vos entrées et sorties prévues
           </p>
         </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouvelle prévision
+        </Button>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle prévision
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Nouvelle prévision</DialogTitle>
@@ -230,14 +227,14 @@ export default function Previsions() {
               <div className="space-y-2">
                 <Label htmlFor="account_id">Compte (optionnel)</Label>
                 <Select
-                  value={formData.account_id || ""}
-                  onValueChange={(value) => setFormData({ ...formData, account_id: value || undefined })}
+                  value={formData.account_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, account_id: value === "none" ? undefined : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Aucun compte spécifique" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucun compte spécifique</SelectItem>
+                    <SelectItem value="none">Aucun compte spécifique</SelectItem>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {account.name}
