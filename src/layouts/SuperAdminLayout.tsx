@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,6 +26,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/superadmin" },
   { icon: Building2, label: "Entreprises", path: "/superadmin/companies" },
   { icon: Users, label: "Utilisateurs Plateforme", path: "/superadmin/users" },
+  { icon: MessageSquare, label: "Tickets Support", path: "/superadmin/tickets" },
   { icon: Settings, label: "Paramètres Globaux", path: "/superadmin/settings" },
   { icon: FileText, label: "Logs & Audit", path: "/superadmin/logs" },
 ];
