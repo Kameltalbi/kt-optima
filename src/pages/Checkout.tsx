@@ -10,6 +10,7 @@ import { ArrowLeft, Check, MessageCircle, CreditCard, Banknote, FileText, Buildi
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { plans } from "./Pricing";
+import { useApp } from "@/context/AppContext";
 
 const paymentMethods = [
   {
@@ -36,6 +37,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planId = searchParams.get("plan") || "depart";
+  const { profile, company } = useApp();
   
   const [selectedPlan, setSelectedPlan] = useState(plans.find(p => p.id === planId) || plans[0]);
   const [paymentMethod, setPaymentMethod] = useState("virement");
@@ -55,6 +57,20 @@ export default function Checkout() {
       setSelectedPlan(plan);
     }
   }, [planId]);
+
+  // Pre-fill contact info from user profile and company data
+  useEffect(() => {
+    if (profile || company) {
+      setContactInfo(prev => ({
+        ...prev,
+        name: profile?.full_name || prev.name,
+        email: company?.email || prev.email,
+        phone: company?.phone || profile?.phone || prev.phone,
+        company: company?.name || prev.company,
+        address: company?.address || prev.address,
+      }));
+    }
+  }, [profile, company]);
 
   const calculatePrice = () => {
     if (selectedPlan.monthlyPrice === 0) return 0;

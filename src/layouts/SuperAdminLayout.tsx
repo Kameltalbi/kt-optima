@@ -113,7 +113,7 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{profile?.full_name || "Super Admin"}</p>
-                <p className="text-xs text-slate-400 truncate">Administrateur</p>
+                <p className="text-xs text-slate-400 truncate">Super Admin</p>
               </div>
             )}
           </div>

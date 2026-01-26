@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlan } from "@/hooks/use-plan";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Modules principaux avec mapping vers les features du plan
 const allModules = [
@@ -42,7 +43,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
-  const { company, user } = useAuth();
+  const { company, user, profile } = useAuth();
   const { features } = usePlan();
 
   // Filtrer les modules selon le plan acheté
@@ -199,16 +200,16 @@ export function Sidebar({ onClose }: SidebarProps) {
 
         {/* User Info */}
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-md">
-            <span className="text-sm font-bold text-white">
-              {user?.email?.charAt(0).toUpperCase() || 'A'}
-            </span>
-          </div>
+          <Avatar className="w-9 h-9">
+            <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-sm font-bold shadow-md">
+              {profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || user?.email?.charAt(0).toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
           {!effectiveCollapsed && (
             <div className="animate-fade-in min-w-0">
-              <p className="text-sm font-bold truncate text-white">{user?.email?.split('@')[0] || 'Utilisateur'}</p>
+              <p className="text-sm font-bold truncate text-white">{profile?.full_name || user?.email?.split('@')[0] || 'Utilisateur'}</p>
               <p className="text-xs text-white/70 truncate font-medium">
-                {company?.name || (company ? 'Chargement...' : 'Aucune entreprise')}
+                {company?.name || 'Aucune entreprise'}
               </p>
             </div>
           )}
