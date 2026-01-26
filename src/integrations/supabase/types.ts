@@ -227,6 +227,7 @@ export type Database = {
           logo: string | null
           name: string
           phone: string | null
+          plan: Database["public"]["Enums"]["company_plan"]
           tax_number: string | null
           updated_at: string | null
         }
@@ -241,6 +242,7 @@ export type Database = {
           logo?: string | null
           name: string
           phone?: string | null
+          plan?: Database["public"]["Enums"]["company_plan"]
           tax_number?: string | null
           updated_at?: string | null
         }
@@ -255,6 +257,7 @@ export type Database = {
           logo?: string | null
           name?: string
           phone?: string | null
+          plan?: Database["public"]["Enums"]["company_plan"]
           tax_number?: string | null
           updated_at?: string | null
         }
@@ -2674,6 +2677,65 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          billing_cycle: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          plan: Database["public"]["Enums"]["company_plan"]
+          price: number | null
+          start_date: string
+          status: string
+          trial_end_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          plan?: Database["public"]["Enums"]["company_plan"]
+          price?: number | null
+          start_date?: string
+          status?: string
+          trial_end_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          plan?: Database["public"]["Enums"]["company_plan"]
+          price?: number | null
+          start_date?: string
+          status?: string
+          trial_end_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taxes: {
         Row: {
           company_id: string
@@ -2977,6 +3039,7 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       reset_document_number_sequence: {
         Args: { p_start_value?: number }
         Returns: undefined
@@ -3003,6 +3066,7 @@ export type Database = {
         | "hr"
         | "sales"
         | "superadmin"
+      company_plan: "depart" | "starter" | "business" | "enterprise"
       ecriture_ligne_type: "debit" | "credit"
       facture_statut: "brouillon" | "validee" | "annulee" | "payee"
       mouvement_stock_type: "entree" | "sortie"
@@ -3146,6 +3210,7 @@ export const Constants = {
         "sales",
         "superadmin",
       ],
+      company_plan: ["depart", "starter", "business", "enterprise"],
       ecriture_ligne_type: ["debit", "credit"],
       facture_statut: ["brouillon", "validee", "annulee", "payee"],
       mouvement_stock_type: ["entree", "sortie"],
