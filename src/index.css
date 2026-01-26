@@ -111,14 +111,14 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar - Gris Foncé #1e293b */
-    --sidebar-background: 217 32% 17%;
+    /* Sidebar - Bleu Moderne Profond */
+    --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 32% 22%;
+    --sidebar-accent: 222 47% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 32% 15%;
+    --sidebar-border: 222 47% 8%;
     --sidebar-ring: 221 83% 53%;
 
     /* Modern Shadows with Primary Blue Tints */
@@ -161,13 +161,13 @@
     --input: 217 32% 18%;
     --ring: 221 83% 58%;
 
-    --sidebar-background: 217 32% 17%;
+    --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 221 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 32% 22%;
+    --sidebar-accent: 222 47% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 32% 15%;
+    --sidebar-border: 222 47% 8%;
     --sidebar-ring: 221 83% 58%;
   }
 }
