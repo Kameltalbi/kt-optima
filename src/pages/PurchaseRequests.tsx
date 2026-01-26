@@ -48,6 +48,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePurchaseRequestValidation } from "@/hooks/use-purchase-request-validation";
 
 const statusStyles = {
   approuvee: "bg-success/10 text-success border-0",
@@ -83,8 +84,9 @@ const prioriteLabels = {
 
 export default function PurchaseRequests() {
   const { company, user } = useAuth();
-  const { demandes, loading, createDemande, updateDemande, approveDemande, rejectDemande, deleteDemande, convertToPurchaseOrder } = usePurchaseRequests();
+  const { demandes, loading, createDemande, updateDemande, approveDemande, rejectDemande, deleteDemande, convertToPurchaseOrder, fetchDemandes } = usePurchaseRequests();
   const { formatCurrency: formatCurrencyAmount } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+  const { submitRequest } = usePurchaseRequestValidation();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -215,9 +217,20 @@ export default function PurchaseRequests() {
 
   const handleSendForApproval = async (id: string) => {
     try {
-      await updateDemande(id, { statut: "en_attente" });
+      const demande = demandes.find(d => d.id === id);
+      if (!demande) return;
+
+      // Calculer le montant total
+      const montantTotal = demande.lignes?.reduce((sum, l) => sum + (l.montant_estime || 0), 0) || 0;
+
+      // Soumettre avec validation automatique
+      const success = await submitRequest(id, montantTotal);
+      if (success) {
+        await fetchDemandes();
+      }
     } catch (error) {
-      // Error handled by hook
+      console.error('Error submitting request:', error);
+      toast.error('Erreur lors de la soumission');
     }
   };
 

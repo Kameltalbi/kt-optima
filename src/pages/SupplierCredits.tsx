@@ -43,42 +43,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { SupplierCredit, SupplierInvoice } from "@/types/database";
 
-// Mock supplier invoices (en production, viendrait d'un hook)
-const mockSupplierInvoices: SupplierInvoice[] = [
-  {
-    id: 'si_1',
-    number: 'FAC-FOUR-2024-001',
-    supplier_id: 'sup_1',
-    date: '2024-03-01',
-    due_date: '2024-03-31',
-    subtotal: 10000,
-    tax: 1900,
-    total: 11900,
-    status: 'sent',
-    company_id: '1',
-    createdAt: '2024-03-01T10:00:00Z',
-    updatedAt: '2024-03-01T10:00:00Z',
-  },
-  {
-    id: 'si_2',
-    number: 'FAC-FOUR-2024-002',
-    supplier_id: 'sup_2',
-    date: '2024-03-05',
-    due_date: '2024-04-05',
-    subtotal: 5000,
-    tax: 950,
-    total: 5950,
-    status: 'sent',
-    company_id: '1',
-    createdAt: '2024-03-05T10:00:00Z',
-    updatedAt: '2024-03-05T10:00:00Z',
-  },
-];
-
-const mockSuppliers: Record<string, string> = {
-  'sup_1': 'Fournisseur Alpha',
-  'sup_2': 'Entreprise Beta Supply',
-};
+const mockSuppliers: Record<string, string> = {};
 
 const reasonLabels: Record<SupplierCredit['reason'], string> = {
   return: 'Retour marchandise',
@@ -99,6 +64,7 @@ export default function SupplierCredits() {
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const navigate = useNavigate();
   const location = useLocation();
+  const [supplierInvoices] = useState<SupplierInvoice[]>([]);
   
   // Récupérer supplier_invoice_id depuis l'URL si présent
   const searchParams = new URLSearchParams(location.search);
@@ -152,7 +118,7 @@ export default function SupplierCredits() {
       });
     } else {
       // Pré-remplir avec la facture d'origine
-      const invoice = mockSupplierInvoices.find(i => i.id === invoiceIdFromUrl);
+      const invoice = supplierInvoices.find(i => i.id === invoiceIdFromUrl);
       if (invoice) {
         setFormData({
           supplier_invoice_id: invoice.id,
@@ -192,7 +158,7 @@ export default function SupplierCredits() {
 
   const handleEdit = (credit: SupplierCredit) => {
     setSelectedCredit(credit);
-    const invoice = mockSupplierInvoices.find(i => i.id === credit.supplier_invoice_id);
+    const invoice = supplierInvoices.find(i => i.id === credit.supplier_invoice_id);
     setFormData({
       supplier_invoice_id: credit.supplier_invoice_id,
       supplier_id: credit.supplier_id,
@@ -221,7 +187,7 @@ export default function SupplierCredits() {
   };
 
   const handleInvoiceChange = (invoiceId: string) => {
-    const invoice = mockSupplierInvoices.find(i => i.id === invoiceId);
+    const invoice = supplierInvoices.find(i => i.id === invoiceId);
     if (invoice) {
       setFormData({
         ...formData,
@@ -235,7 +201,7 @@ export default function SupplierCredits() {
     }
   };
 
-  const selectedInvoice = mockSupplierInvoices.find(i => i.id === formData.supplier_invoice_id);
+  const selectedInvoice = supplierInvoices.find(i => i.id === formData.supplier_invoice_id);
 
   return (
     <div className="space-y-6">
@@ -342,7 +308,7 @@ export default function SupplierCredits() {
                   </TableRow>
                 ) : (
                   filteredCredits.map((credit) => {
-                    const invoice = mockSupplierInvoices.find(i => i.id === credit.supplier_invoice_id);
+                    const invoice = supplierInvoices.find(i => i.id === credit.supplier_invoice_id);
                     return (
                       <TableRow key={credit.id}>
                         <TableCell className="font-medium">{credit.number}</TableCell>
@@ -443,7 +409,7 @@ export default function SupplierCredits() {
                   <SelectValue placeholder="Sélectionner une facture" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockSupplierInvoices.map((invoice) => (
+                  {supplierInvoices.map((invoice) => (
                     <SelectItem key={invoice.id} value={invoice.id}>
                       {invoice.number} - {formatCurrency(invoice.total)} - {mockSuppliers[invoice.supplier_id]}
                     </SelectItem>
@@ -604,7 +570,7 @@ export default function SupplierCredits() {
                 <div>
                   <p className="text-sm text-muted-foreground">Facture d'origine</p>
                   <p className="font-medium">
-                    {mockSupplierInvoices.find(i => i.id === selectedCredit.supplier_invoice_id)?.number || 'N/A'}
+                    {supplierInvoices.find(i => i.id === selectedCredit.supplier_invoice_id)?.number || 'N/A'}
                   </p>
                 </div>
                 <div>

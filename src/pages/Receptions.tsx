@@ -93,83 +93,7 @@ interface Reception {
   notes?: string;
 }
 
-// Mock data
-const mockPurchaseOrders: PurchaseOrder[] = [
-  {
-    id: "1",
-    number: "BC-2024-001",
-    fournisseurId: "1",
-    fournisseurNom: "Fournisseur Alpha",
-    date: "2024-01-12",
-    lignes: [
-      { id: "1", produitId: "P001", produitNom: "Produit A", quantiteCommandee: 100, quantiteDejaRecue: 0, quantiteRestante: 100, unite: "Unité" },
-      { id: "2", produitId: "P002", produitNom: "Produit B", quantiteCommandee: 50, quantiteDejaRecue: 0, quantiteRestante: 50, unite: "Unité" },
-      { id: "3", produitId: "P003", produitNom: "Produit C", quantiteCommandee: 200, quantiteDejaRecue: 0, quantiteRestante: 200, unite: "Unité" },
-    ],
-  },
-  {
-    id: "2",
-    number: "BC-2024-002",
-    fournisseurId: "2",
-    fournisseurNom: "Entreprise Beta Supply",
-    date: "2024-01-10",
-    lignes: [
-      { id: "1", produitId: "P004", produitNom: "Produit D", quantiteCommandee: 75, quantiteDejaRecue: 25, quantiteRestante: 50, unite: "Unité" },
-      { id: "2", produitId: "P005", produitNom: "Produit E", quantiteCommandee: 30, quantiteDejaRecue: 30, quantiteRestante: 0, unite: "Unité" },
-    ],
-  },
-  {
-    id: "3",
-    number: "BC-2024-003",
-    fournisseurId: "3",
-    fournisseurNom: "Commerce Gamma Pro",
-    date: "2024-01-05",
-    lignes: [
-      { id: "1", produitId: "P006", produitNom: "Produit F", quantiteCommandee: 150, quantiteDejaRecue: 100, quantiteRestante: 50, unite: "Unité" },
-    ],
-  },
-];
-
-const mockReceptions: Reception[] = [
-  {
-    id: "1",
-    numero: "REC-2024-001",
-    dateReception: "2024-01-15",
-    fournisseurId: "1",
-    fournisseurNom: "Fournisseur Alpha",
-    bonCommandeId: "1",
-    bonCommandeNumero: "BC-2024-001",
-    entrepotId: "1",
-    entrepotNom: "Entrepôt Principal",
-    statut: "complete",
-    lignes: [
-      { id: 1, produitId: "P001", produitNom: "Produit A", quantiteCommandee: 100, quantiteDejaRecue: 0, quantiteRestante: 100, quantiteRecue: 100, unite: "Unité", ecart: 0, commentaire: "" },
-      { id: 2, produitId: "P002", produitNom: "Produit B", quantiteCommandee: 50, quantiteDejaRecue: 0, quantiteRestante: 50, quantiteRecue: 50, unite: "Unité", ecart: 0, commentaire: "" },
-    ],
-  },
-  {
-    id: "2",
-    numero: "REC-2024-002",
-    dateReception: "2024-01-13",
-    fournisseurId: "2",
-    fournisseurNom: "Entreprise Beta Supply",
-    bonCommandeId: "2",
-    bonCommandeNumero: "BC-2024-002",
-    entrepotId: "1",
-    entrepotNom: "Entrepôt Principal",
-    statut: "partial",
-    lignes: [
-      { id: 1, produitId: "P004", produitNom: "Produit D", quantiteCommandee: 75, quantiteDejaRecue: 0, quantiteRestante: 75, quantiteRecue: 25, unite: "Unité", ecart: 0, commentaire: "Réception partielle" },
-    ],
-  },
-];
-
-const supplierNames: Record<string, string> = {
-  "1": "Fournisseur Alpha",
-  "2": "Entreprise Beta Supply",
-  "3": "Commerce Gamma Pro",
-  "4": "Services Delta Corp",
-};
+const supplierNames: Record<string, string> = {};
 
 const entrepots = [
   { id: "1", nom: "Entrepôt Principal" },
@@ -191,15 +115,14 @@ const statusLabels = {
   closed: "Clôturée",
 };
 
-let receptionCounter = 3;
-
 export default function Receptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedReception, setSelectedReception] = useState<Reception | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [receptions, setReceptions] = useState<Reception[]>(mockReceptions);
+  const [receptions, setReceptions] = useState<Reception[]>([]);
+  const [purchaseOrders] = useState<PurchaseOrder[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<Partial<Reception>>({
@@ -233,7 +156,7 @@ export default function Receptions() {
 
   const handleCreateReception = () => {
     setFormData({
-      numero: `REC-2024-${String(receptionCounter++).padStart(3, '0')}`,
+      numero: `REC-${new Date().getFullYear()}-${String(receptions.length + 1).padStart(3, '0')}`,
       dateReception: new Date().toISOString().split('T')[0],
       fournisseurId: "",
       bonCommandeId: "",
@@ -246,7 +169,7 @@ export default function Receptions() {
   };
 
   const handleSelectPurchaseOrder = (orderId: string) => {
-    const order = mockPurchaseOrders.find(o => o.id === orderId);
+    const order = purchaseOrders.find(o => o.id === orderId);
     if (order) {
       setSelectedPurchaseOrder(order);
       setFormData({
@@ -576,7 +499,7 @@ export default function Receptions() {
                         <SelectValue placeholder="Sélectionner un bon de commande" />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockPurchaseOrders.map((order) => (
+                        {purchaseOrders.map((order) => (
                           <SelectItem key={order.id} value={order.id}>
                             {order.number} - {order.fournisseurNom} ({new Date(order.date).toLocaleDateString('fr-FR')})
                           </SelectItem>

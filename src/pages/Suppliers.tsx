@@ -44,30 +44,22 @@ import {
 import { cn } from "@/lib/utils";
 import type { Supplier } from "@/types/database";
 
-const mockSuppliers: Supplier[] = [
-  { id: "1", name: "Fournisseur Alpha", phone: "+212 522 123 456", email: "contact@alpha.ma", address: "Casablanca", tax_number: "123456789", company_id: "1", balance: -15000 },
-  { id: "2", name: "Entreprise Beta Supply", phone: "+212 537 654 321", email: "info@beta.ma", address: "Rabat", tax_number: "987654321", company_id: "1", balance: -8500 },
-  { id: "3", name: "Commerce Gamma Pro", phone: "+212 528 987 654", email: "sales@gamma.ma", address: "Marrakech", tax_number: "456789123", company_id: "1", balance: -2200 },
-  { id: "4", name: "Services Delta Corp", phone: "+212 535 111 222", email: "contact@delta.ma", address: "Fès", tax_number: "789123456", company_id: "1", balance: 0 },
-  { id: "5", name: "Tech Solutions Supply", phone: "+212 522 999 888", email: "info@tech.ma", address: "Casablanca", tax_number: "321654987", company_id: "1", balance: -32000 },
-  { id: "6", name: "Global Trade Supply", phone: "+212 537 777 666", email: "contact@global.ma", address: "Tanger", tax_number: "654987321", company_id: "1", balance: -12500 },
-];
-
 export default function Suppliers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [suppliers] = useState<Supplier[]>([]);
 
-  const filteredSuppliers = mockSuppliers.filter((s) =>
+  const filteredSuppliers = suppliers.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.phone.includes(searchTerm) ||
-    s.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.phone?.includes(searchTerm) ||
+    s.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.tax_number && s.tax_number.includes(searchTerm))
   );
 
-  const totalSuppliers = mockSuppliers.length;
-  const totalBalance = mockSuppliers.reduce((sum, s) => sum + (s.balance || 0), 0);
-  const activeSuppliers = mockSuppliers.filter(s => s.balance < 0).length;
+  const totalSuppliers = suppliers.length;
+  const totalBalance = suppliers.reduce((sum, s) => sum + (s.balance || 0), 0);
+  const activeSuppliers = suppliers.filter(s => s.balance < 0).length;
 
   return (
     <div className="space-y-6">

@@ -89,7 +89,10 @@ export function useExpenseNotes() {
 
   // Charger les catégories
   const loadCategories = useCallback(async () => {
-    if (!company?.id) return;
+    if (!company?.id) {
+      console.warn("Company ID not available for loading expense categories");
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -99,49 +102,98 @@ export function useExpenseNotes() {
         .eq("actif", true)
         .order("name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase lors du chargement des catégories:", error);
+        throw error;
+      }
       setCategories(data || []);
     } catch (error: any) {
       console.error("Erreur lors du chargement des catégories:", error);
-      toast.error("Erreur lors du chargement des catégories");
+      const errorMessage = error?.message || "Erreur inconnue";
+      toast.error(`Erreur lors du chargement des catégories: ${errorMessage}`);
     }
   }, [company?.id]);
 
   // Charger les notes de frais
   const loadExpenseNotes = useCallback(async () => {
-    if (!company?.id) return;
+    if (!company?.id) {
+      console.warn("Company ID not available for loading expense notes");
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Charger d'abord les notes de frais de base
+      const { data: notesData, error: notesError } = await supabase
         .from("expense_notes")
-        .select(`
-          *,
-          items:expense_note_items(
-            *,
-            category:expense_categories(*)
-          ),
-          attachments:expense_attachments(*),
-          employes(id, nom, prenom)
-        `)
+        .select("*")
         .eq("company_id", company.id)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (notesError) {
+        console.error("Erreur Supabase lors du chargement des notes de frais:", notesError);
+        throw notesError;
+      }
+
+      if (!notesData || notesData.length === 0) {
+        setExpenseNotes([]);
+        setLoading(false);
+        return;
+      }
+
+      // Charger les items pour chaque note
+      const noteIds = notesData.map(n => n.id);
+      const { data: itemsData } = await supabase
+        .from("expense_note_items")
+        .select(`
+          *,
+          category:expense_categories(*)
+        `)
+        .in("expense_note_id", noteIds);
+
+      // Charger les attachments
+      const { data: attachmentsData } = await supabase
+        .from("expense_attachments")
+        .select("*")
+        .in("expense_note_id", noteIds);
+
+      // Charger les employés si nécessaire
+      const employeeIds = notesData
+        .map(n => n.employee_id)
+        .filter((id): id is string => id !== null);
+      
+      let employeesData: any[] = [];
+      if (employeeIds.length > 0) {
+        const { data: empData } = await supabase
+          .from("employes")
+          .select("id, nom, prenom")
+          .in("id", employeeIds);
+        employeesData = empData || [];
+      }
 
       // Formater les données
-      const formatted = (data || []).map((note: any) => ({
-        ...note,
-        items: note.items || [],
-        attachments: note.attachments || [],
-        employee: note.employes || null,
-      }));
+      const formatted = notesData.map((note: any) => {
+        const items = (itemsData || []).filter((item: any) => item.expense_note_id === note.id);
+        const attachments = (attachmentsData || []).filter((att: any) => att.expense_note_id === note.id);
+        const employee = note.employee_id 
+          ? (employeesData.find((emp: any) => emp.id === note.employee_id) || null)
+          : null;
+
+        return {
+          ...note,
+          items,
+          attachments,
+          employee,
+        };
+      });
 
       setExpenseNotes(formatted);
     } catch (error: any) {
       console.error("Erreur lors du chargement des notes de frais:", error);
-      toast.error("Erreur lors du chargement des notes de frais");
+      const errorMessage = error?.message || error?.code || "Erreur inconnue";
+      toast.error(`Erreur lors du chargement des notes de frais: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

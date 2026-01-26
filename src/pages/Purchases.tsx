@@ -21,30 +21,23 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Search, ShoppingCart, TrendingUp } from "lucide-react";
 import type { Purchase, Supplier } from "@/types/database";
-
-const mockSuppliers: Supplier[] = [
-  { id: "1", name: "Fournisseur Atlas", phone: "+212 522 123 456", email: "contact@atlas.ma", address: "Casablanca", company_id: "1", balance: -15000 },
-  { id: "2", name: "Matériaux Pro", phone: "+212 537 654 321", email: "info@materiauxpro.ma", address: "Rabat", company_id: "1", balance: -8500 },
-  { id: "3", name: "Tech Solutions", phone: "+212 528 111 222", email: "sales@techsolutions.ma", address: "Marrakech", company_id: "1", balance: 0 },
-];
-
-const mockPurchases: (Purchase & { supplier_name: string; status: string })[] = [
-  { id: "1", supplier_id: "1", supplier_name: "Fournisseur Atlas", total: 25000, date: "2024-01-15", company_id: "1", status: "paid" },
-  { id: "2", supplier_id: "2", supplier_name: "Matériaux Pro", total: 12500, date: "2024-01-12", company_id: "1", status: "pending" },
-  { id: "3", supplier_id: "3", supplier_name: "Tech Solutions", total: 8750, date: "2024-01-10", company_id: "1", status: "paid" },
-  { id: "4", supplier_id: "1", supplier_name: "Fournisseur Atlas", total: 32000, date: "2024-01-08", company_id: "1", status: "pending" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/use-currency";
 
 export default function Purchases() {
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const [searchTerm, setSearchTerm] = useState("");
+  const [purchases] = useState<(Purchase & { supplier_name: string; status: string })[]>([]);
+  const [suppliers] = useState<Supplier[]>([]);
 
-  const filteredPurchases = mockPurchases.filter(
+  const filteredPurchases = purchases.filter(
     (purchase) =>
       purchase.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPurchases = mockPurchases.reduce((sum, p) => sum + p.total, 0);
-  const pendingAmount = mockPurchases
+  const totalPurchases = purchases.reduce((sum, p) => sum + p.total, 0);
+  const pendingAmount = purchases
     .filter((p) => p.status === "pending")
     .reduce((sum, p) => sum + p.total, 0);
 
@@ -72,7 +65,7 @@ export default function Purchases() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total achats</p>
-                  <p className="text-xl font-semibold">{totalPurchases.toLocaleString()} MAD</p>
+                  <p className="text-xl font-semibold">{formatCurrency(totalPurchases)}</p>
                 </div>
               </div>
             </CardContent>
@@ -85,7 +78,7 @@ export default function Purchases() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">En attente</p>
-                  <p className="text-xl font-semibold">{pendingAmount.toLocaleString()} MAD</p>
+                  <p className="text-xl font-semibold">{formatCurrency(pendingAmount)}</p>
                 </div>
               </div>
             </CardContent>
@@ -98,7 +91,7 @@ export default function Purchases() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Fournisseurs</p>
-                  <p className="text-xl font-semibold">{mockSuppliers.length}</p>
+                  <p className="text-xl font-semibold">{suppliers.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -156,7 +149,7 @@ export default function Purchases() {
                   <TableRow key={purchase.id}>
                     <TableCell className="font-medium">{purchase.supplier_name}</TableCell>
                     <TableCell>{new Date(purchase.date).toLocaleDateString("fr-FR")}</TableCell>
-                    <TableCell>{purchase.total.toLocaleString()} MAD</TableCell>
+                    <TableCell>{formatCurrency(purchase.total)}</TableCell>
                     <TableCell>{getStatusBadge(purchase.status)}</TableCell>
                   </TableRow>
                 ))}

@@ -5,6 +5,8 @@ import { AccountingSettings } from "./SettingsSections";
 import SettingsPayrollComplete from "./SettingsPayrollComplete";
 import SettingsTemplates from "./SettingsTemplates";
 import ComingSoon from "./ComingSoon";
+import SettingsPurchaseValidation from "./SettingsPurchaseValidation";
+import DefaultValidatorsConfig from "@/components/purchase-request/DefaultValidatorsConfig";
 import { ResponsiveTabs, ResponsiveTabsContent } from "@/components/settings/ResponsiveTabs";
 import { usePlan } from "@/hooks/use-plan";
 import { 
@@ -130,10 +132,10 @@ export default function SettingsModulesPage() {
         </ResponsiveTabsContent>
 
         <ResponsiveTabsContent value="achats" className="mt-6">
-          <ComingSoon 
-            title="Paramètres Achats" 
-            subtitle="Numérotation factures fournisseurs, délais de paiement, réceptions, comptes fournisseurs par défaut" 
-          />
+          <div className="space-y-6">
+            <SettingsPurchaseValidation />
+            <DefaultValidatorsConfig />
+          </div>
         </ResponsiveTabsContent>
 
         <ResponsiveTabsContent value="stock" className="mt-6">

@@ -37,6 +37,8 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/use-currency";
 
 // Local type for purchase orders with extended status
 type PurchaseOrderStatus = 'draft' | 'sent' | 'confirmed' | 'received' | 'cancelled';
@@ -52,20 +54,7 @@ interface PurchaseOrder {
   company_id: string;
 }
 
-const mockPurchaseOrders: PurchaseOrder[] = [
-  { id: "1", number: "BC-2024-001", client_id: "1", date: "2024-01-12", total: 15000, tax: 3000, status: "sent", company_id: "1" },
-  { id: "2", number: "BC-2024-002", client_id: "2", date: "2024-01-10", total: 8500, tax: 1700, status: "confirmed", company_id: "1" },
-  { id: "3", number: "BC-2024-003", client_id: "3", date: "2024-01-05", total: 22300, tax: 4460, status: "received", company_id: "1" },
-  { id: "4", number: "BC-2024-004", client_id: "4", date: "2024-01-03", total: 5200, tax: 1040, status: "sent", company_id: "1" },
-  { id: "5", number: "BC-2024-005", client_id: "1", date: "2024-01-02", total: 12800, tax: 2560, status: "draft", company_id: "1" },
-];
-
-const supplierNames: Record<string, string> = {
-  "1": "Fournisseur Alpha",
-  "2": "Entreprise Beta Supply",
-  "3": "Commerce Gamma Pro",
-  "4": "Services Delta Corp",
-};
+const supplierNames: Record<string, string> = {};
 
 const statusStyles = {
   confirmed: "bg-success/10 text-success border-0",
@@ -84,25 +73,28 @@ const statusLabels = {
 };
 
 export default function PurchaseOrders() {
+  const { company } = useAuth();
+  const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [purchaseOrders] = useState<PurchaseOrder[]>([]);
 
-  const filteredOrders = mockPurchaseOrders.filter((order) => {
+  const filteredOrders = purchaseOrders.filter((order) => {
     const matchesSearch = order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplierNames[order.client_id]?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalOrders = mockPurchaseOrders.length;
-  const totalAmount = mockPurchaseOrders.reduce((sum, o) => sum + o.total, 0);
-  const confirmedAmount = mockPurchaseOrders
+  const totalOrders = purchaseOrders.length;
+  const totalAmount = purchaseOrders.reduce((sum, o) => sum + o.total, 0);
+  const confirmedAmount = purchaseOrders
     .filter(o => o.status === "confirmed" || o.status === "received")
     .reduce((sum, o) => sum + o.total, 0);
-  const pendingAmount = mockPurchaseOrders
+  const pendingAmount = purchaseOrders
     .filter(o => o.status === "sent")
     .reduce((sum, o) => sum + o.total, 0);
 
@@ -146,7 +138,7 @@ export default function PurchaseOrders() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Montant total</p>
                   <p className="text-2xl font-bold mt-1 text-foreground">
-                    {totalAmount.toLocaleString()} MAD
+                    {formatCurrency(totalAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-secondary/10">
@@ -162,7 +154,7 @@ export default function PurchaseOrders() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Confirmés/Reçus</p>
                   <p className="text-2xl font-bold mt-1 text-success">
-                    {confirmedAmount.toLocaleString()} MAD
+                    {formatCurrency(confirmedAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-success/10">
@@ -178,7 +170,7 @@ export default function PurchaseOrders() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">En attente</p>
                   <p className="text-2xl font-bold mt-1 text-accent">
-                    {pendingAmount.toLocaleString()} MAD
+                    {formatCurrency(pendingAmount)}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-accent/10">
@@ -261,13 +253,13 @@ export default function PurchaseOrders() {
                         <TableCell>{supplierNames[order.client_id]}</TableCell>
                         <TableCell>{new Date(order.date).toLocaleDateString('fr-FR')}</TableCell>
                         <TableCell className="text-right">
-                          {(order.total - order.tax).toLocaleString()} MAD
+                          {formatCurrency(order.total - order.tax)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {order.tax.toLocaleString()} MAD
+                          {formatCurrency(order.tax)}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          {order.total.toLocaleString()} MAD
+                          {formatCurrency(order.total)}
                         </TableCell>
                         <TableCell>
                           <span className={cn("erp-badge text-xs", statusStyles[order.status as keyof typeof statusStyles])}>

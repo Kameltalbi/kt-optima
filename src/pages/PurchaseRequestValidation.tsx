@@ -46,6 +46,8 @@ import { useCurrency } from "@/hooks/use-currency";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import { toast } from "sonner";
+import { usePurchaseRequestValidations } from "@/hooks/use-purchase-request-validations";
+import type { PurchaseRequestValidation as Validation } from "@/hooks/use-purchase-request-validations";
 
 const statusStyles = {
   approuvee: "bg-success/10 text-success border-0",
@@ -81,72 +83,100 @@ const prioriteLabels = {
 
 export default function PurchaseRequestValidation() {
   const { company, user } = useAuth();
-  const { demandes, loading, approveDemande, rejectDemande, fetchDemandes } = usePurchaseRequests();
+  const { demandes, loading, fetchDemandes } = usePurchaseRequests();
   const { formatCurrency } = useCurrency({ companyId: company?.id, companyCurrency: company?.currency });
+  const { loadValidations, validateValidationStep } = usePurchaseRequestValidations();
   
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("en_attente");
-  const [prioriteFilter, setPrioriteFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("en_validation");
   const [selectedDemande, setSelectedDemande] = useState<DemandeAchat | null>(null);
+  const [selectedValidation, setSelectedValidation] = useState<Validation | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [validations, setValidations] = useState<Validation[]>([]);
 
-  // Filtrer les demandes en attente de validation
-  const demandesEnAttente = demandes.filter(d => d.statut === "en_attente");
-  const demandesApprouvees = demandes.filter(d => d.statut === "approuvee");
-  const demandesRejetees = demandes.filter(d => d.statut === "rejetee");
+  // Filtrer les demandes selon le statut de validation
+  const demandesEnValidation = demandes.filter(d => d.statut_validation === "en_validation");
+  const demandesValidees = demandes.filter(d => d.statut_validation === "validee");
+  const demandesRejetees = demandes.filter(d => d.statut_validation === "rejetee");
+
+  // Charger les validations pour une demande
+  useEffect(() => {
+    if (selectedDemande) {
+      loadValidations(selectedDemande.id).then(setValidations);
+    }
+  }, [selectedDemande, loadValidations]);
+
+  // Filtrer les validations en attente pour l'utilisateur connecté
+  const myPendingValidations = validations.filter(
+    v => v.validateur_id === user?.id && v.statut === 'en_attente'
+  );
 
   const filteredDemandes = demandes.filter((demande) => {
     const matchesSearch = 
       demande.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       demande.departement?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       demande.demandeur?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || demande.statut === statusFilter;
-    const matchesPriorite = prioriteFilter === "all" || demande.priorite === prioriteFilter;
-    return matchesSearch && matchesStatus && matchesPriorite;
+    
+    if (statusFilter === "en_validation") {
+      return matchesSearch && demande.statut_validation === "en_validation";
+    } else if (statusFilter === "validee") {
+      return matchesSearch && demande.statut_validation === "validee";
+    } else if (statusFilter === "rejetee") {
+      return matchesSearch && demande.statut_validation === "rejetee";
+    }
+    return matchesSearch;
   });
 
-  const totalEnAttente = demandesEnAttente.length;
-  const totalApprouvees = demandesApprouvees.length;
+  const totalEnValidation = demandesEnValidation.length;
+  const totalValidees = demandesValidees.length;
   const totalRejetees = demandesRejetees.length;
-  const montantEnAttente = demandesEnAttente.reduce((sum, d) => {
-    const totalLignes = d.lignes?.reduce((s, l) => s + (l.montant_estime || 0), 0) || 0;
-    return sum + totalLignes;
+  const montantEnValidation = demandesEnValidation.reduce((sum, d) => {
+    return sum + (d.montant_total || 0);
   }, 0);
 
-  const handleView = (demande: DemandeAchat) => {
+  const handleView = async (demande: DemandeAchat) => {
     setSelectedDemande(demande);
+    const validationsData = await loadValidations(demande.id);
+    setValidations(validationsData);
     setIsViewModalOpen(true);
   };
 
-  const handleApproveClick = (demande: DemandeAchat) => {
-    setSelectedDemande(demande);
+  const handleApproveClick = (validation: Validation) => {
+    setSelectedValidation(validation);
     setIsApproveModalOpen(true);
   };
 
-  const handleRejectClick = (demande: DemandeAchat) => {
-    setSelectedDemande(demande);
+  const handleRejectClick = (validation: Validation) => {
+    setSelectedValidation(validation);
     setRejectReason("");
     setIsRejectModalOpen(true);
   };
 
   const handleApprove = async () => {
-    if (!selectedDemande || !user?.id) return;
+    if (!selectedValidation) return;
 
     try {
-      await approveDemande(selectedDemande.id, user.id);
-      setIsApproveModalOpen(false);
-      setSelectedDemande(null);
-      toast.success("Demande d'achat approuvée avec succès");
+      const success = await validateValidationStep(selectedValidation.id, 'valide');
+      if (success) {
+        setIsApproveModalOpen(false);
+        setSelectedValidation(null);
+        await fetchDemandes();
+        if (selectedDemande) {
+          const validationsData = await loadValidations(selectedDemande.id);
+          setValidations(validationsData);
+        }
+        toast.success("Validation effectuée avec succès");
+      }
     } catch (error) {
-      // Error handled by hook
+      console.error('Error approving validation:', error);
     }
   };
 
   const handleReject = async () => {
-    if (!selectedDemande || !user?.id) return;
+    if (!selectedValidation) return;
 
     if (!rejectReason.trim()) {
       toast.error("Veuillez indiquer la raison du rejet");
@@ -154,12 +184,20 @@ export default function PurchaseRequestValidation() {
     }
 
     try {
-      await rejectDemande(selectedDemande.id, user.id, rejectReason);
-      setIsRejectModalOpen(false);
-      setSelectedDemande(null);
-      setRejectReason("");
+      const success = await validateValidationStep(selectedValidation.id, 'rejete', rejectReason);
+      if (success) {
+        setIsRejectModalOpen(false);
+        setSelectedValidation(null);
+        setRejectReason("");
+        await fetchDemandes();
+        if (selectedDemande) {
+          const validationsData = await loadValidations(selectedDemande.id);
+          setValidations(validationsData);
+        }
+        toast.success("Demande rejetée");
+      }
     } catch (error) {
-      // Error handled by hook
+      console.error('Error rejecting validation:', error);
     }
   };
 
@@ -168,6 +206,22 @@ export default function PurchaseRequestValidation() {
       fetchDemandes();
     }
   }, [company?.id, fetchDemandes]);
+
+  // Charger les validations pour toutes les demandes en validation
+  useEffect(() => {
+    const loadAllValidations = async () => {
+      const allValidations: Validation[] = [];
+      for (const demande of demandesEnValidation) {
+        const validationsData = await loadValidations(demande.id);
+        allValidations.push(...validationsData);
+      }
+      setValidations(allValidations);
+    };
+    
+    if (demandesEnValidation.length > 0) {
+      loadAllValidations();
+    }
+  }, [demandesEnValidation, loadValidations]);
 
   return (
     <div className="space-y-6">
@@ -189,9 +243,9 @@ export default function PurchaseRequestValidation() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning">{totalEnAttente}</div>
+            <div className="text-2xl font-bold text-warning">{totalEnValidation}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {formatCurrency(montantEnAttente)} à valider
+              {formatCurrency(montantEnValidation)} à valider
             </p>
           </CardContent>
         </Card>
@@ -199,11 +253,11 @@ export default function PurchaseRequestValidation() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
-              Approuvées
+              Validées
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{totalApprouvees}</div>
+            <div className="text-2xl font-bold text-success">{totalValidees}</div>
           </CardContent>
         </Card>
         <Card>
@@ -226,7 +280,7 @@ export default function PurchaseRequestValidation() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {formatCurrency(montantEnAttente)}
+              {formatCurrency(montantEnValidation)}
             </div>
           </CardContent>
         </Card>
@@ -253,25 +307,9 @@ export default function PurchaseRequestValidation() {
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="en_attente">En attente</SelectItem>
-                  <SelectItem value="approuvee">Approuvée</SelectItem>
+                  <SelectItem value="en_validation">En validation</SelectItem>
+                  <SelectItem value="validee">Validée</SelectItem>
                   <SelectItem value="rejetee">Rejetée</SelectItem>
-                  <SelectItem value="brouillon">Brouillon</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-full sm:w-48">
-              <Select value={prioriteFilter} onValueChange={setPrioriteFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Priorité" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les priorités</SelectItem>
-                  <SelectItem value="urgente">Urgente</SelectItem>
-                  <SelectItem value="haute">Haute</SelectItem>
-                  <SelectItem value="normale">Normale</SelectItem>
-                  <SelectItem value="basse">Basse</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -309,14 +347,19 @@ export default function PurchaseRequestValidation() {
               </TableHeader>
               <TableBody>
                 {filteredDemandes.map((demande) => {
-                  const montantTotal = demande.lignes?.reduce((sum, l) => sum + (l.montant_estime || 0), 0) || 0;
-                  const joursEnAttente = demande.statut === "en_attente" 
-                    ? Math.floor((new Date().getTime() - new Date(demande.date_demande).getTime()) / (1000 * 60 * 60 * 24))
+                  const montantTotal = demande.montant_total || demande.lignes?.reduce((sum, l) => sum + (l.montant_estime || 0), 0) || 0;
+                  const joursEnAttente = demande.statut_validation === "en_validation" 
+                    ? Math.floor((new Date().getTime() - new Date(demande.created_at).getTime()) / (1000 * 60 * 60 * 24))
                     : 0;
+                  
+                  // Trouver la validation en attente pour cet utilisateur
+                  const myValidation = validations.find(
+                    v => v.demande_achat_id === demande.id && v.validateur_id === user?.id && v.statut === 'en_attente'
+                  );
                   
                   return (
                     <TableRow key={demande.id} className={cn(
-                      demande.statut === "en_attente" && joursEnAttente > 7 && "bg-warning/5"
+                      demande.statut_validation === "en_validation" && joursEnAttente > 7 && "bg-warning/5"
                     )}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -327,7 +370,7 @@ export default function PurchaseRequestValidation() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span>{format(new Date(demande.date_demande), "dd MMM yyyy", { locale: fr })}</span>
-                          {demande.statut === "en_attente" && joursEnAttente > 0 && (
+                          {demande.statut_validation === "en_validation" && joursEnAttente > 0 && (
                             <span className="text-xs text-muted-foreground">
                               {joursEnAttente} jour{joursEnAttente > 1 ? "s" : ""} en attente
                             </span>
@@ -347,8 +390,15 @@ export default function PurchaseRequestValidation() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn("text-xs", statusStyles[demande.statut])}>
-                          {statusLabels[demande.statut]}
+                        <Badge variant="outline" className={cn("text-xs", 
+                          demande.statut_validation === "en_validation" && "bg-warning/10 text-warning",
+                          demande.statut_validation === "validee" && "bg-success/10 text-success",
+                          demande.statut_validation === "rejetee" && "bg-destructive/10 text-destructive"
+                        )}>
+                          {demande.statut_validation === "en_validation" && "En validation"}
+                          {demande.statut_validation === "validee" && "Validée"}
+                          {demande.statut_validation === "rejetee" && "Rejetée"}
+                          {(!demande.statut_validation || demande.statut_validation === "brouillon") && "Brouillon"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-semibold">
@@ -363,12 +413,12 @@ export default function PurchaseRequestValidation() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {demande.statut === "en_attente" && (
+                          {myValidation && (
                             <>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleApproveClick(demande)}
+                                onClick={() => handleApproveClick(myValidation)}
                                 className="text-green-600 hover:text-green-700 hover:bg-green-50"
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -376,7 +426,7 @@ export default function PurchaseRequestValidation() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleRejectClick(demande)}
+                                onClick={() => handleRejectClick(myValidation)}
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <XCircle className="h-4 w-4" />

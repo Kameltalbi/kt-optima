@@ -8,6 +8,7 @@ import SettingsSystem from "../SettingsSystem";
 import SettingsModules from "../SettingsModules";
 import ProductsServicesModule from "./ProductsServicesModule";
 import SettingsDocuments from "../SettingsDocuments";
+import SettingsPurchaseValidation from "../SettingsPurchaseValidation";
 
 const tabs: ModuleTab[] = [
   { id: "general", label: "Général", path: "/parametres/general" },
@@ -159,6 +160,21 @@ export default function SettingsModule() {
       <Route
         path="paie"
         element={<Navigate to="/parametres/modules" replace />}
+      />
+      <Route
+        path="achats/validation-paliers"
+        element={
+          <MainLayout
+            title="Paramètres"
+            subtitle="Configuration de l'application"
+            moduleTabs={tabs}
+            moduleName="Paramètres"
+            hideSidebar={true}
+            showBackButton={true}
+          >
+            <SettingsPurchaseValidation />
+          </MainLayout>
+        }
       />
     </Routes>
   );
